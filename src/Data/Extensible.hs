@@ -1,10 +1,27 @@
 {-# LANGUAGE DataKinds, TypeOperators, PolyKinds, KindSignatures, GADTs, MultiParamTypeClasses, TypeFamilies, FlexibleInstances, FlexibleContexts, UndecidableInstances, ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
-module Data.Extensible ((∈)(), (:*)(Nil), (<:*), outI, (:|), (<:|), inU, K1(..), K2(..)) where
+{-# LANGUAGE DeriveDataTypeable #-}
+module Data.Extensible (
+  -- * Lookup
+  Position
+  , (∈)(..)
+  -- * Product
+  , (:*)(..)
+  , (<:*)
+  , outP
+  -- * Sum
+  , (:|)(..)
+  , (<:|)
+  , inS
+  -- * Utilities
+  , K1(..)
+  , K2(..)
+  , Match(..)
+  , match
+  ) where
 import Unsafe.Coerce
-import Debug.Trace
-
-data Proxy a = Proxy
+import Data.Bits
+import Data.Typeable
 
 data (h :: k -> *) :* (s :: [k]) where
   Nil :: h :* '[]
@@ -29,30 +46,41 @@ a <:* Nil = Tree a Nil Nil
 a <:* Tree b c d = Tree a (unsafeCoerce (<:*) b d) c --  (Half (x1 : xs1) ~ (x1 : Half (Tail xs1)))
 infixr 6 <:*
 
-outI :: forall h x xs. (x ∈ xs) => h :* xs -> h x
-outI = go $ getPosition (position :: Position x xs) where
+outP :: forall h x xs. (x ∈ xs) => h :* xs -> h x
+outP = productAt (position :: Position x xs) where
+
+productAt :: forall h x xs. Position x xs -> h :* xs -> h x
+productAt (Position x) = go x where
   go :: Int -> h :* xs -> h x
   go 0 (Tree h _ _) = unsafeCoerce h
-  go n (Tree h a b) = case divMod (n - 1) 2 of
-    (m, 0) -> go m (unsafeCoerce a)
-    (m, 1) -> go m (unsafeCoerce b)
+  go n (Tree _ a b) = go (shiftR n 1) $ case n .&. 1 of
+    0 -> unsafeCoerce a
+    1 -> unsafeCoerce b
+    _ -> error "GHC is bad at math"
   go _ Nil = error "Impossible"
 
-inU :: (x ∈ xs) => h x -> h :| xs
-inU = Union position
+inS :: (x ∈ xs) => h x -> h :| xs
+inS = UnionAt position
 
 (<:|) :: (h x -> r) -> (h :* xs -> r) -> h :| (x ': xs) -> r
-(<:|) r _ (Union (Position 0) h) = r (unsafeCoerce h)
-(<:|) _ c (Union (Position n) h) = c $ unsafeCoerce $ Union (Position (n - 1)) h
+(<:|) r _ (UnionAt (Position 0) h) = r (unsafeCoerce h)
+(<:|) _ c (UnionAt (Position n) h) = c $ unsafeCoerce $ UnionAt (Position (n - 1)) h
 
 data (h :: k -> *) :| (s :: [k]) where
-  Union :: Position x xs -> h x -> h :| xs
+  UnionAt :: Position x xs -> h x -> h :| xs
 
-newtype K1 a = K1 a deriving Show
+newtype K1 a = K1 a deriving (Show, Eq, Ord, Read, Typeable)
 
-newtype K2 a f = K2 (f a)
+newtype K2 a f = K2 (f a) deriving (Show, Eq, Ord, Read, Typeable)
 
-newtype Position x xs = Position { getPosition :: Int } deriving Show
+newtype Match h a x = Match { runMatch :: h x -> a }
+
+match :: Match h a :* xs -> h :| xs -> a
+match p (UnionAt pos h) = runMatch (productAt pos p) h
+
+---------------------------------------------------------------------
+
+newtype Position x xs = Position Int deriving Show
 
 class (x :: k) ∈ (xs :: [k]) where
   position :: Position x xs
@@ -70,10 +98,6 @@ type family Tail (xs :: [k]) :: [k] where
   Tail (x ': xs) = xs
   Tail '[] = '[]
 
-type family (++) (xs :: [k]) (ys :: [k]) :: [k] where
-  (x ': xs) ++ ys = x ': (xs ++ ys)
-  '[] ++ ys = ys
-
 data Nat = Zero | DNat Nat | SDNat Nat | NotFound
 
 class Record n where
@@ -83,10 +107,10 @@ instance Record Zero where
   theInt _ = 0
 
 instance Record n => Record (DNat n) where
-  theInt _ = theInt (Proxy :: Proxy n) * 2
+  theInt _ = theInt (Proxy :: Proxy n) `shiftL` 1
 
 instance Record n => Record (SDNat n) where
-  theInt _ = theInt (Proxy :: Proxy n) * 2 + 1
+  theInt _ = (theInt (Proxy :: Proxy n) `shiftL` 1) .|. 1
 
 instance Record n => Record (Just n) where
   theInt _ = theInt (Proxy :: Proxy n)
@@ -101,59 +125,3 @@ type family Succ (x :: Nat) :: Nat where
   Succ (DNat n) = SDNat n
   Succ (SDNat n) = DNat (Succ n)
   Succ NotFound = NotFound
-
-data A = A Int deriving Show
-data B = B Int deriving Show
-data C = C Int deriving Show
-data D = D Int deriving Show
-data E = E Int deriving Show
-data F = F Int deriving Show
-data G = G Int deriving Show
-data H = H Int deriving Show
-data I = I Int deriving Show
-data J = J Int deriving Show
-data K = K Int deriving Show
-data L = L Int deriving Show
-data M = M Int deriving Show
-data N = N Int deriving Show
-data O = O Int deriving Show
-data P = P Int deriving Show
-data Q = Q Int deriving Show
-data R = R Int deriving Show
-data S = S Int deriving Show
-data T = T Int deriving Show
-data U = U Int deriving Show
-data V = V Int deriving Show
-data W = W Int deriving Show
-data X = X Int deriving Show
-data Y = Y Int deriving Show
-data Z = Z Int deriving Show
-
-blah26 :: K1 :* [A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z]
-blah26 = K1 (A 0)
-    <:* K1 (B 0)
-    <:* K1 (C 0)
-    <:* K1 (D 0)
-    <:* K1 (E 0)
-    <:* K1 (F 0)
-    <:* K1 (G 0)
-    <:* K1 (H 0)
-    <:* K1 (I 0)
-    <:* K1 (J 0)
-    <:* K1 (K 0)
-    <:* K1 (L 0)
-    <:* K1 (M 0)
-    <:* K1 (N 0)
-    <:* K1 (O 0)
-    <:* K1 (P 0)
-    <:* K1 (Q 0)
-    <:* K1 (R 0)
-    <:* K1 (S 0)
-    <:* K1 (T 0)
-    <:* K1 (U 0)
-    <:* K1 (V 0)
-    <:* K1 (W 0)
-    <:* K1 (X 0)
-    <:* K1 (Y 0)
-    <:* K1 (Z 0)
-    <:* Nil
