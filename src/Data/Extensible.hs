@@ -14,8 +14,9 @@ module Data.Extensible (
   , (<:|)
   , inS
   -- * Utilities
+  , K0(..)
+  , (<%)
   , K1(..)
-  , K2(..)
   , Match(..)
   , match
   ) where
@@ -44,7 +45,7 @@ instance (Show (h :* Half xs), Show (h :* Half (Tail xs)), Show (h x)) => Show (
 (<:*) :: h x -> h :* xs -> h :* (x ': xs)
 a <:* Nil = Tree a Nil Nil
 a <:* Tree b c d = Tree a (unsafeCoerce (<:*) b d) c --  (Half (x1 : xs1) ~ (x1 : Half (Tail xs1)))
-infixr 6 <:*
+infixr 5 <:*
 
 outP :: forall h x xs. (x ∈ xs) => h :* xs -> h x
 outP = productAt (position :: Position x xs) where
@@ -53,10 +54,9 @@ productAt :: forall h x xs. Position x xs -> h :* xs -> h x
 productAt (Position x) = go x where
   go :: Int -> h :* xs -> h x
   go 0 (Tree h _ _) = unsafeCoerce h
-  go n (Tree _ a b) = go (shiftR n 1) $ case n .&. 1 of
+  go n (Tree _ a b) = let (m, d) = divMod (n - 1) 2 in go m $ case d of
     0 -> unsafeCoerce a
-    1 -> unsafeCoerce b
-    _ -> error "GHC is bad at math"
+    _ -> unsafeCoerce b
   go _ Nil = error "Impossible"
 
 inS :: (x ∈ xs) => h x -> h :| xs
@@ -69,14 +69,18 @@ inS = UnionAt position
 data (h :: k -> *) :| (s :: [k]) where
   UnionAt :: Position x xs -> h x -> h :| xs
 
-newtype K1 a = K1 a deriving (Show, Eq, Ord, Read, Typeable)
+newtype K0 a = K0 a deriving (Show, Eq, Ord, Read, Typeable)
 
-newtype K2 a f = K2 (f a) deriving (Show, Eq, Ord, Read, Typeable)
+newtype K1 a f = K1 (f a) deriving (Show, Eq, Ord, Read, Typeable)
 
 newtype Match h a x = Match { runMatch :: h x -> a }
 
 match :: Match h a :* xs -> h :| xs -> a
 match p (UnionAt pos h) = runMatch (productAt pos p) h
+
+(<%) :: x -> K0 :* xs -> K0 :* (x ': xs)
+(<%) = unsafeCoerce (<:*)
+infixr 5 <%
 
 ---------------------------------------------------------------------
 
