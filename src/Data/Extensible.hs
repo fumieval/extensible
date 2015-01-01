@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds, TypeOperators, PolyKinds, KindSignatures, GADTs, MultiParamTypeClasses, TypeFamilies, FlexibleInstances, FlexibleContexts, UndecidableInstances, ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE ViewPatterns, BangPatterns #-}
 module Data.Extensible (
   -- * Lookup
   Position
@@ -58,32 +58,37 @@ unconsP (Tree a bd c) = (a, let (b, d) = unconsP (unsafeCoerce bd) in unsafeCoer
 
 -- | /O(log n)/ Add an element to a product.
 (<:*) :: h x -> h :* xs -> h :* (x ': xs)
-a <:* Nil = Tree a Nil Nil
 a <:* Tree b c d = Tree a (unsafeCoerce (<:*) b d) c --  (Half (x1 : xs1) ~ (x1 : Half (Tail xs1)))
+a <:* Nil = Tree a Nil Nil
 infixr 5 <:*
 
 -- | /O(log n)/ Pick a specific element.
 outP :: forall h x xs. (x ∈ xs) => h :* xs -> h x
-outP = getConst . recordAt (position :: Position x xs) Const
+outP = view $ recordAt (position :: Position x xs)
+{-# INLINE outP #-}
 
 -- | /O(log n)/ A lens for a specific element.
 record :: forall h x xs f. (Functor f, x ∈ xs) => (h x -> f (h x)) -> h :* xs -> f (h :* xs)
 record = recordAt (position :: Position x xs)
+{-# INLINE record #-}
 
 view :: ((a -> Const a a) -> (s -> Const a s)) -> s -> a
-view l = getConst . l Const
+view l = unsafeCoerce (l Const)
+{-# INLINE view #-}
 
 recordAt :: forall h x xs f. (Functor f) => Position x xs -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)
 recordAt (Position x) f = go x where
-  go 0 (Tree h a b) = fmap (\h' -> Tree h' a b) $ unsafeCoerce f $ h
-  go n (Tree h a b) = case divMod (n - 1) 2 of
-    (m, 0) -> fmap (\a' -> Tree h a' b) $ unsafeCoerce go m a
-    (m, _) -> fmap (\b' -> Tree h a b') $ unsafeCoerce go m b
+  go 0 (Tree h a b) = fmap (\h' -> Tree h' a b) $ unsafeCoerce f h
+  go n (Tree h a b) = let m = n - 1 in case m .&. 1 of
+    0 -> fmap (\a' -> Tree h a' b) $ unsafeCoerce go (shiftR m 1) a
+    _ -> fmap (\b' -> Tree h a b') $ unsafeCoerce go (shiftR m 1) b
   go _ Nil = error "Impossible"
+{-# INLINE recordAt #-}
 
 -- | /O(log n)/
 inS :: (x ∈ xs) => h x -> h :| xs
 inS = UnionAt position
+{-# INLINE inS #-}
 
 -- | /O(n)/ Naive pattern match
 (<:|) :: (h x -> r) -> (h :| xs -> r) -> h :| (x ': xs) -> r
@@ -109,14 +114,16 @@ newtype K0 a = K0 { getK0 :: a } deriving (Eq, Ord, Read, Typeable)
 -- | /O(log n)/ Add a plain value to a product.
 (<%) :: x -> K0 :* xs -> K0 :* (x ': xs)
 (<%) = unsafeCoerce (<:*)
+{-# INLINE (<%) #-}
 infixr 5 <%
 
 instance Show a => Show (K0 a) where
   showsPrec d (K0 a) = showParen (d > 10) $ showString "K0 " . showsPrec 11 a
 
 -- | /O(log n)/ A lens for a plain value in a product.
-platter :: (x ∈ xs, Functor f) => (x -> f x) -> (K0 :* xs -> f (K0 :* xs))
-platter f = record (fmap K0 . f . getK0)
+platter :: forall f x xs. (x ∈ xs, Functor f) => (x -> f x) -> (K0 :* xs -> f (K0 :* xs))
+platter = unsafeCoerce (record :: (K0 x -> f (K0 x)) -> (K0 :* xs -> f (K0 :* xs)))
+{-# INLINE platter #-}
 
 newtype K1 a f = K1 { getK1 :: f a } deriving (Eq, Ord, Read, Typeable)
 
@@ -128,6 +135,7 @@ newtype Match h a x = Match { runMatch :: h x -> a }
 -- | /O(log n)/ Perform pattern match.
 match :: Match h a :* xs -> h :| xs -> a
 match p (UnionAt pos h) = runMatch (view (recordAt pos) p) h
+{-# INLINE match #-}
 
 (<?%) :: (x -> a) -> Match K0 a :* xs -> Match K0 a :* (x ': xs)
 (<?%) = unsafeCoerce (<:*)
@@ -167,20 +175,28 @@ type family Tail (xs :: [k]) :: [k] where
 
 data Nat = Zero | DNat Nat | SDNat Nat | NotFound
 
+retagD :: (Proxy n -> a) -> proxy (DNat n) -> a
+retagD f _ = f Proxy
+{-# INLINE retagD #-}
+
+retagSD :: (Proxy n -> a) -> proxy (SDNat n) -> a
+retagSD f _ = f Proxy
+{-# INLINE retagSD #-}
+
 class Record n where
   theInt :: Proxy n -> Int
 
 instance Record Zero where
   theInt _ = 0
+  {-# INLINE theInt #-}
 
 instance Record n => Record (DNat n) where
-  theInt _ = theInt (Proxy :: Proxy n) `shiftL` 1
+  theInt = (\n -> n + n) <$> retagD theInt
+  {-# INLINE theInt #-}
 
 instance Record n => Record (SDNat n) where
-  theInt _ = (theInt (Proxy :: Proxy n) `shiftL` 1) .|. 1
-
-instance Record n => Record (Just n) where
-  theInt _ = theInt (Proxy :: Proxy n)
+  theInt = (\n -> n + n + 1) <$> retagSD theInt
+  {-# INLINE theInt #-}
 
 type family Lookup (x :: k) (xs :: [k]) :: Nat where
   Lookup x (x ': xs) = Zero
