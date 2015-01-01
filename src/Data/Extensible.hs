@@ -16,13 +16,14 @@ module Data.Extensible (
   -- * Sum
   , (:|)(..)
   , (<:|)
+  , exhaust
   , inS
-  , liftU
   -- * Utilities
   , K0(..)
   , platter
   , (<%)
   , K1(..)
+  , liftU
   , Union(..)
   , Match(..)
   , match
@@ -80,6 +81,9 @@ inS = UnionAt position
 (<:|) :: (h x -> r) -> (h :| xs -> r) -> h :| (x ': xs) -> r
 (<:|) r _ (UnionAt (Position 0) h) = r (unsafeCoerce h)
 (<:|) _ c (UnionAt (Position n) h) = c $ unsafeCoerce $ UnionAt (Position (n - 1)) h
+
+exhaust :: h :| '[] -> r
+exhaust _ = error "Impossible"
 
 data (h :: k -> *) :| (s :: [k]) where
   UnionAt :: Position x xs -> h x -> h :| xs
