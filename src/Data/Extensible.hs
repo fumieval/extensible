@@ -23,16 +23,19 @@ module Data.Extensible (
   , platter
   , (<%)
   , K1(..)
-  , liftU
   , Union(..)
+  , liftU
   , Match(..)
   , match
+  , (<?%)
+  , (<?!)
   ) where
 import Unsafe.Coerce
 import Data.Bits
 import Data.Typeable
 import Control.Applicative
 
+-- | The extensible product type
 data (h :: k -> *) :* (s :: [k]) where
   Nil :: h :* '[]
   Tree :: h x
@@ -53,14 +56,17 @@ unconsP :: h :* (x ': xs) -> (h x, h :* xs)
 unconsP (Tree a Nil _) = (a, unsafeCoerce Nil)
 unconsP (Tree a bd c) = (a, let (b, d) = unconsP (unsafeCoerce bd) in unsafeCoerce $ Tree b (unsafeCoerce c) d)
 
+-- | /O(log n)/ Add an element to a product.
 (<:*) :: h x -> h :* xs -> h :* (x ': xs)
 a <:* Nil = Tree a Nil Nil
 a <:* Tree b c d = Tree a (unsafeCoerce (<:*) b d) c --  (Half (x1 : xs1) ~ (x1 : Half (Tail xs1)))
 infixr 5 <:*
 
+-- | /O(log n)/ Pick a specific element.
 outP :: forall h x xs. (x ∈ xs) => h :* xs -> h x
 outP = getConst . recordAt (position :: Position x xs) Const
 
+-- | /O(log n)/ A lens for a specific element.
 record :: forall h x xs f. (Functor f, x ∈ xs) => (h x -> f (h x)) -> h :* xs -> f (h :* xs)
 record = recordAt (position :: Position x xs)
 
@@ -85,6 +91,7 @@ inS = UnionAt position
 exhaust :: h :| '[] -> r
 exhaust _ = error "Impossible"
 
+-- | The extensible sum type
 data (h :: k -> *) :| (s :: [k]) where
   UnionAt :: Position x xs -> h x -> h :| xs
 
@@ -97,9 +104,15 @@ instance (Show (h x), Show (h :| xs)) => Show (h :| (x ': xs)) where
 
 newtype K0 a = K0 { getK0 :: a } deriving (Eq, Ord, Read, Typeable)
 
+-- | Add a plain value to a product.
+(<%) :: x -> K0 :* xs -> K0 :* (x ': xs)
+(<%) = unsafeCoerce (<:*)
+infixr 5 <%
+
 instance Show a => Show (K0 a) where
   showsPrec d (K0 a) = showParen (d > 10) $ showString "K0 " . showsPrec 11 a
 
+-- | A lens for a plain value in a product.
 platter :: (x ∈ xs, Functor f) => (x -> f x) -> (K0 :* xs -> f (K0 :* xs))
 platter f = record (fmap K0 . f . getK0)
 
@@ -110,12 +123,17 @@ instance Show (f a) => Show (K1 a f) where
 
 newtype Match h a x = Match { runMatch :: h x -> a }
 
+-- | O(log n) Perform pattern match.
 match :: Match h a :* xs -> h :| xs -> a
 match p (UnionAt pos h) = runMatch (view (recordAt pos) p) h
 
-(<%) :: x -> K0 :* xs -> K0 :* (x ': xs)
-(<%) = unsafeCoerce (<:*)
-infixr 5 <%
+(<?%) :: (x -> a) -> Match K0 a :* xs -> Match K0 a :* (x ': xs)
+(<?%) = unsafeCoerce (<:*)
+infixr 1 <?%
+
+(<?!) :: (f x -> a) -> Match (K1 x) a :* xs -> Match (K1 x) a :* (f ': fs)
+(<?!) = unsafeCoerce (<:*)
+infixr 1 <?!
 
 newtype Union fs a = Union { getUnion :: K1 a :| fs }
 
