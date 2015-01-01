@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds, TypeOperators, PolyKinds, KindSignatures, GADTs, MultiParamTypeClasses, TypeFamilies, FlexibleInstances, FlexibleContexts, UndecidableInstances, ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ViewPatterns, BangPatterns #-}
 module Data.Extensible (
   -- * Lookup
@@ -10,6 +11,7 @@ module Data.Extensible (
   , (:*)(..)
   , (<:*)
   , unconsP
+  , hoistP
   , outP
   , record
   , recordAt
@@ -27,6 +29,7 @@ module Data.Extensible (
   , liftU
   , Match(..)
   , match
+  , mapMatch
   , (<?%)
   , (<?!)
   ) where
@@ -61,6 +64,10 @@ unconsP (Tree a bd c) = (a, let (b, d) = unconsP (unsafeCoerce bd) in unsafeCoer
 a <:* Tree b c d = Tree a (unsafeCoerce (<:*) b d) c --  (Half (x1 : xs1) ~ (x1 : Half (Tail xs1)))
 a <:* Nil = Tree a Nil Nil
 infixr 5 <:*
+
+hoistP :: (forall x. g x -> h x) -> g :* xs -> h :* xs
+hoistP t (Tree h a b) = Tree (t h) (hoistP t a) (hoistP t b)
+hoistP _ Nil = Nil
 
 -- | /O(log n)/ Pick a specific element.
 outP :: forall h x xs. (x ∈ xs) => h :* xs -> h x
@@ -131,6 +138,10 @@ instance Show (f a) => Show (K1 a f) where
   showsPrec d (K1 a) = showParen (d > 10) $ showString "K1 " . showsPrec 11 a
 
 newtype Match h a x = Match { runMatch :: h x -> a }
+
+mapMatch :: (a -> b) -> Match h a x -> Match h b x
+mapMatch f (Match g) = Match (f . g)
+{-# INLINE mapMatch #-}
 
 -- | /O(log n)/ Perform pattern match.
 match :: Match h a :* xs -> h :| xs -> a
