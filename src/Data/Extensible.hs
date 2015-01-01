@@ -81,9 +81,11 @@ recordAt (Position x) f = go x where
     (m, _) -> fmap (\b' -> Tree h a b') $ unsafeCoerce go m b
   go _ Nil = error "Impossible"
 
+-- | /O(log n)/
 inS :: (x ∈ xs) => h x -> h :| xs
 inS = UnionAt position
 
+-- | /O(n)/ Naive pattern match
 (<:|) :: (h x -> r) -> (h :| xs -> r) -> h :| (x ': xs) -> r
 (<:|) r _ (UnionAt (Position 0) h) = r (unsafeCoerce h)
 (<:|) _ c (UnionAt (Position n) h) = c $ unsafeCoerce $ UnionAt (Position (n - 1)) h
@@ -104,7 +106,7 @@ instance (Show (h x), Show (h :| xs)) => Show (h :| (x ': xs)) where
 
 newtype K0 a = K0 { getK0 :: a } deriving (Eq, Ord, Read, Typeable)
 
--- | Add a plain value to a product.
+-- | /O(log n)/ Add a plain value to a product.
 (<%) :: x -> K0 :* xs -> K0 :* (x ': xs)
 (<%) = unsafeCoerce (<:*)
 infixr 5 <%
@@ -112,7 +114,7 @@ infixr 5 <%
 instance Show a => Show (K0 a) where
   showsPrec d (K0 a) = showParen (d > 10) $ showString "K0 " . showsPrec 11 a
 
--- | A lens for a plain value in a product.
+-- | /O(log n)/ A lens for a plain value in a product.
 platter :: (x ∈ xs, Functor f) => (x -> f x) -> (K0 :* xs -> f (K0 :* xs))
 platter f = record (fmap K0 . f . getK0)
 
@@ -123,7 +125,7 @@ instance Show (f a) => Show (K1 a f) where
 
 newtype Match h a x = Match { runMatch :: h x -> a }
 
--- | O(log n) Perform pattern match.
+-- | /O(log n)/ Perform pattern match.
 match :: Match h a :* xs -> h :| xs -> a
 match p (UnionAt pos h) = runMatch (view (recordAt pos) p) h
 

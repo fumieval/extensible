@@ -6,7 +6,7 @@ license:             BSD3
 license-file:        LICENSE
 author:              Fumiaki Kinoshita
 maintainer:          Fumiaki Kinoshita <fumiexcel@gmail.com>
-copyright:           Copyright (C) 2014 Fumiaki Kinoshita
+copyright:           Copyright (C) 2015 Fumiaki Kinoshita
 category:            Data
 build-type:          Simple
 extra-source-files:
