@@ -18,6 +18,7 @@ module Data.Extensible (
   , outP
   , sector
   , sectorAt
+  , Generate(..)
   -- * Sum
   , (:|)(..)
   , (<:|)
@@ -134,6 +135,17 @@ instance Show (h :| '[]) where
 instance (Show (h x), Show (h :| xs)) => Show (h :| (x ': xs)) where
   showsPrec d = (\h -> showParen (d > 10) $ showString "inS " . showsPrec d h)
     <:| showsPrec d
+
+class Generate (xs :: [k]) where
+  generate :: (forall x. Position x xs -> h x) -> h :* xs
+
+instance Generate '[] where
+  generate _ = Nil
+
+instance Generate xs => Generate (x ': xs) where
+  generate f = f (Position 0) <:* generate (f . succPos) where
+    succPos (Position n) = Position (n + 1)
+    {-# INLINE succPos #-}
 
 newtype K0 a = K0 { getK0 :: a } deriving (Eq, Ord, Read, Typeable)
 
