@@ -2,19 +2,22 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE ViewPatterns, BangPatterns #-}
 module Data.Extensible (
   -- * Lookup
-  Position
+    Position
+  , runPosition
   , (∈)(..)
+  , Member
   -- * Product
   , (:*)(..)
   , (<:*)
   , unconsP
   , hoistP
   , outP
-  , record
-  , recordAt
+  , sector
+  , sectorAt
   -- * Sum
   , (:|)(..)
   , (<:|)
@@ -22,7 +25,7 @@ module Data.Extensible (
   , inS
   -- * Utilities
   , K0(..)
-  , platter
+  , record
   , (<%)
   , K1(..)
   , Union(..)
@@ -37,6 +40,7 @@ import Unsafe.Coerce
 import Data.Bits
 import Data.Typeable
 import Control.Applicative
+import Data.Type.Equality
 
 -- | The extensible product type
 data (h :: k -> *) :* (s :: [k]) where
@@ -59,9 +63,12 @@ unconsP :: h :* (x ': xs) -> (h x, h :* xs)
 unconsP (Tree a Nil _) = (a, unsafeCoerce Nil)
 unconsP (Tree a bd c) = (a, let (b, d) = unconsP (unsafeCoerce bd) in unsafeCoerce $ Tree b (unsafeCoerce c) d)
 
+lemmaHalfTail :: Proxy xs -> p (x ': Half (Tail xs)) -> p (Half (x ': xs))
+lemmaHalfTail _ = unsafeCoerce
+
 -- | /O(log n)/ Add an element to a product.
-(<:*) :: h x -> h :* xs -> h :* (x ': xs)
-a <:* Tree b c d = Tree a (unsafeCoerce (<:*) b d) c --  (Half (x1 : xs1) ~ (x1 : Half (Tail xs1)))
+(<:*) :: forall h x xs. h x -> h :* xs -> h :* (x ': xs)
+a <:* Tree b c d = Tree a (lemmaHalfTail (Proxy :: Proxy (Tail xs)) $ b <:* d) c
 a <:* Nil = Tree a Nil Nil
 infixr 5 <:*
 
@@ -71,36 +78,48 @@ hoistP _ Nil = Nil
 
 -- | /O(log n)/ Pick a specific element.
 outP :: forall h x xs. (x ∈ xs) => h :* xs -> h x
-outP = view $ recordAt (position :: Position x xs)
+outP = view $ sectorAt (position :: Position x xs)
 {-# INLINE outP #-}
 
 -- | /O(log n)/ A lens for a specific element.
-record :: forall h x xs f. (Functor f, x ∈ xs) => (h x -> f (h x)) -> h :* xs -> f (h :* xs)
-record = recordAt (position :: Position x xs)
-{-# INLINE record #-}
+sector :: forall h x xs f. (Functor f, x ∈ xs) => (h x -> f (h x)) -> h :* xs -> f (h :* xs)
+sector = sectorAt (position :: Position x xs)
+{-# INLINE sector #-}
 
 view :: ((a -> Const a a) -> (s -> Const a s)) -> s -> a
 view l = unsafeCoerce (l Const)
 {-# INLINE view #-}
 
-recordAt :: forall h x xs f. (Functor f) => Position x xs -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)
-recordAt (Position x) f = go x where
-  go 0 (Tree h a b) = fmap (\h' -> Tree h' a b) $ unsafeCoerce f h
-  go n (Tree h a b) = let m = n - 1 in case m .&. 1 of
-    0 -> fmap (\a' -> Tree h a' b) $ unsafeCoerce go (shiftR m 1) a
-    _ -> fmap (\b' -> Tree h a b') $ unsafeCoerce go (shiftR m 1) b
+-- | /O(log n)/
+sectorAt :: forall h x xs f. (Functor f) => Position x xs -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)
+sectorAt pos0 f = go pos0 where
+  go :: forall t. Position x t -> h :* t -> f (h :* t)
+  go pos (Tree h a b) = case runPosition pos of
+    Left Refl -> fmap (\h' -> Tree h' a b) (f h)
+    Right (Position m) -> case m .&. 1 of
+      0 -> fmap (\a' -> Tree h a' b)
+        $ go (Position (shiftR m 1) :: Position x (Half (Tail t))) a
+      _ -> fmap (\b' -> Tree h a b')
+        $ go (Position (shiftR m 1) :: Position x (Half (Tail (Tail t)))) b
   go _ Nil = error "Impossible"
-{-# INLINE recordAt #-}
+{-# INLINE sectorAt #-}
 
 -- | /O(log n)/
 inS :: (x ∈ xs) => h x -> h :| xs
 inS = UnionAt position
 {-# INLINE inS #-}
 
--- | /O(n)/ Naive pattern match
+runPosition :: Position x (y ': xs) -> Either (x :~: y) (Position x xs)
+runPosition (Position 0) = Left (unsafeCoerce Refl)
+runPosition (Position n) = Right (Position (n - 1))
+{-# INLINE runPosition #-}
+
+-- | /O(1)/ Naive pattern match
 (<:|) :: (h x -> r) -> (h :| xs -> r) -> h :| (x ': xs) -> r
-(<:|) r _ (UnionAt (Position 0) h) = r (unsafeCoerce h)
-(<:|) _ c (UnionAt (Position n) h) = c $ unsafeCoerce $ UnionAt (Position (n - 1)) h
+(<:|) r c = \(UnionAt pos h) -> case runPosition pos of
+  Left Refl -> r h
+  Right pos' -> c (UnionAt pos' h)
+{-# INLINE (<:|) #-}
 
 exhaust :: h :| '[] -> r
 exhaust _ = error "Impossible"
@@ -128,9 +147,9 @@ instance Show a => Show (K0 a) where
   showsPrec d (K0 a) = showParen (d > 10) $ showString "K0 " . showsPrec 11 a
 
 -- | /O(log n)/ A lens for a plain value in a product.
-platter :: forall f x xs. (x ∈ xs, Functor f) => (x -> f x) -> (K0 :* xs -> f (K0 :* xs))
-platter = unsafeCoerce (record :: (K0 x -> f (K0 x)) -> (K0 :* xs -> f (K0 :* xs)))
-{-# INLINE platter #-}
+record :: forall f x xs. (x ∈ xs, Functor f) => (x -> f x) -> (K0 :* xs -> f (K0 :* xs))
+record = unsafeCoerce (sector :: (K0 x -> f (K0 x)) -> (K0 :* xs -> f (K0 :* xs)))
+{-# INLINE record #-}
 
 newtype K1 a f = K1 { getK1 :: f a } deriving (Eq, Ord, Read, Typeable)
 
@@ -145,7 +164,7 @@ mapMatch f (Match g) = Match (f . g)
 
 -- | /O(log n)/ Perform pattern match.
 match :: Match h a :* xs -> h :| xs -> a
-match p (UnionAt pos h) = runMatch (view (recordAt pos) p) h
+match p (UnionAt pos h) = runMatch (view (sectorAt pos) p) h
 {-# INLINE match #-}
 
 (<?%) :: (x -> a) -> Match K0 a :* xs -> Match K0 a :* (x ': xs)
@@ -166,7 +185,9 @@ deriving instance Show (K1 a :| fs) => Show (Union fs a)
 
 ---------------------------------------------------------------------
 
-newtype Position x xs = Position Int deriving Show
+newtype Position (x :: k) (xs :: [k]) = Position Int deriving Show
+
+type Member = (∈)
 
 class (x :: k) ∈ (xs :: [k]) where
   position :: Position x xs
