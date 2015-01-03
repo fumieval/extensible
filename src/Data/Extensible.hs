@@ -60,16 +60,19 @@ instance (Show (h :* xs), Show (h x)) => Show (h :* (x ': xs)) where
     . showString " <:* "
     . showsPrec 6 xs
 
-unconsP :: h :* (x ': xs) -> (h x, h :* xs)
-unconsP (Tree a Nil _) = (a, unsafeCoerce Nil)
+unconsP :: forall h x xs. h :* (x ': xs) -> (h x, h :* xs)
+unconsP (Tree a Nil _) = (a, lemmaHalfEmpty (Proxy :: Proxy xs) Nil)
 unconsP (Tree a bd c) = (a, let (b, d) = unconsP (unsafeCoerce bd) in unsafeCoerce $ Tree b (unsafeCoerce c) d)
+
+lemmaHalfEmpty :: (Half xs ~ '[]) => Proxy xs -> p '[] -> p xs
+lemmaHalfEmpty _ = unsafeCoerce
 
 lemmaHalfTail :: Proxy xs -> p (x ': Half (Tail xs)) -> p (Half (x ': xs))
 lemmaHalfTail _ = unsafeCoerce
 
 -- | /O(log n)/ Add an element to a product.
 (<:*) :: forall h x xs. h x -> h :* xs -> h :* (x ': xs)
-a <:* Tree b c d = Tree a (lemmaHalfTail (Proxy :: Proxy (Tail xs)) $ b <:* d) c
+a <:* Tree b c d = Tree a (lemmaHalfTail (Proxy :: Proxy (Tail xs)) $! b <:* d) c
 a <:* Nil = Tree a Nil Nil
 infixr 5 <:*
 
