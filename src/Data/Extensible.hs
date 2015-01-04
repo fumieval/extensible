@@ -4,13 +4,35 @@
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE ViewPatterns, BangPatterns #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Extensible
+-- Copyright   :  (c) Fumiaki Kinoshita 2015
+-- License     :  BSD3
+--
+-- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
+-- Stability   :  experimental
+-- Portability :  non-portable
+--
+-- This package defines an extensible type-indexed product type and a union type.
+-- Both are determined from the type-level list of elements which has kind @[k]@
+-- and a wrapper (k -> *).
+-- We can define ADTs not only for plain values, but also parameterized ones.
+--
+-- >>> let t = K0 (42 :: Int) <:* K0 "foo" <:* K0 (Just "bar") <:* Nil
+-- >>> t
+-- K0 42 <:* K0 "foo" <:* K0 (Just "bar") <:* Nil
+-- >>> :t t
+-- t :: K0 :* '[Int, [Char], Maybe [Char]]
+-- >>> pluck t :: Int
+-- 42
+-----------------------------------------------------------------------------
 module Data.Extensible (
   -- * Lookup
     Position
   , runPosition
-  , (∈)(..)
+  , (∈)()
   , Member(..)
-  , Include(..)
   -- * Product
   , (:*)(..)
   , (<:*)
@@ -25,24 +47,31 @@ module Data.Extensible (
   , (<:|)
   , exhaust
   , inS
-  -- * Utilities
-  , K0(..)
-  , record
-  , (<%)
-  , K1(..)
-  , Union(..)
-  , liftU
+  , picked
+  -- * Inclusion/Permutation
+  , Include(..)
+  -- * Pattern match
   , Match(..)
   , match
   , mapMatch
+  -- * Monomorphic
+  , K0(..)
+  , (<%)
+  , pluck
+  , bury
+  , (<%|)
+  , record
   , (<?%)
+  -- * Parameterized
+  , K1(..)
+  , Union(..)
+  , liftU
   , (<?!)
   ) where
 import Unsafe.Coerce
 import Data.Bits
 import Data.Typeable
 import Control.Applicative
-import Data.Type.Equality
 
 -- | The extensible product type
 data (h :: k -> *) :* (s :: [k]) where
@@ -109,7 +138,7 @@ sectorAt pos0 f = go pos0 where
   go _ Nil = error "Impossible"
 {-# INLINE sectorAt #-}
 
--- | /O(log n)/
+-- | /O(log n)/ lift a value.
 inS :: (x ∈ xs) => h x -> h :| xs
 inS = UnionAt position
 {-# INLINE inS #-}
@@ -145,7 +174,7 @@ instance Show (h :| '[]) where
   show = exhaust
 
 instance (Show (h x), Show (h :| xs)) => Show (h :| (x ': xs)) where
-  showsPrec d = (\h -> showParen (d > 10) $ showString "inS " . showsPrec 10 h)
+  showsPrec d = (\h -> showParen (d > 10) $ showString "inS " . showsPrec 11 h)
     <:| showsPrec d
 
 class Generate (xs :: [k]) where
@@ -153,11 +182,12 @@ class Generate (xs :: [k]) where
 
 instance Generate '[] where
   generate _ = Nil
-
+  {-# INLINE generate #-}
 instance Generate xs => Generate (x ': xs) where
   generate f = f (Position 0) <:* generate (f . succPos) where
     succPos (Position n) = Position (n + 1)
     {-# INLINE succPos #-}
+  {-# INLINE generate #-}
 
 newtype K0 a = K0 { getK0 :: a } deriving (Eq, Ord, Read, Typeable)
 
@@ -166,6 +196,15 @@ newtype K0 a = K0 { getK0 :: a } deriving (Eq, Ord, Read, Typeable)
 (<%) = unsafeCoerce (<:*)
 {-# INLINE (<%) #-}
 infixr 5 <%
+
+pluck :: (x ∈ xs) => K0 :* xs -> x
+pluck = getK0 . outP
+
+bury :: (x ∈ xs) => x -> K0 :| xs
+bury = inS . K0
+
+(<%|) :: (x -> r) -> (K0 :| xs -> r) -> K0 :| (x ': xs) -> r
+(<%|) = unsafeCoerce (<:|)
 
 instance Show a => Show (K0 a) where
   showsPrec d (K0 a) = showParen (d > 10) $ showString "K0 " . showsPrec 11 a
@@ -236,9 +275,9 @@ instance Record (Lookup x xs) => Member x xs where
   {-# INLINE position #-}
 
 class Include (xs :: [k]) (ys :: [k]) where
-  -- | /O(n log n)/ Select some elements
+  -- | /O(m log n)/ Select some elements.
   shrink :: h :* ys -> h :* xs
-  -- | /O(n log n)/ Embed to a larger union
+  -- | /O(m log n)/ Embed to a larger union.
   spread :: h :| xs -> h :| ys
 
 instance Include '[] xs where
