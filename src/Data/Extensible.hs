@@ -209,7 +209,7 @@ instance Show (Union '[] a) where
   show (Union u) = exhaust u
 
 instance (Show (f a), Show (Union fs a)) => Show (Union (f ': fs) a) where
-  showsPrec d (Union u) = (\f -> showParen (d > 10) $ showString "liftU " . showsPrec 11 f)
+  showsPrec d (Union u) = (\(K1 f) -> showParen (d > 10) $ showString "liftU " . showsPrec 11 f)
     <:| showsPrec d . Union
     $ u
 
