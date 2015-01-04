@@ -9,7 +9,8 @@ module Data.Extensible (
     Position
   , runPosition
   , (∈)(..)
-  , Member
+  , Member(..)
+  , Include(..)
   -- * Product
   , (:*)(..)
   , (<:*)
@@ -113,6 +114,13 @@ inS :: (x ∈ xs) => h x -> h :| xs
 inS = UnionAt position
 {-# INLINE inS #-}
 
+picked :: forall f h x xs. (x ∈ xs, Applicative f) => (h x -> f (h x)) -> h :| xs -> f (h :| xs)
+picked f u@(UnionAt (Position n) h)
+  | n == m = fmap (UnionAt (Position n)) $ f (unsafeCoerce h)
+  | otherwise = pure u
+  where
+    Position m = position :: Position x xs
+
 runPosition :: Position x (y ': xs) -> Either (x :~: y) (Position x xs)
 runPosition (Position 0) = Left (unsafeCoerce Refl)
 runPosition (Position n) = Right (Position (n - 1))
@@ -123,6 +131,7 @@ runPosition (Position n) = Right (Position (n - 1))
 (<:|) r c = \(UnionAt pos h) -> case runPosition pos of
   Left Refl -> r h
   Right pos' -> c (UnionAt pos' h)
+infixr 1 <:|
 {-# INLINE (<:|) #-}
 
 exhaust :: h :| '[] -> r
@@ -133,10 +142,10 @@ data (h :: k -> *) :| (s :: [k]) where
   UnionAt :: Position x xs -> h x -> h :| xs
 
 instance Show (h :| '[]) where
-  show _ = undefined
+  show = exhaust
 
 instance (Show (h x), Show (h :| xs)) => Show (h :| (x ': xs)) where
-  showsPrec d = (\h -> showParen (d > 10) $ showString "inS " . showsPrec d h)
+  showsPrec d = (\h -> showParen (d > 10) $ showString "inS " . showsPrec 10 h)
     <:| showsPrec d
 
 class Generate (xs :: [k]) where
@@ -196,20 +205,49 @@ liftU :: (f ∈ fs) => f a -> Union fs a
 liftU = Union . inS . K1
 {-# INLINE liftU #-}
 
-deriving instance Show (K1 a :| fs) => Show (Union fs a)
+instance Show (Union '[] a) where
+  show (Union u) = exhaust u
+
+instance (Show (f a), Show (Union fs a)) => Show (Union (f ': fs) a) where
+  showsPrec d (Union u) = (\f -> showParen (d > 10) $ showString "liftU " . showsPrec 11 f)
+    <:| showsPrec d . Union
+    $ u
+
+instance Functor (Union '[]) where
+  fmap _ = exhaust . getUnion
+
+instance (Functor f, Functor (Union fs)) => Functor (Union (f ': fs)) where
+  fmap f (Union (UnionAt pos@(Position n) (K1 h))) = case runPosition pos of
+    Left Refl -> Union $ UnionAt pos $ K1 (fmap f h)
+    Right pos' -> case fmap f (Union (UnionAt pos' (K1 h))) of
+      Union (UnionAt _ h') -> Union (UnionAt (Position n) h')
 
 ---------------------------------------------------------------------
 
-newtype Position (x :: k) (xs :: [k]) = Position Int deriving Show
+newtype Position (x :: k) (xs :: [k]) = Position Int deriving (Show, Eq, Ord)
 
-type Member = (∈)
+type (∈) = Member
 
-class (x :: k) ∈ (xs :: [k]) where
+class Member (x :: k) (xs :: [k]) where
   position :: Position x xs
 
-instance Record (Lookup x xs) => x ∈ xs where
+instance Record (Lookup x xs) => Member x xs where
   position = Position $ theInt (Proxy :: Proxy (Lookup x xs))
   {-# INLINE position #-}
+
+class Include (xs :: [k]) (ys :: [k]) where
+  -- | /O(n log n)/ Select some elements
+  shrink :: h :* ys -> h :* xs
+  -- | /O(n log n)/ Embed to a larger union
+  spread :: h :| xs -> h :| ys
+
+instance Include '[] xs where
+  shrink _ = Nil
+  spread = exhaust
+
+instance (x ∈ ys, Include xs ys) => Include (x ': xs) ys where
+  shrink ys = outP ys <:* shrink ys
+  spread xs = inS <:| spread $ xs
 
 type family Half (xs :: [k]) :: [k] where
   Half '[] = '[]
