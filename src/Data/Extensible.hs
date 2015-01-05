@@ -67,6 +67,12 @@ module Data.Extensible (
   , Union(..)
   , liftU
   , (<?!)
+  -- * Improved Union
+  , Fuse(..)
+  , meltdown
+  , League(..)
+  , liftL
+  , (<?~)
   ) where
 import Unsafe.Coerce
 import Data.Bits
@@ -255,11 +261,40 @@ instance (Show (f a), Show (Union fs a)) => Show (Union (f ': fs) a) where
 instance Functor (Union '[]) where
   fmap _ = exhaust . getUnion
 
+-- | slow fmap
 instance (Functor f, Functor (Union fs)) => Functor (Union (f ': fs)) where
   fmap f (Union (UnionAt pos@(Position n) (K1 h))) = case runPosition pos of
     Left Refl -> Union $ UnionAt pos $ K1 (fmap f h)
     Right pos' -> case fmap f (Union (UnionAt pos' (K1 h))) of
       Union (UnionAt _ h') -> Union (UnionAt (Position n) h')
+
+-- | Better representation of a union of functors.
+newtype League fs a = League { getLeague :: Fuse a :| fs }
+
+-- | /O(log n)/ Embed a functor along with 'fmap'.
+liftL :: (Functor f, f ∈ fs) => f a -> League fs a
+liftL f = League $ inS $ Fuse $ \g -> fmap g f
+{-# INLINE liftL #-}
+
+-- | Flipped <http://hackage.haskell.org/package/kan-extensions-4.1.0.1/docs/Data-Functor-Yoneda.html Yoneda>
+newtype Fuse a f = Fuse { getFuse :: forall b. (a -> b) -> f b }
+
+meltdown :: Fuse a f -> f a
+meltdown (Fuse f) = f id
+{-# INLINE meltdown #-}
+
+mapFuse :: (a -> b) -> Fuse a f -> Fuse b f
+mapFuse f (Fuse g) = Fuse (\h -> g (h . f))
+{-# INLINE mapFuse #-}
+
+-- | fast fmap
+instance Functor (League fs) where
+  fmap f (League (UnionAt pos s)) = League (UnionAt pos (mapFuse f s))
+  {-# INLINE fmap #-}
+
+(<?~) :: (f x -> a) -> Match (Fuse x) a :* fs -> Match (Fuse x) a :* (f ': fs)
+(<?~) f = (<:*) (Match (f . meltdown))
+infixr 1 <?~
 
 ---------------------------------------------------------------------
 
