@@ -236,6 +236,11 @@ match :: Match h a :* xs -> h :| xs -> a
 match p (UnionAt pos h) = runMatch (view (sectorAt pos) p) h
 {-# INLINE match #-}
 
+caseOf :: h :| xs -> Match h a :* xs -> a
+caseOf = flip match
+{-# INLINE caseOf #-}
+infix 0 `caseOf`
+
 (<?%) :: (x -> a) -> Match K0 a :* xs -> Match K0 a :* (x ': xs)
 (<?%) = unsafeCoerce (<:*)
 infixr 1 <?%
