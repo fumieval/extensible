@@ -50,10 +50,15 @@ module Data.Extensible (
   , picked
   -- * Inclusion/Permutation
   , Include(..)
+  , (⊆)()
+  , Possession(..)
+  , shrink
+  , spread
   -- * Pattern match
   , Match(..)
   , match
   , mapMatch
+  , caseOf
   -- * Monomorphic
   , K0(..)
   , (<%)
@@ -273,7 +278,7 @@ instance (Functor f, Functor (Union fs)) => Functor (Union (f ': fs)) where
     Right pos' -> case fmap f (Union (UnionAt pos' (K1 h))) of
       Union (UnionAt _ h') -> Union (UnionAt (Position n) h')
 
--- | Better representation of a union of functors.
+-- | A much more efficient representation for 'Union' of functors.
 newtype League fs a = League { getLeague :: Fuse a :| fs }
 
 -- | /O(log n)/ Embed a functor along with 'fmap'.
@@ -314,19 +319,25 @@ instance Record (Lookup x xs) => Member x xs where
   position = Position $ theInt (Proxy :: Proxy (Lookup x xs))
   {-# INLINE position #-}
 
+newtype Possession xs x = Possession { getPossession :: Position x xs }
+
 class Include (xs :: [k]) (ys :: [k]) where
-  -- | /O(m log n)/ Select some elements.
-  shrink :: h :* ys -> h :* xs
-  -- | /O(m log n)/ Embed to a larger union.
-  spread :: h :| xs -> h :| ys
+  possession :: Possession ys :* xs
+
+type (⊆) = Include
+
+-- | /O(m log n)/ Select some elements.
+shrink :: (xs ⊆ ys) => h :* ys -> h :* xs
+shrink = let !p = possession in \h -> hoistP (\(Possession pos) -> sectorAt pos `view` h) p
+
+-- | /O(m log n)/ Embed to a larger union.
+spread :: (xs ⊆ ys) => h :| xs -> h :| ys
+spread = let !p = possession in \(UnionAt pos h) -> getPossession (sectorAt pos `view` p) `UnionAt` h
 
 instance Include '[] xs where
-  shrink _ = Nil
-  spread = exhaust
-
-instance (x ∈ ys, Include xs ys) => Include (x ': xs) ys where
-  shrink ys = outP ys <:* shrink ys
-  spread xs = inS <:| spread $ xs
+  possession = Nil
+instance (x ∈ ys, xs ⊆ ys) => Include (x ': xs) ys where
+  possession = Possession position <:* possession
 
 type family Half (xs :: [k]) :: [k] where
   Half '[] = '[]
