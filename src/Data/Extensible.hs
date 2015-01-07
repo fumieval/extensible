@@ -15,8 +15,8 @@
 -- Portability :  non-portable
 --
 -- This package defines an extensible type-indexed product type and a union type.
--- Both are determined from the type-level list of elements which has kind @[k]@
--- and a wrapper (k -> *).
+-- Both are determined from the type-level list @[k]@
+-- and a wrapper @k -> *@.
 -- We can define ADTs not only for plain values, but also parameterized ones.
 --
 -- >>> let t = K0 (42 :: Int) <:* K0 "foo" <:* K0 (Just "bar") <:* Nil
@@ -31,6 +31,7 @@ module Data.Extensible (
   -- * Lookup
     Position
   , runPosition
+  , Possession(..)
   , (∈)()
   , Member(..)
   -- * Product
@@ -51,7 +52,6 @@ module Data.Extensible (
   -- * Inclusion/Permutation
   , Include(..)
   , (⊆)()
-  , Possession(..)
   , shrink
   , spread
   -- * Pattern match
@@ -75,6 +75,7 @@ module Data.Extensible (
   -- * Improved Union
   , Fuse(..)
   , meltdown
+  , mapFuse
   , League(..)
   , liftL
   , (<?~)
@@ -91,6 +92,7 @@ data (h :: k -> *) :* (s :: [k]) where
     -> h :* Half xs
     -> h :* Half (Tail xs)
     -> h :* (x ': xs)
+deriving instance Typeable (:*)
 
 instance Show (h :* '[]) where
   show Nil = "Nil"
@@ -101,6 +103,7 @@ instance (Show (h :* xs), Show (h x)) => Show (h :* (x ': xs)) where
     . showString " <:* "
     . showsPrec 6 xs
 
+-- | Split a product to the head and the tail.
 unconsP :: forall h x xs. h :* (x ': xs) -> (h x, h :* xs)
 unconsP (Tree a Nil _) = (a, lemmaHalfEmpty (Proxy :: Proxy xs) Nil)
 unconsP (Tree a bd c) = (a, let (b, d) = unconsP (unsafeCoerce bd) in unsafeCoerce $ Tree b (unsafeCoerce c) d)
@@ -117,6 +120,7 @@ a <:* Tree b c d = Tree a (lemmaHalfTail (Proxy :: Proxy (Tail xs)) $! b <:* d) 
 a <:* Nil = Tree a Nil Nil
 infixr 5 <:*
 
+-- | Transform every elements in a union, preserving the order.
 hoistP :: (forall x. g x -> h x) -> g :* xs -> h :* xs
 hoistP t (Tree h a b) = Tree (t h) (hoistP t a) (hoistP t b)
 hoistP _ Nil = Nil
@@ -135,7 +139,7 @@ view :: ((a -> Const a a) -> (s -> Const a s)) -> s -> a
 view l = unsafeCoerce (l Const)
 {-# INLINE view #-}
 
--- | /O(log n)/
+-- | /O(log n)/ A lens for a value in a known position.
 sectorAt :: forall h x xs f. (Functor f) => Position x xs -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)
 sectorAt pos0 f = go pos0 where
   go :: forall t. Position x t -> h :* t -> f (h :* t)
@@ -154,6 +158,7 @@ inS :: (x ∈ xs) => h x -> h :| xs
 inS = UnionAt position
 {-# INLINE inS #-}
 
+-- | A traversal that tries to point a specific element.
 picked :: forall f h x xs. (x ∈ xs, Applicative f) => (h x -> f (h x)) -> h :| xs -> f (h :| xs)
 picked f u@(UnionAt (Position n) h)
   | n == m = fmap (UnionAt (Position n)) $ f (unsafeCoerce h)
@@ -161,6 +166,7 @@ picked f u@(UnionAt (Position n) h)
   where
     Position m = position :: Position x xs
 
+-- | Embodies a type equivalence to ensure that the 'Position' points the first element.
 runPosition :: Position x (y ': xs) -> Either (x :~: y) (Position x xs)
 runPosition (Position 0) = Left (unsafeCoerce Refl)
 runPosition (Position n) = Right (Position (n - 1))
@@ -174,12 +180,14 @@ runPosition (Position n) = Right (Position (n - 1))
 infixr 1 <:|
 {-# INLINE (<:|) #-}
 
+-- | There is no empty union.
 exhaust :: h :| '[] -> r
 exhaust _ = error "Impossible"
 
 -- | The extensible sum type
 data (h :: k -> *) :| (s :: [k]) where
   UnionAt :: Position x xs -> h x -> h :| xs
+deriving instance Typeable (:*)
 
 instance Show (h :| '[]) where
   show = exhaust
@@ -188,18 +196,21 @@ instance (Show (h x), Show (h :| xs)) => Show (h :| (x ': xs)) where
   showsPrec d = (\h -> showParen (d > 10) $ showString "inS " . showsPrec 11 h)
     <:| showsPrec d
 
+-- | Given a function that maps types to values, we can "collect" entities all you want.
 class Generate (xs :: [k]) where
   generate :: (forall x. Position x xs -> h x) -> h :* xs
 
 instance Generate '[] where
   generate _ = Nil
   {-# INLINE generate #-}
+
 instance Generate xs => Generate (x ': xs) where
   generate f = f (Position 0) <:* generate (f . succPos) where
     succPos (Position n) = Position (n + 1)
     {-# INLINE succPos #-}
   {-# INLINE generate #-}
 
+-- | Just a value.
 newtype K0 a = K0 { getK0 :: a } deriving (Eq, Ord, Read, Typeable)
 
 -- | /O(log n)/ Add a plain value to a product.
@@ -208,12 +219,15 @@ newtype K0 a = K0 { getK0 :: a } deriving (Eq, Ord, Read, Typeable)
 {-# INLINE (<%) #-}
 infixr 5 <%
 
+-- | Extract a plain value.
 pluck :: (x ∈ xs) => K0 :* xs -> x
 pluck = getK0 . outP
 
+-- | Embed a plain value.
 bury :: (x ∈ xs) => x -> K0 :| xs
 bury = inS . K0
 
+-- | Naive pattern matching for a plain value.
 (<%|) :: (x -> r) -> (K0 :| xs -> r) -> K0 :| (x ': xs) -> r
 (<%|) = unsafeCoerce (<:|)
 
@@ -225,37 +239,45 @@ record :: forall f x xs. (x ∈ xs, Functor f) => (x -> f x) -> (K0 :* xs -> f (
 record = unsafeCoerce (sector :: (K0 x -> f (K0 x)) -> (K0 :* xs -> f (K0 :* xs)))
 {-# INLINE record #-}
 
+-- | Wrap a type that has a kind @* -> *@.
 newtype K1 a f = K1 { getK1 :: f a } deriving (Eq, Ord, Read, Typeable)
 
 instance Show (f a) => Show (K1 a f) where
   showsPrec d (K1 a) = showParen (d > 10) $ showString "K1 " . showsPrec 11 a
 
+-- | Turn a wrapper type into one clause that returns @a@.
 newtype Match h a x = Match { runMatch :: h x -> a }
 
+-- | Applies a function to the result of 'Match'.
 mapMatch :: (a -> b) -> Match h a x -> Match h b x
 mapMatch f (Match g) = Match (f . g)
 {-# INLINE mapMatch #-}
 
--- | /O(log n)/ Perform pattern match.
+-- | /O(log n)/ Perform pattern matching.
 match :: Match h a :* xs -> h :| xs -> a
 match p (UnionAt pos h) = runMatch (view (sectorAt pos) p) h
 {-# INLINE match #-}
 
+-- | Flipped `match`
 caseOf :: h :| xs -> Match h a :* xs -> a
 caseOf = flip match
 {-# INLINE caseOf #-}
 infix 0 `caseOf`
 
+-- | Prepend a clause for a plain value.
 (<?%) :: (x -> a) -> Match K0 a :* xs -> Match K0 a :* (x ': xs)
 (<?%) = unsafeCoerce (<:*)
 infixr 1 <?%
 
+-- | Prepend a clause for parameterized value.
 (<?!) :: (f x -> a) -> Match (K1 x) a :* xs -> Match (K1 x) a :* (f ': fs)
 (<?!) = unsafeCoerce (<:*)
 infixr 1 <?!
 
+-- | A wrapper for @'K1' a ':|'' fs@ for having a kind @* -> *@.
 newtype Union fs a = Union { getUnion :: K1 a :| fs }
 
+-- | /O(log n)/ Lift a value.
 liftU :: (f ∈ fs) => f a -> Union fs a
 liftU = Union . inS . K1
 {-# INLINE liftU #-}
@@ -278,10 +300,10 @@ instance (Functor f, Functor (Union fs)) => Functor (Union (f ': fs)) where
     Right pos' -> case fmap f (Union (UnionAt pos' (K1 h))) of
       Union (UnionAt _ h') -> Union (UnionAt (Position n) h')
 
--- | A much more efficient representation for 'Union' of functors.
+-- | A much more efficient representation for 'Union' of 'Functor's.
 newtype League fs a = League { getLeague :: Fuse a :| fs }
 
--- | /O(log n)/ Embed a functor along with 'fmap'.
+-- | /O(log n)/ Embed a functor.
 liftL :: (Functor f, f ∈ fs) => f a -> League fs a
 liftL f = League $ inS $ Fuse $ \g -> fmap g f
 {-# INLINE liftL #-}
@@ -289,10 +311,12 @@ liftL f = League $ inS $ Fuse $ \g -> fmap g f
 -- | Flipped <http://hackage.haskell.org/package/kan-extensions-4.1.0.1/docs/Data-Functor-Yoneda.html Yoneda>
 newtype Fuse a f = Fuse { getFuse :: forall b. (a -> b) -> f b }
 
+-- | Fuse 'Fuse' to retract a substantial functor.
 meltdown :: Fuse a f -> f a
 meltdown (Fuse f) = f id
 {-# INLINE meltdown #-}
 
+-- | 'fmap' for the content
 mapFuse :: (a -> b) -> Fuse a f -> Fuse b f
 mapFuse f (Fuse g) = Fuse (\h -> g (h . f))
 {-# INLINE mapFuse #-}
@@ -302,16 +326,20 @@ instance Functor (League fs) where
   fmap f (League (UnionAt pos s)) = League (UnionAt pos (mapFuse f s))
   {-# INLINE fmap #-}
 
+-- | Prepend a clause for @'Match' ('Fuse' x)@ as well as ('<?!').
 (<?~) :: (f x -> a) -> Match (Fuse x) a :* fs -> Match (Fuse x) a :* (f ': fs)
 (<?~) f = (<:*) (Match (f . meltdown))
 infixr 1 <?~
 
 ---------------------------------------------------------------------
 
+-- | The position of @x@ in the type level set @xs@.
 newtype Position (x :: k) (xs :: [k]) = Position Int deriving (Show, Eq, Ord)
 
+-- | Unicode alias for 'Member'
 type (∈) = Member
 
+-- | @Member x xs@ or @x ∈ xs@ indicates that @x@ is an element of @xs@.
 class Member (x :: k) (xs :: [k]) where
   position :: Position x xs
 
@@ -319,11 +347,14 @@ instance Record (Lookup x xs) => Member x xs where
   position = Position $ theInt (Proxy :: Proxy (Lookup x xs))
   {-# INLINE position #-}
 
+-- | Flipped 'Position'
 newtype Possession xs x = Possession { getPossession :: Position x xs }
 
+-- | ys contains xs
 class Include (xs :: [k]) (ys :: [k]) where
   possession :: Possession ys :* xs
 
+-- | Unicode alias for 'Include'
 type (⊆) = Include
 
 -- | /O(m log n)/ Select some elements.
@@ -366,11 +397,11 @@ instance Record Zero where
   {-# INLINE theInt #-}
 
 instance Record n => Record (DNat n) where
-  theInt = (\n -> n + n) <$> retagD theInt
+  theInt = (*2) <$> retagD theInt
   {-# INLINE theInt #-}
 
 instance Record n => Record (SDNat n) where
-  theInt = (\n -> n + n + 1) <$> retagSD theInt
+  theInt = (+1) <$> (*2) <$> retagSD theInt
   {-# INLINE theInt #-}
 
 type family Lookup (x :: k) (xs :: [k]) :: Nat where
