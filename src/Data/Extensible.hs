@@ -28,21 +28,20 @@
 -- 42
 -----------------------------------------------------------------------------
 module Data.Extensible (
-  -- * Lookup
-    Position
-  , runPosition
-  , Possession(..)
-  , (∈)()
-  , Member(..)
   -- * Product
-  , (:*)(..)
+  (:*)(..)
   , (<:*)
   , unconsP
   , hoistP
+  , zipWithP
+  , foldP
   , outP
   , sector
   , sectorAt
   , Generate(..)
+  , Forall(..)
+  , Consecutive
+  , consecutive
   -- * Sum
   , (:|)(..)
   , (<:|)
@@ -79,11 +78,18 @@ module Data.Extensible (
   , League(..)
   , liftL
   , (<?~)
+  -- * Lookup
+  , Position
+  , runPosition
+  , Possession(..)
+  , (∈)()
+  , Member(..)
   ) where
 import Unsafe.Coerce
 import Data.Bits
 import Data.Typeable
 import Control.Applicative
+import Data.Monoid
 
 -- | The extensible product type
 data (h :: k -> *) :* (s :: [k]) where
@@ -92,6 +98,20 @@ data (h :: k -> *) :* (s :: [k]) where
     -> h :* Half xs
     -> h :* Half (Tail xs)
     -> h :* (x ': xs)
+
+newtype ShowTree h s = ShowTree { unShowTree :: h :* s }
+
+instance Show (ShowTree h '[]) where
+  showsPrec d (ShowTree Nil) = showString "Nil"
+
+instance (Show (h x), Show (ShowTree h (Half xs)), Show (ShowTree h (Half (Tail xs)))) => Show (ShowTree h (x ': xs)) where
+  showsPrec d (ShowTree (Tree h a b)) = showParen (d > 10) $ showString "Tree"
+    . showsPrec 11 h
+    . showChar ' '
+    . showsPrec 11 (ShowTree a)
+    . showChar ' '
+    . showsPrec 11 (ShowTree b)
+
 deriving instance Typeable (:*)
 
 instance Show (h :* '[]) where
@@ -103,10 +123,13 @@ instance (Show (h :* xs), Show (h x)) => Show (h :* (x ': xs)) where
     . showString " <:* "
     . showsPrec 6 xs
 
+tailP :: h :* (x ': xs) -> h :* xs
+tailP (Tree _ a@(Tree h _ _) b) = unsafeCoerce (Tree h) b (tailP a)
+tailP (Tree _ Nil _) = unsafeCoerce Nil
+
 -- | Split a product to the head and the tail.
 unconsP :: forall h x xs. h :* (x ': xs) -> (h x, h :* xs)
-unconsP (Tree a Nil _) = (a, lemmaHalfEmpty (Proxy :: Proxy xs) Nil)
-unconsP (Tree a bd c) = (a, let (b, d) = unconsP (unsafeCoerce bd) in unsafeCoerce $ Tree b (unsafeCoerce c) d)
+unconsP t@(Tree a _ _) = (a, tailP t)
 
 lemmaHalfEmpty :: (Half xs ~ '[]) => Proxy xs -> p '[] -> p xs
 lemmaHalfEmpty _ = unsafeCoerce
@@ -124,6 +147,21 @@ infixr 5 <:*
 hoistP :: (forall x. g x -> h x) -> g :* xs -> h :* xs
 hoistP t (Tree h a b) = Tree (t h) (hoistP t a) (hoistP t b)
 hoistP _ Nil = Nil
+
+zipWithP :: (forall x. f x -> g x -> h x) -> f :* xs -> g :* xs -> h :* xs
+zipWithP t (Tree f a b) (Tree g c d) = Tree (t f g) (zipWithP t a c) (zipWithP t b d)
+zipWithP _ Nil _ = Nil
+zipWithP _ _ Nil = Nil
+
+zipWith3P :: (forall x. f x -> g x -> h x -> i x) -> f :* xs -> g :* xs -> h :* xs -> i :* xs
+zipWith3P t (Tree f a b) (Tree g c d) (Tree h e f') = Tree (t f g h) (zipWith3P t a c e) (zipWith3P t b d f')
+zipWith3P _ Nil _ _ = Nil
+zipWith3P _ _ Nil _ = Nil
+zipWith3P _ _ _ Nil = Nil
+
+foldP :: Monoid a => (forall x. h x -> a) -> h :* xs -> a
+foldP f t@(Tree _ _ _) = let (h, t') = unconsP t in f h <> foldP f t'
+foldP _ Nil = mempty
 
 -- | /O(log n)/ Pick a specific element.
 outP :: forall h x xs. (x ∈ xs) => h :* xs -> h x
@@ -153,6 +191,65 @@ sectorAt pos0 f = go pos0 where
   go _ Nil = error "Impossible"
 {-# INLINE sectorAt #-}
 
+-- | Given a function that maps types to values, we can "collect" entities all you want.
+class Generate (xs :: [k]) where
+  generate :: (forall x. Position x xs -> h x) -> h :* xs
+
+instance Generate '[] where
+  generate _ = Nil
+  {-# INLINE generate #-}
+
+lw :: Position a b -> Position c d
+lw (Position x) = Position (x * 2 + 1)
+
+rw :: Position a b -> Position c d
+rw (Position x) = Position ((x + 1) * 2)
+
+instance (Generate (Half xs), Generate (Half (Tail xs))) => Generate (x ': xs) where
+  generate f = Tree (f (Position 0)) (generate (f . lw)) (generate (f . rw)) where
+  {-# INLINE generate #-}
+
+-- | Given a function that maps types to values, we can "collect" entities all you want.
+class Forall c (xs :: [k]) where
+  generateFor :: Proxy c -> (forall x. c x => Position x xs -> h x) -> h :* xs
+
+instance Forall c '[] where
+  generateFor _ _ = Nil
+  {-# INLINE generateFor #-}
+
+instance (c x, Forall c (Half xs), Forall c (Half (Tail xs))) => Forall c (x ': xs) where
+  generateFor proxy f = Tree (f (Position 0)) (generateFor proxy (f . lw)) (generateFor proxy (f . rw)) where
+  {-# INLINE generateFor #-}
+
+-- | The extensible sum type
+data (h :: k -> *) :| (s :: [k]) where
+  UnionAt :: Position x xs -> h x -> h :| xs
+deriving instance Typeable (:|)
+
+newtype Const' a x = Const' { getConst' :: a } deriving Show
+
+-- newtype TheEq h x = TheEq { getEq :: h x -> h x -> Bool }
+
+type Consecutive xs = Possession xs :* xs
+
+consecutive :: Generate xs => Consecutive xs
+consecutive = generate Possession
+
+instance Show (h :| '[]) where
+  show = exhaust
+
+instance (Show (h x), Show (h :| xs)) => Show (h :| (x ': xs)) where
+  showsPrec d = (\h -> showParen (d > 10) $ showString "inS " . showsPrec 11 h)
+    <:| showsPrec d
+
+-- | /O(1)/ Naive pattern match
+(<:|) :: (h x -> r) -> (h :| xs -> r) -> h :| (x ': xs) -> r
+(<:|) r c = \(UnionAt pos h) -> case runPosition pos of
+  Left Refl -> r h
+  Right pos' -> c (UnionAt pos' h)
+infixr 1 <:|
+{-# INLINE (<:|) #-}
+
 -- | /O(log n)/ lift a value.
 inS :: (x ∈ xs) => h x -> h :| xs
 inS = UnionAt position
@@ -166,49 +263,11 @@ picked f u@(UnionAt (Position n) h)
   where
     Position m = position :: Position x xs
 
--- | Embodies a type equivalence to ensure that the 'Position' points the first element.
-runPosition :: Position x (y ': xs) -> Either (x :~: y) (Position x xs)
-runPosition (Position 0) = Left (unsafeCoerce Refl)
-runPosition (Position n) = Right (Position (n - 1))
-{-# INLINE runPosition #-}
-
--- | /O(1)/ Naive pattern match
-(<:|) :: (h x -> r) -> (h :| xs -> r) -> h :| (x ': xs) -> r
-(<:|) r c = \(UnionAt pos h) -> case runPosition pos of
-  Left Refl -> r h
-  Right pos' -> c (UnionAt pos' h)
-infixr 1 <:|
-{-# INLINE (<:|) #-}
-
 -- | There is no empty union.
 exhaust :: h :| '[] -> r
 exhaust _ = error "Impossible"
 
--- | The extensible sum type
-data (h :: k -> *) :| (s :: [k]) where
-  UnionAt :: Position x xs -> h x -> h :| xs
-deriving instance Typeable (:*)
-
-instance Show (h :| '[]) where
-  show = exhaust
-
-instance (Show (h x), Show (h :| xs)) => Show (h :| (x ': xs)) where
-  showsPrec d = (\h -> showParen (d > 10) $ showString "inS " . showsPrec 11 h)
-    <:| showsPrec d
-
--- | Given a function that maps types to values, we can "collect" entities all you want.
-class Generate (xs :: [k]) where
-  generate :: (forall x. Position x xs -> h x) -> h :* xs
-
-instance Generate '[] where
-  generate _ = Nil
-  {-# INLINE generate #-}
-
-instance Generate xs => Generate (x ': xs) where
-  generate f = f (Position 0) <:* generate (f . succPos) where
-    succPos (Position n) = Position (n + 1)
-    {-# INLINE succPos #-}
-  {-# INLINE generate #-}
+-------------------------------------------------------------
 
 -- | Just a value.
 newtype K0 a = K0 { getK0 :: a } deriving (Eq, Ord, Read, Typeable)
@@ -235,8 +294,8 @@ instance Show a => Show (K0 a) where
   showsPrec d (K0 a) = showParen (d > 10) $ showString "K0 " . showsPrec 11 a
 
 -- | /O(log n)/ A lens for a plain value in a product.
-record :: forall f x xs. (x ∈ xs, Functor f) => (x -> f x) -> (K0 :* xs -> f (K0 :* xs))
-record = unsafeCoerce (sector :: (K0 x -> f (K0 x)) -> (K0 :* xs -> f (K0 :* xs)))
+record :: (x ∈ xs, Functor f) => (x -> f x) -> (K0 :* xs -> f (K0 :* xs))
+record f = sector $ unsafeCoerce f `asTypeOf` (fmap K0 . f . getK0)
 {-# INLINE record #-}
 
 -- | Wrap a type that has a kind @* -> *@.
@@ -275,7 +334,7 @@ infixr 1 <?%
 infixr 1 <?!
 
 -- | A wrapper for @'K1' a ':|'' fs@ for having a kind @* -> *@.
-newtype Union fs a = Union { getUnion :: K1 a :| fs }
+newtype Union fs a = Union { getUnion :: K1 a :| fs } deriving Typeable
 
 -- | /O(log n)/ Lift a value.
 liftU :: (f ∈ fs) => f a -> Union fs a
@@ -301,7 +360,7 @@ instance (Functor f, Functor (Union fs)) => Functor (Union (f ': fs)) where
       Union (UnionAt _ h') -> Union (UnionAt (Position n) h')
 
 -- | A much more efficient representation for 'Union' of 'Functor's.
-newtype League fs a = League { getLeague :: Fuse a :| fs }
+newtype League fs a = League { getLeague :: Fuse a :| fs } deriving Typeable
 
 -- | /O(log n)/ Embed a functor.
 liftL :: (Functor f, f ∈ fs) => f a -> League fs a
@@ -316,7 +375,7 @@ meltdown :: Fuse a f -> f a
 meltdown (Fuse f) = f id
 {-# INLINE meltdown #-}
 
--- | 'fmap' for the content
+-- | 'fmap' for the content.
 mapFuse :: (a -> b) -> Fuse a f -> Fuse b f
 mapFuse f (Fuse g) = Fuse (\h -> g (h . f))
 {-# INLINE mapFuse #-}
@@ -336,6 +395,12 @@ infixr 1 <?~
 -- | The position of @x@ in the type level set @xs@.
 newtype Position (x :: k) (xs :: [k]) = Position Int deriving (Show, Eq, Ord)
 
+-- | Embodies a type equivalence to ensure that the 'Position' points the first element.
+runPosition :: Position x (y ': xs) -> Either (x :~: y) (Position x xs)
+runPosition (Position 0) = Left (unsafeCoerce Refl)
+runPosition (Position n) = Right (Position (n - 1))
+{-# INLINE runPosition #-}
+
 -- | Unicode alias for 'Member'
 type (∈) = Member
 
@@ -348,7 +413,7 @@ instance Record (Lookup x xs) => Member x xs where
   {-# INLINE position #-}
 
 -- | Flipped 'Position'
-newtype Possession xs x = Possession { getPossession :: Position x xs }
+newtype Possession xs x = Possession { getPossession :: Position x xs } deriving (Show, Eq, Ord, Typeable)
 
 -- | ys contains xs
 class Include (xs :: [k]) (ys :: [k]) where
