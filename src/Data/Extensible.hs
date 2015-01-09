@@ -34,14 +34,13 @@ module Data.Extensible (
   , unconsP
   , hoistP
   , zipWithP
+  , zipWith3P
   , foldP
   , outP
   , sector
   , sectorAt
   , Generate(..)
   , Forall(..)
-  , Consecutive
-  , consecutive
   -- * Sum
   , (:|)(..)
   , (<:|)
@@ -99,41 +98,26 @@ data (h :: k -> *) :* (s :: [k]) where
     -> h :* Half (Tail xs)
     -> h :* (x ': xs)
 
-newtype ShowTree h s = ShowTree { unShowTree :: h :* s }
-
-instance Show (ShowTree h '[]) where
-  showsPrec d (ShowTree Nil) = showString "Nil"
-
-instance (Show (h x), Show (ShowTree h (Half xs)), Show (ShowTree h (Half (Tail xs)))) => Show (ShowTree h (x ': xs)) where
-  showsPrec d (ShowTree (Tree h a b)) = showParen (d > 10) $ showString "Tree"
-    . showsPrec 11 h
-    . showChar ' '
-    . showsPrec 11 (ShowTree a)
-    . showChar ' '
-    . showsPrec 11 (ShowTree b)
-
 deriving instance Typeable (:*)
 
 instance Show (h :* '[]) where
   show Nil = "Nil"
 
 instance (Show (h :* xs), Show (h x)) => Show (h :* (x ': xs)) where
-  showsPrec d (unconsP -> (x, xs)) = showParen (d > 10) $
+  showsPrec d (huncons -> (x, xs)) = showParen (d > 10) $
      showsPrec 6 x
     . showString " <:* "
     . showsPrec 6 xs
 
-tailP :: h :* (x ': xs) -> h :* xs
-tailP (Tree _ a@(Tree h _ _) b) = unsafeCoerce (Tree h) b (tailP a)
-tailP (Tree _ Nil _) = unsafeCoerce Nil
+htail :: h :* (x ': xs) -> h :* xs
+htail (Tree _ a@(Tree h _ _) b) = unsafeCoerce (Tree h) b (htail a)
+htail (Tree _ Nil _) = unsafeCoerce Nil
 
 -- | Split a product to the head and the tail.
-unconsP :: forall h x xs. h :* (x ': xs) -> (h x, h :* xs)
-unconsP t@(Tree a _ _) = (a, tailP t)
+huncons :: forall h x xs. h :* (x ': xs) -> (h x, h :* xs)
+huncons t@(Tree a _ _) = (a, htail t)
 
-lemmaHalfEmpty :: (Half xs ~ '[]) => Proxy xs -> p '[] -> p xs
-lemmaHalfEmpty _ = unsafeCoerce
-
+-- GHC can't prove this
 lemmaHalfTail :: Proxy xs -> p (x ': Half (Tail xs)) -> p (Half (x ': xs))
 lemmaHalfTail _ = unsafeCoerce
 
@@ -144,24 +128,28 @@ a <:* Nil = Tree a Nil Nil
 infixr 5 <:*
 
 -- | Transform every elements in a union, preserving the order.
-hoistP :: (forall x. g x -> h x) -> g :* xs -> h :* xs
-hoistP t (Tree h a b) = Tree (t h) (hoistP t a) (hoistP t b)
-hoistP _ Nil = Nil
+hhoist :: (forall x. g x -> h x) -> g :* xs -> h :* xs
+hhoist t (Tree h a b) = Tree (t h) (hhoist t a) (hhoist t b)
+hhoist _ Nil = Nil
 
-zipWithP :: (forall x. f x -> g x -> h x) -> f :* xs -> g :* xs -> h :* xs
-zipWithP t (Tree f a b) (Tree g c d) = Tree (t f g) (zipWithP t a c) (zipWithP t b d)
-zipWithP _ Nil _ = Nil
-zipWithP _ _ Nil = Nil
+hzipWith :: (forall x. f x -> g x -> h x) -> f :* xs -> g :* xs -> h :* xs
+hzipWith t (Tree f a b) (Tree g c d) = Tree (t f g) (hzipWith t a c) (hzipWith t b d)
+hzipWith _ Nil _ = Nil
+hzipWith _ _ Nil = Nil
 
-zipWith3P :: (forall x. f x -> g x -> h x -> i x) -> f :* xs -> g :* xs -> h :* xs -> i :* xs
-zipWith3P t (Tree f a b) (Tree g c d) (Tree h e f') = Tree (t f g h) (zipWith3P t a c e) (zipWith3P t b d f')
-zipWith3P _ Nil _ _ = Nil
-zipWith3P _ _ Nil _ = Nil
-zipWith3P _ _ _ Nil = Nil
+hzipWith3 :: (forall x. f x -> g x -> h x -> i x) -> f :* xs -> g :* xs -> h :* xs -> i :* xs
+hzipWith3 t (Tree f a b) (Tree g c d) (Tree h e f') = Tree (t f g h) (hzipWith3 t a c e) (hzipWith3 t b d f')
+hzipWith3 _ Nil _ _ = Nil
+hzipWith3 _ _ Nil _ = Nil
+hzipWith3 _ _ _ Nil = Nil
 
-foldP :: Monoid a => (forall x. h x -> a) -> h :* xs -> a
-foldP f t@(Tree _ _ _) = let (h, t') = unconsP t in f h <> foldP f t'
-foldP _ Nil = mempty
+hfold :: Monoid a => (forall x. h x -> a) -> h :* xs -> a
+hfold f t@(Tree h a b) = f h <> hfold f a <> hfold f b
+hfold _ Nil = mempty
+
+htraverse :: Applicative f => (forall x. h x -> f (h x)) -> h :* xs -> f (h :* xs)
+htraverse f (Tree h a b) = Tree <$> f h <*> htraverse f a <*> htraverse f b
+htraverse _ Nil = pure Nil
 
 -- | /O(log n)/ Pick a specific element.
 outP :: forall h x xs. (x ∈ xs) => h :* xs -> h x
@@ -221,19 +209,24 @@ instance (c x, Forall c (Half xs), Forall c (Half (Tail xs))) => Forall c (x ': 
   generateFor proxy f = Tree (f (Position 0)) (generateFor proxy (f . lw)) (generateFor proxy (f . rw)) where
   {-# INLINE generateFor #-}
 
+class c (h x) => Comp c h x
+instance c (h x) => Comp c h x
+
+instance Forall (Comp Eq h) xs => Eq (h :* xs) where
+  (==) = (aggr.) . hzipWith3 (\(Possession pos) -> (Const' .) . unwrapEq (view (sectorAt pos) dic))
+    (generateFor (Proxy :: Proxy (Comp Eq h)) Possession) where
+      dic = generateFor (Proxy :: Proxy (Comp Eq h)) $ const $ WrapEq (==)
+      aggr = getAll . hfold (All . getConst')
+
+newtype WrapEq h x = WrapEq { unwrapEq :: h x -> h x -> Bool }
+
 -- | The extensible sum type
 data (h :: k -> *) :| (s :: [k]) where
   UnionAt :: Position x xs -> h x -> h :| xs
 deriving instance Typeable (:|)
 
+-- | Poly-kinded Const
 newtype Const' a x = Const' { getConst' :: a } deriving Show
-
--- newtype TheEq h x = TheEq { getEq :: h x -> h x -> Bool }
-
-type Consecutive xs = Possession xs :* xs
-
-consecutive :: Generate xs => Consecutive xs
-consecutive = generate Possession
 
 instance Show (h :| '[]) where
   show = exhaust
@@ -328,7 +321,7 @@ infix 0 `caseOf`
 (<?%) = unsafeCoerce (<:*)
 infixr 1 <?%
 
--- | Prepend a clause for parameterized value.
+-- | Prepend a clause for a parameterized value.
 (<?!) :: (f x -> a) -> Match (K1 x) a :* xs -> Match (K1 x) a :* (f ': fs)
 (<?!) = unsafeCoerce (<:*)
 infixr 1 <?!
@@ -394,6 +387,7 @@ infixr 1 <?~
 
 -- | The position of @x@ in the type level set @xs@.
 newtype Position (x :: k) (xs :: [k]) = Position Int deriving (Show, Eq, Ord)
+-- should it be flipped?
 
 -- | Embodies a type equivalence to ensure that the 'Position' points the first element.
 runPosition :: Position x (y ': xs) -> Either (x :~: y) (Position x xs)
@@ -424,7 +418,7 @@ type (⊆) = Include
 
 -- | /O(m log n)/ Select some elements.
 shrink :: (xs ⊆ ys) => h :* ys -> h :* xs
-shrink = let !p = possession in \h -> hoistP (\(Possession pos) -> sectorAt pos `view` h) p
+shrink = let !p = possession in \h -> hhoist (\(Possession pos) -> sectorAt pos `view` h) p
 
 -- | /O(m log n)/ Embed to a larger union.
 spread :: (xs ⊆ ys) => h :| xs -> h :| ys
