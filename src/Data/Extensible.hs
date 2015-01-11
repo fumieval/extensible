@@ -203,6 +203,7 @@ instance (c x, Forall c (Half xs), Forall c (Half (Tail xs))) => Forall c (x ': 
   generateFor proxy f = Tree (f here) (generateFor proxy (f . navL)) (generateFor proxy (f . navR)) where
   {-# INLINE generateFor #-}
 
+-- | Composition for a class and a wrapper,
 class c (h x) => ClassComp c h x
 instance c (h x) => ClassComp c h x
 
@@ -378,6 +379,8 @@ infixr 1 <?~
 
 -- | Unicode alias for 'Include'
 type xs ⊆ ys = Include ys xs
+
+-- | @ys@ contains @xs@
 type Include ys xs = Forall (Member ys) xs
 
 -- | Reify the inclusion of type level sets.

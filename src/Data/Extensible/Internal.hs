@@ -14,6 +14,8 @@ module Data.Extensible.Internal (Position
   , (∈)()
   , Nat(..)
   , Record(..)
+  , Lookup
+  , Succ
   , Half
   , Tail
   , lemmaHalfTail) where
@@ -21,6 +23,7 @@ import Data.Type.Equality
 import Data.Proxy
 import Control.Applicative
 import Unsafe.Coerce
+
 -- | The position of @x@ in the type level set @xs@.
 newtype Position (xs :: [k]) (x :: k) = Position Int deriving (Show, Eq, Ord)
 
