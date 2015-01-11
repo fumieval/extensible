@@ -31,11 +31,12 @@ module Data.Extensible (
   -- * Product
   (:*)(..)
   , (<:*)
-  , unconsP
-  , hoistP
-  , zipWithP
-  , zipWith3P
-  , foldP
+  , huncons
+  , hhoist
+  , hzipWith
+  , hzipWith3
+  , hfold
+  , htraverse
   , outP
   , sector
   , sectorAt
@@ -48,7 +49,7 @@ module Data.Extensible (
   , inS
   , picked
   -- * Inclusion/Permutation
-  , Include(..)
+  , Include()
   , (⊆)()
   , shrink
   , spread
@@ -80,15 +81,14 @@ module Data.Extensible (
   -- * Lookup
   , Position
   , runPosition
-  , Possession(..)
   , (∈)()
   , Member(..)
   ) where
 import Unsafe.Coerce
-import Data.Bits
 import Data.Typeable
 import Control.Applicative
 import Data.Monoid
+import Data.Extensible.Internal
 
 -- | The extensible product type
 data (h :: k -> *) :* (s :: [k]) where
@@ -144,7 +144,7 @@ hzipWith3 _ _ Nil _ = Nil
 hzipWith3 _ _ _ Nil = Nil
 
 hfold :: Monoid a => (forall x. h x -> a) -> h :* xs -> a
-hfold f t@(Tree h a b) = f h <> hfold f a <> hfold f b
+hfold f (Tree h a b) = f h <> hfold f a <> hfold f b
 hfold _ Nil = mempty
 
 htraverse :: Applicative f => (forall x. h x -> f (h x)) -> h :* xs -> f (h :* xs)
@@ -153,12 +153,12 @@ htraverse _ Nil = pure Nil
 
 -- | /O(log n)/ Pick a specific element.
 outP :: forall h x xs. (x ∈ xs) => h :* xs -> h x
-outP = view $ sectorAt (position :: Position x xs)
+outP = view sector
 {-# INLINE outP #-}
 
 -- | /O(log n)/ A lens for a specific element.
 sector :: forall h x xs f. (Functor f, x ∈ xs) => (h x -> f (h x)) -> h :* xs -> f (h :* xs)
-sector = sectorAt (position :: Position x xs)
+sector = sectorAt (membership :: Position xs x)
 {-# INLINE sector #-}
 
 view :: ((a -> Const a a) -> (s -> Const a s)) -> s -> a
@@ -166,55 +166,46 @@ view l = unsafeCoerce (l Const)
 {-# INLINE view #-}
 
 -- | /O(log n)/ A lens for a value in a known position.
-sectorAt :: forall h x xs f. (Functor f) => Position x xs -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)
+sectorAt :: forall h x xs f. (Functor f) => Position xs x -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)
 sectorAt pos0 f = go pos0 where
-  go :: forall t. Position x t -> h :* t -> f (h :* t)
-  go pos (Tree h a b) = case runPosition pos of
-    Left Refl -> fmap (\h' -> Tree h' a b) (f h)
-    Right (Position m) -> case m .&. 1 of
-      0 -> fmap (\a' -> Tree h a' b)
-        $ go (Position (shiftR m 1) :: Position x (Half (Tail t))) a
-      _ -> fmap (\b' -> Tree h a b')
-        $ go (Position (shiftR m 1) :: Position x (Half (Tail (Tail t)))) b
+  go :: forall t. Position t x -> h :* t -> f (h :* t)
+  go pos (Tree h a b) = case navigate pos of
+    Here -> fmap (\h' -> Tree h' a b) (f h)
+    NavL p -> fmap (\a' -> Tree h a' b) $ go p a
+    NavR p -> fmap (\b' -> Tree h a b') $ go p b
   go _ Nil = error "Impossible"
 {-# INLINE sectorAt #-}
 
 -- | Given a function that maps types to values, we can "collect" entities all you want.
 class Generate (xs :: [k]) where
-  generate :: (forall x. Position x xs -> h x) -> h :* xs
+  generate :: (forall x. Position xs x -> h x) -> h :* xs
 
 instance Generate '[] where
   generate _ = Nil
   {-# INLINE generate #-}
 
-lw :: Position a b -> Position c d
-lw (Position x) = Position (x * 2 + 1)
-
-rw :: Position a b -> Position c d
-rw (Position x) = Position ((x + 1) * 2)
-
 instance (Generate (Half xs), Generate (Half (Tail xs))) => Generate (x ': xs) where
-  generate f = Tree (f (Position 0)) (generate (f . lw)) (generate (f . rw)) where
+  generate f = Tree (f here) (generate (f . navL)) (generate (f . navR)) where
   {-# INLINE generate #-}
 
 -- | Given a function that maps types to values, we can "collect" entities all you want.
 class Forall c (xs :: [k]) where
-  generateFor :: Proxy c -> (forall x. c x => Position x xs -> h x) -> h :* xs
+  generateFor :: Proxy c -> (forall x. c x => Position xs x -> h x) -> h :* xs
 
 instance Forall c '[] where
   generateFor _ _ = Nil
   {-# INLINE generateFor #-}
 
 instance (c x, Forall c (Half xs), Forall c (Half (Tail xs))) => Forall c (x ': xs) where
-  generateFor proxy f = Tree (f (Position 0)) (generateFor proxy (f . lw)) (generateFor proxy (f . rw)) where
+  generateFor proxy f = Tree (f here) (generateFor proxy (f . navL)) (generateFor proxy (f . navR)) where
   {-# INLINE generateFor #-}
 
 class c (h x) => Comp c h x
 instance c (h x) => Comp c h x
 
 instance Forall (Comp Eq h) xs => Eq (h :* xs) where
-  (==) = (aggr.) . hzipWith3 (\(Possession pos) -> (Const' .) . unwrapEq (view (sectorAt pos) dic))
-    (generateFor (Proxy :: Proxy (Comp Eq h)) Possession) where
+  (==) = (aggr.) . hzipWith3 (\pos -> (Const' .) . unwrapEq (view (sectorAt pos) dic))
+    (generateFor (Proxy :: Proxy (Comp Eq h)) id) where
       dic = generateFor (Proxy :: Proxy (Comp Eq h)) $ const $ WrapEq (==)
       aggr = getAll . hfold (All . getConst')
 
@@ -222,7 +213,7 @@ newtype WrapEq h x = WrapEq { unwrapEq :: h x -> h x -> Bool }
 
 -- | The extensible sum type
 data (h :: k -> *) :| (s :: [k]) where
-  UnionAt :: Position x xs -> h x -> h :| xs
+  UnionAt :: Position xs x -> h x -> h :| xs
 deriving instance Typeable (:|)
 
 -- | Poly-kinded Const
@@ -245,16 +236,14 @@ infixr 1 <:|
 
 -- | /O(log n)/ lift a value.
 inS :: (x ∈ xs) => h x -> h :| xs
-inS = UnionAt position
+inS = UnionAt membership
 {-# INLINE inS #-}
 
 -- | A traversal that tries to point a specific element.
 picked :: forall f h x xs. (x ∈ xs, Applicative f) => (h x -> f (h x)) -> h :| xs -> f (h :| xs)
-picked f u@(UnionAt (Position n) h)
-  | n == m = fmap (UnionAt (Position n)) $ f (unsafeCoerce h)
-  | otherwise = pure u
-  where
-    Position m = position :: Position x xs
+picked f u@(UnionAt pos h) = case comparePosition (membership :: Position xs x) pos of
+  Just Refl -> fmap (UnionAt pos) (f h)
+  Nothing -> pure u
 
 -- | There is no empty union.
 exhaust :: h :| '[] -> r
@@ -347,10 +336,10 @@ instance Functor (Union '[]) where
 
 -- | slow fmap
 instance (Functor f, Functor (Union fs)) => Functor (Union (f ': fs)) where
-  fmap f (Union (UnionAt pos@(Position n) (K1 h))) = case runPosition pos of
+  fmap f (Union (UnionAt pos (K1 h))) = case runPosition pos of
     Left Refl -> Union $ UnionAt pos $ K1 (fmap f h)
     Right pos' -> case fmap f (Union (UnionAt pos' (K1 h))) of
-      Union (UnionAt _ h') -> Union (UnionAt (Position n) h')
+      Union (UnionAt _ h') -> Union (UnionAt (unsafeCoerce pos) h')
 
 -- | A much more efficient representation for 'Union' of 'Functor's.
 newtype League fs a = League { getLeague :: Fuse a :| fs } deriving Typeable
@@ -383,93 +372,18 @@ instance Functor (League fs) where
 (<?~) f = (<:*) (Match (f . meltdown))
 infixr 1 <?~
 
----------------------------------------------------------------------
-
--- | The position of @x@ in the type level set @xs@.
-newtype Position (x :: k) (xs :: [k]) = Position Int deriving (Show, Eq, Ord)
--- should it be flipped?
-
--- | Embodies a type equivalence to ensure that the 'Position' points the first element.
-runPosition :: Position x (y ': xs) -> Either (x :~: y) (Position x xs)
-runPosition (Position 0) = Left (unsafeCoerce Refl)
-runPosition (Position n) = Right (Position (n - 1))
-{-# INLINE runPosition #-}
-
--- | Unicode alias for 'Member'
-type (∈) = Member
-
--- | @Member x xs@ or @x ∈ xs@ indicates that @x@ is an element of @xs@.
-class Member (x :: k) (xs :: [k]) where
-  position :: Position x xs
-
-instance Record (Lookup x xs) => Member x xs where
-  position = Position $ theInt (Proxy :: Proxy (Lookup x xs))
-  {-# INLINE position #-}
-
--- | Flipped 'Position'
-newtype Possession xs x = Possession { getPossession :: Position x xs } deriving (Show, Eq, Ord, Typeable)
-
--- | ys contains xs
-class Include (xs :: [k]) (ys :: [k]) where
-  possession :: Possession ys :* xs
-
 -- | Unicode alias for 'Include'
-type (⊆) = Include
+type xs ⊆ ys = Include ys xs
+type Include ys xs = Forall (Member ys) xs
+
+-- | Reify the inclusion of type level sets.
+inclusion :: forall xs ys. Include ys xs => Position ys :* xs
+inclusion = generateFor (Proxy :: Proxy (Member ys)) (const membership)
 
 -- | /O(m log n)/ Select some elements.
 shrink :: (xs ⊆ ys) => h :* ys -> h :* xs
-shrink = let !p = possession in \h -> hhoist (\(Possession pos) -> sectorAt pos `view` h) p
+shrink h = hhoist (\pos -> sectorAt pos `view` h) inclusion
 
 -- | /O(m log n)/ Embed to a larger union.
 spread :: (xs ⊆ ys) => h :| xs -> h :| ys
-spread = let !p = possession in \(UnionAt pos h) -> getPossession (sectorAt pos `view` p) `UnionAt` h
-
-instance Include '[] xs where
-  possession = Nil
-instance (x ∈ ys, xs ⊆ ys) => Include (x ': xs) ys where
-  possession = Possession position <:* possession
-
-type family Half (xs :: [k]) :: [k] where
-  Half '[] = '[]
-  Half (x ': y ': zs) = x ': zs
-  Half (x ': '[]) = x ': '[]
-
-type family Tail (xs :: [k]) :: [k] where
-  Tail (x ': xs) = xs
-  Tail '[] = '[]
-
-data Nat = Zero | DNat Nat | SDNat Nat | NotFound
-
-retagD :: (Proxy n -> a) -> proxy (DNat n) -> a
-retagD f _ = f Proxy
-{-# INLINE retagD #-}
-
-retagSD :: (Proxy n -> a) -> proxy (SDNat n) -> a
-retagSD f _ = f Proxy
-{-# INLINE retagSD #-}
-
-class Record n where
-  theInt :: Proxy n -> Int
-
-instance Record Zero where
-  theInt _ = 0
-  {-# INLINE theInt #-}
-
-instance Record n => Record (DNat n) where
-  theInt = (*2) <$> retagD theInt
-  {-# INLINE theInt #-}
-
-instance Record n => Record (SDNat n) where
-  theInt = (+1) <$> (*2) <$> retagSD theInt
-  {-# INLINE theInt #-}
-
-type family Lookup (x :: k) (xs :: [k]) :: Nat where
-  Lookup x (x ': xs) = Zero
-  Lookup x (y ': ys) = Succ (Lookup x ys)
-  Lookup x '[] = NotFound
-
-type family Succ (x :: Nat) :: Nat where
-  Succ Zero = SDNat Zero
-  Succ (DNat n) = SDNat n
-  Succ (SDNat n) = DNat (Succ n)
-  Succ NotFound = NotFound
+spread (UnionAt pos h) = UnionAt (sectorAt pos `view` inclusion) h
