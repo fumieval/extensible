@@ -15,7 +15,8 @@ module Data.Extensible.Internal (Position
   , Nat(..)
   , Record(..)
   , Half
-  , Tail) where
+  , Tail
+  , lemmaHalfTail) where
 import Data.Type.Equality
 import Data.Proxy
 import Control.Applicative
@@ -109,3 +110,7 @@ type family Succ (x :: Nat) :: Nat where
   Succ (DNat n) = SDNat n
   Succ (SDNat n) = DNat (Succ n)
   Succ NotFound = NotFound
+
+-- GHC can't prove this
+lemmaHalfTail :: Proxy xs -> p (x ': Half (Tail xs)) -> p (Half (x ': xs))
+lemmaHalfTail _ = unsafeCoerce

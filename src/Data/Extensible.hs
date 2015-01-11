@@ -35,7 +35,7 @@ module Data.Extensible (
   , hhoist
   , hzipWith
   , hzipWith3
-  , hfold
+  , hfoldMap
   , htraverse
   , outP
   , sector
@@ -83,6 +83,8 @@ module Data.Extensible (
   , runPosition
   , (∈)()
   , Member(..)
+  -- * Utilities
+  , ClassComp
   ) where
 import Unsafe.Coerce
 import Data.Typeable
@@ -109,6 +111,7 @@ instance (Show (h :* xs), Show (h x)) => Show (h :* (x ': xs)) where
     . showString " <:* "
     . showsPrec 6 xs
 
+-- | Extract the tail of the product.
 htail :: h :* (x ': xs) -> h :* xs
 htail (Tree _ a@(Tree h _ _) b) = unsafeCoerce (Tree h) b (htail a)
 htail (Tree _ Nil _) = unsafeCoerce Nil
@@ -116,10 +119,6 @@ htail (Tree _ Nil _) = unsafeCoerce Nil
 -- | Split a product to the head and the tail.
 huncons :: forall h x xs. h :* (x ': xs) -> (h x, h :* xs)
 huncons t@(Tree a _ _) = (a, htail t)
-
--- GHC can't prove this
-lemmaHalfTail :: Proxy xs -> p (x ': Half (Tail xs)) -> p (Half (x ': xs))
-lemmaHalfTail _ = unsafeCoerce
 
 -- | /O(log n)/ Add an element to a product.
 (<:*) :: forall h x xs. h x -> h :* xs -> h :* (x ': xs)
@@ -132,21 +131,25 @@ hhoist :: (forall x. g x -> h x) -> g :* xs -> h :* xs
 hhoist t (Tree h a b) = Tree (t h) (hhoist t a) (hhoist t b)
 hhoist _ Nil = Nil
 
+-- | 'zipWith' for heterogeneous product
 hzipWith :: (forall x. f x -> g x -> h x) -> f :* xs -> g :* xs -> h :* xs
 hzipWith t (Tree f a b) (Tree g c d) = Tree (t f g) (hzipWith t a c) (hzipWith t b d)
 hzipWith _ Nil _ = Nil
 hzipWith _ _ Nil = Nil
 
+-- | 'zipWith3' for heterogeneous product
 hzipWith3 :: (forall x. f x -> g x -> h x -> i x) -> f :* xs -> g :* xs -> h :* xs -> i :* xs
 hzipWith3 t (Tree f a b) (Tree g c d) (Tree h e f') = Tree (t f g h) (hzipWith3 t a c e) (hzipWith3 t b d f')
 hzipWith3 _ Nil _ _ = Nil
 hzipWith3 _ _ Nil _ = Nil
 hzipWith3 _ _ _ Nil = Nil
 
-hfold :: Monoid a => (forall x. h x -> a) -> h :* xs -> a
-hfold f (Tree h a b) = f h <> hfold f a <> hfold f b
-hfold _ Nil = mempty
+-- | Combine all elements.
+hfoldMap :: Monoid a => (forall x. h x -> a) -> h :* xs -> a
+hfoldMap f (Tree h a b) = f h <> hfoldMap f a <> hfoldMap f b
+hfoldMap _ Nil = mempty
 
+-- | Traverse all elements.
 htraverse :: Applicative f => (forall x. h x -> f (h x)) -> h :* xs -> f (h :* xs)
 htraverse f (Tree h a b) = Tree <$> f h <*> htraverse f a <*> htraverse f b
 htraverse _ Nil = pure Nil
@@ -188,7 +191,7 @@ instance (Generate (Half xs), Generate (Half (Tail xs))) => Generate (x ': xs) w
   generate f = Tree (f here) (generate (f . navL)) (generate (f . navR)) where
   {-# INLINE generate #-}
 
--- | Given a function that maps types to values, we can "collect" entities all you want.
+-- | Guarantees the all elements satisfies the predicate.
 class Forall c (xs :: [k]) where
   generateFor :: Proxy c -> (forall x. c x => Position xs x -> h x) -> h :* xs
 
@@ -200,14 +203,15 @@ instance (c x, Forall c (Half xs), Forall c (Half (Tail xs))) => Forall c (x ': 
   generateFor proxy f = Tree (f here) (generateFor proxy (f . navL)) (generateFor proxy (f . navR)) where
   {-# INLINE generateFor #-}
 
-class c (h x) => Comp c h x
-instance c (h x) => Comp c h x
+class c (h x) => ClassComp c h x
+instance c (h x) => ClassComp c h x
 
-instance Forall (Comp Eq h) xs => Eq (h :* xs) where
+instance Forall (ClassComp Eq h) xs => Eq (h :* xs) where
   (==) = (aggr.) . hzipWith3 (\pos -> (Const' .) . unwrapEq (view (sectorAt pos) dic))
-    (generateFor (Proxy :: Proxy (Comp Eq h)) id) where
-      dic = generateFor (Proxy :: Proxy (Comp Eq h)) $ const $ WrapEq (==)
-      aggr = getAll . hfold (All . getConst')
+    (generateFor c id) where
+      dic = generateFor c $ const $ WrapEq (==)
+      aggr = getAll . hfoldMap (All . getConst')
+      c = Proxy :: Proxy (ClassComp Eq h)
 
 newtype WrapEq h x = WrapEq { unwrapEq :: h x -> h x -> Bool }
 
