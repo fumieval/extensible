@@ -32,7 +32,7 @@ module Data.Extensible (
   (:*)(..)
   , (<:*)
   , huncons
-  , hhoist
+  , hmap
   , hzipWith
   , hzipWith3
   , hfoldMap
@@ -44,6 +44,7 @@ module Data.Extensible (
   , Forall(..)
   -- * Sum
   , (:|)(..)
+  , hoist
   , (<:|)
   , exhaust
   , inS
@@ -127,9 +128,9 @@ a <:* Nil = Tree a Nil Nil
 infixr 5 <:*
 
 -- | Transform every elements in a union, preserving the order.
-hhoist :: (forall x. g x -> h x) -> g :* xs -> h :* xs
-hhoist t (Tree h a b) = Tree (t h) (hhoist t a) (hhoist t b)
-hhoist _ Nil = Nil
+hmap :: (forall x. g x -> h x) -> g :* xs -> h :* xs
+hmap t (Tree h a b) = Tree (t h) (hhoist t a) (hhoist t b)
+hmap _ Nil = Nil
 
 -- | 'zipWith' for heterogeneous product
 hzipWith :: (forall x. f x -> g x -> h x) -> f :* xs -> g :* xs -> h :* xs
@@ -220,6 +221,9 @@ newtype WrapEq h x = WrapEq { unwrapEq :: h x -> h x -> Bool }
 data (h :: k -> *) :| (s :: [k]) where
   UnionAt :: Position xs x -> h x -> h :| xs
 deriving instance Typeable (:|)
+
+hoist :: (forall x. g x -> h x) => h :| xs -> g :| xs
+hoist f (UnionAt pos h) = UnionAt pos (f h)
 
 -- | Poly-kinded Const
 newtype Const' a x = Const' { getConst' :: a } deriving Show
