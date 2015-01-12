@@ -19,6 +19,7 @@ module Data.Extensible.Plain (
   , bury
   , (<%|)
   , record
+  , recordAt
   , (<?%)
   )where
 import Data.Extensible.Internal

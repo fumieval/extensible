@@ -30,7 +30,7 @@ library
     Data.Extensible.Sum
     Data.Extensible.Union
   default-extensions: TypeOperators, DeriveDataTypeable
-  build-depends:       base == 4.*, ghc-prim
+  build-depends:       base == 4.*, ghc-prim, template-haskell
   hs-source-dirs:      src
   ghc-options: -Wall
   default-language:    Haskell2010

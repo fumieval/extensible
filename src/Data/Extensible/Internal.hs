@@ -2,9 +2,11 @@
 {-# LANGUAGE GADTs, TypeFamilies, TypeOperators #-}
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, UndecidableInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell #-}
 module Data.Extensible.Internal (Position
   , runPosition
   , comparePosition
+  , ord
   , Nav(..)
   , navigate
   , here
@@ -22,8 +24,20 @@ module Data.Extensible.Internal (Position
 import Data.Type.Equality
 import Data.Proxy
 import Control.Applicative
+import Control.Monad
 import Unsafe.Coerce
 import Data.Typeable
+import Language.Haskell.TH
+
+ord :: Int -> Q Exp
+ord n = do
+  let names = map mkName $ take (n + 1) $ concatMap (flip replicateM ['a'..'z']) [1..]
+  let rest = mkName "any"
+  let cons x xs = PromotedConsT `AppT` x `AppT` xs
+  let t = foldr cons (VarT rest) (map VarT names)
+  sigE (conE 'Position `appE` litE (IntegerL $ toInteger n))
+    $ forallT (PlainTV rest : map PlainTV names) (pure [])
+    $ conT ''Position `appT` pure t `appT` varT (names !! n)
 
 -- | The position of @x@ in the type level set @xs@.
 newtype Position (xs :: [k]) (x :: k) = Position Int deriving (Show, Eq, Ord, Typeable)
