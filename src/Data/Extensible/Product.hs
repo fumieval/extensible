@@ -98,6 +98,7 @@ htraverse :: Applicative f => (forall x. h x -> f (h x)) -> h :* xs -> f (h :* x
 htraverse f (Tree h a b) = Tree <$> f h <*> htraverse f a <*> htraverse f b
 htraverse _ Nil = pure Nil
 
+-- | Pick up an elemtnt.
 hlookup :: Position xs x -> h :* xs -> h x
 hlookup = view . sectorAt
 {-# INLINE hlookup #-}

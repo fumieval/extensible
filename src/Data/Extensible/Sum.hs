@@ -33,6 +33,7 @@ data (h :: k -> *) :| (s :: [k]) where
   UnionAt :: Position xs x -> h x -> h :| xs
 deriving instance Typeable (:|)
 
+-- | Change the wrapper.
 hoist :: (forall x. g x -> h x) -> g :| xs -> h :| xs
 hoist f (UnionAt pos h) = UnionAt pos (f h)
 {-# INLINE hoist #-}
@@ -41,7 +42,6 @@ hoist f (UnionAt pos h) = UnionAt pos (f h)
 embed :: (x ∈ xs) => h x -> h :| xs
 embed = UnionAt membership
 {-# INLINE embed #-}
-
 
 instance Show (h :| '[]) where
   show = exhaust

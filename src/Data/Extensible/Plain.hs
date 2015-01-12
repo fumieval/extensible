@@ -10,7 +10,15 @@
 -- Portability :  non-portable
 --
 ------------------------------------------------------------------------
-module Data.Extensible.Plain where
+module Data.Extensible.Plain (
+  K0(..)
+  , (<%)
+  , pluck
+  , bury
+  , (<%|)
+  , record
+  , (<?%)
+  )where
 import Data.Extensible.Internal
 import Data.Extensible.Product
 import Data.Extensible.Sum

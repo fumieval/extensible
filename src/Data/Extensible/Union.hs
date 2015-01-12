@@ -10,7 +10,11 @@
 -- Portability :  non-portable
 --
 ------------------------------------------------------------------------
-module Data.Extensible.Union where
+module Data.Extensible.Union (K1(..)
+  , (<?!)
+  , Union(..)
+  , liftU
+  ) where
 
 import Data.Typeable
 import Data.Extensible.Internal
