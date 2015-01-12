@@ -12,6 +12,8 @@
 ------------------------------------------------------------------------
 module Data.Extensible.Plain (
   K0(..)
+  , AllOf
+  , OneOf
   , (<%)
   , pluck
   , bury
@@ -32,25 +34,25 @@ instance Show a => Show (K0 a) where
   showsPrec d (K0 a) = showParen (d > 10) $ showString "K0 " . showsPrec 11 a
 
 -- | /O(log n)/ Add a plain value to a product.
-(<%) :: x -> K0 :* xs -> K0 :* (x ': xs)
+(<%) :: x -> AllOf xs -> AllOf (x ': xs)
 (<%) = unsafeCoerce (<:*)
 {-# INLINE (<%) #-}
 infixr 5 <%
 
 -- | Extract a plain value.
-pluck :: (x ∈ xs) => K0 :* xs -> x
+pluck :: (x ∈ xs) => AllOf xs -> x
 pluck = getK0 . hlookup membership
 
 -- | Embed a plain value.
-bury :: (x ∈ xs) => x -> K0 :| xs
+bury :: (x ∈ xs) => x -> OneOf xs
 bury = embed . K0
 
 -- | Naive pattern matching for a plain value.
-(<%|) :: (x -> r) -> (K0 :| xs -> r) -> K0 :| (x ': xs) -> r
+(<%|) :: (x -> r) -> (OneOf xs -> r) -> OneOf (x ': xs) -> r
 (<%|) = unsafeCoerce (<:|)
 
 -- | /O(log n)/ A lens for a plain value in a product.
-record :: (x ∈ xs, Functor f) => (x -> f x) -> (K0 :* xs -> f (K0 :* xs))
+record :: (x ∈ xs, Functor f) => (x -> f x) -> (AllOf xs -> f (AllOf xs))
 record f = sector $ unsafeCoerce f `asTypeOf` (fmap K0 . f . getK0)
 {-# INLINE record #-}
 
@@ -58,3 +60,6 @@ record f = sector $ unsafeCoerce f `asTypeOf` (fmap K0 . f . getK0)
 (<?%) :: (x -> a) -> Match K0 a :* xs -> Match K0 a :* (x ': xs)
 (<?%) = unsafeCoerce (<:*)
 infixr 1 <?%
+
+type AllOf xs = K0 :* xs
+type OneOf xs = K0 :| xs
