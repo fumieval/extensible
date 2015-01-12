@@ -33,6 +33,7 @@ module Data.Extensible (
   , runPosition
   , (∈)()
   , Member(..)
+  , ord
   ) where
 import Data.Extensible.Internal
 import Data.Extensible.Inclusion
