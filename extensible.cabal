@@ -1,5 +1,5 @@
 name:                extensible
-version:             0.2
+version:             0.2.1
 synopsis:            Poly-kinded, extensible ADTs
 homepage:            https://github.com/fumieval/extensible
 description:         Extensible Products/Unions
