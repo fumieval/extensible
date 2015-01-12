@@ -1,4 +1,4 @@
-{-# LANGUAGE DataKinds, FlexibleContexts, FlexibleInstances, GADTs #-}
+{-# LANGUAGE DataKinds, FlexibleContexts, FlexibleInstances, GADTs, Rank2Types #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Union
@@ -11,7 +11,7 @@
 --
 ------------------------------------------------------------------------
 module Data.Extensible.Union (
-    (<$?~)
+  (<$?~)
   , Union(..)
   , liftU
   , Flux(..)
@@ -23,20 +23,19 @@ import Data.Extensible.Internal
 import Data.Extensible.Sum
 import Data.Extensible.Product
 import Data.Extensible.Match
-import Unsafe.Coerce
 
 -- | A much more efficient representation for 'Union' of 'Functor's.
 newtype Union fs a = Union { getLeague :: Flux a :| fs } deriving Typeable
 
 -- | fast fmap
-instance Functor (League fs) where
-  fmap f (League (UnionAt pos s)) = League (UnionAt pos (mapFlux f s))
+instance Functor (Union fs) where
+  fmap f (Union (UnionAt pos s)) = Union (UnionAt pos (mapFlux f s))
   {-# INLINE fmap #-}
 
 -- | /O(log n)/ Embed a value.
-liftU :: (f ∈ fs) => f a -> League fs a
-liftU f = Union . embed . Flux id
-{-# INLINE liftL #-}
+liftU :: (f ∈ fs) => f a -> Union fs a
+liftU = Union . embed . Flux id
+{-# INLINE liftU #-}
 
 -- | Flipped <http://hackage.haskell.org/package/kan-extensions/docs/Data-Functor-Coyoneda.html Coyoneda>
 data Flux a f where
@@ -48,6 +47,6 @@ mapFlux f (Flux g m) = Flux (f . g) m
 {-# INLINE mapFlux #-}
 
 -- | Prepend a clause for @'Match' ('Flux' x)@ as well as ('<?!').
-(<$?~) :: (forall b. f b -> (b -> a) -> a) -> Match (Flux x) a :* fs -> Match (Flux x) a :* (f ': fs)
-(<$?~) f = (<:*) (Match (f . meltdown))
+(<$?~) :: (forall b. f b -> (b -> x) -> a) -> Match (Flux x) a :* fs -> Match (Flux x) a :* (f ': fs)
+(<$?~) f = (<:*) $ Match $ \(Flux g m) -> f m g
 infixr 1 <$?~
