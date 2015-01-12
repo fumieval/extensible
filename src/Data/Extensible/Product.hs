@@ -18,6 +18,8 @@ module Data.Extensible.Product (
   -- * Product
   (:*)(..)
   , (<:*)
+  , hhead
+  , htail
   , huncons
   , hmap
   , hzipWith
@@ -28,7 +30,8 @@ module Data.Extensible.Product (
   , sector
   , sectorAt
   , Generate(..)
-  , Forall(..)) where
+  , Forall(..)
+  , ClassComp) where
 
 import Data.Extensible.Internal
 import Unsafe.Coerce
@@ -55,7 +58,11 @@ instance (Show (h :* xs), Show (h x)) => Show (h :* (x ': xs)) where
     . showString " <:* "
     . showsPrec 6 xs
 
--- | Extract the tail of the product.
+-- | /O(1)/ Extract the head element.
+hhead :: h :* (x ': xs) -> h x
+hhead (Tree a _ _) = a
+
+-- | /O(n)/ Extract the tail of the product.
 htail :: h :* (x ': xs) -> h :* xs
 htail (Tree _ a@(Tree h _ _) b) = unsafeCoerce (Tree h) b (htail a)
 htail (Tree _ Nil _) = unsafeCoerce Nil
@@ -98,12 +105,12 @@ htraverse :: Applicative f => (forall x. h x -> f (h x)) -> h :* xs -> f (h :* x
 htraverse f (Tree h a b) = Tree <$> f h <*> htraverse f a <*> htraverse f b
 htraverse _ Nil = pure Nil
 
--- | Pick up an elemtnt.
+-- | /O(log n)/ Pick up an elemtnt.
 hlookup :: Position xs x -> h :* xs -> h x
 hlookup = view . sectorAt
 {-# INLINE hlookup #-}
 
--- | Composition for a class and a wrapper,
+-- | Composition for a class and a wrapper
 class c (h x) => ClassComp c h x
 instance c (h x) => ClassComp c h x
 
@@ -128,8 +135,8 @@ newtype WrapEq h x = WrapEq { unwrapEq :: h x -> h x -> Bool }
 newtype WrapOrd h x = WrapOrd { unwrapOrd :: h x -> h x -> Ordering }
 
 -- | /O(log n)/ A lens for a specific element.
-sector :: forall h x xs f. (Functor f, x ∈ xs) => (h x -> f (h x)) -> h :* xs -> f (h :* xs)
-sector = sectorAt (membership :: Position xs x)
+sector :: (Functor f, x ∈ xs) => (h x -> f (h x)) -> h :* xs -> f (h :* xs)
+sector = sectorAt membership
 {-# INLINE sector #-}
 
 view :: ((a -> Const a a) -> (s -> Const a s)) -> s -> a

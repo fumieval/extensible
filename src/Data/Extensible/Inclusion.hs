@@ -21,7 +21,7 @@ import Data.Proxy
 type xs ⊆ ys = Include ys xs
 
 -- | @ys@ contains @xs@
-type Include ys xs = Forall (Member ys) xs
+type Include ys = Forall (Member ys)
 
 -- | Reify the inclusion of type level sets.
 inclusion :: forall xs ys. Include ys xs => Position ys :* xs
@@ -31,6 +31,6 @@ inclusion = generateFor (Proxy :: Proxy (Member ys)) (const membership)
 shrink :: (xs ⊆ ys) => h :* ys -> h :* xs
 shrink h = hmap (\pos -> hlookup pos h) inclusion
 
--- | /O(m log n)/ Embed to a larger union.
+-- | /O(log n)/ Embed to a larger union.
 spread :: (xs ⊆ ys) => h :| xs -> h :| ys
 spread (UnionAt pos h) = UnionAt (hlookup pos inclusion) h
