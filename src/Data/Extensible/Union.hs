@@ -10,10 +10,12 @@
 -- Portability :  non-portable
 --
 ------------------------------------------------------------------------
-module Data.Extensible.Union (K1(..)
-  , (<?!)
+module Data.Extensible.Union (
+    (<$?~)
   , Union(..)
   , liftU
+  , Flux(..)
+  , mapFlux
   ) where
 
 import Data.Typeable
@@ -23,39 +25,29 @@ import Data.Extensible.Product
 import Data.Extensible.Match
 import Unsafe.Coerce
 
--- | Wrap a type that has a kind @* -> *@.
-newtype K1 a f = K1 { getK1 :: f a } deriving (Eq, Ord, Read, Typeable)
+-- | A much more efficient representation for 'Union' of 'Functor's.
+newtype Union fs a = Union { getLeague :: Flux a :| fs } deriving Typeable
 
-instance Show (f a) => Show (K1 a f) where
-  showsPrec d (K1 a) = showParen (d > 10) $ showString "K1 " . showsPrec 11 a
+-- | fast fmap
+instance Functor (League fs) where
+  fmap f (League (UnionAt pos s)) = League (UnionAt pos (mapFlux f s))
+  {-# INLINE fmap #-}
 
--- | Prepend a clause for a parameterized value.
-(<?!) :: (f x -> a) -> Match (K1 x) a :* xs -> Match (K1 x) a :* (f ': fs)
-(<?!) = unsafeCoerce (<:*)
-infixr 1 <?!
+-- | /O(log n)/ Embed a value.
+liftU :: (f ∈ fs) => f a -> League fs a
+liftU f = Union . embed . Flux id
+{-# INLINE liftL #-}
 
--- | A wrapper for @'K1' a ':|'' fs@ for having a kind @* -> *@.
-newtype Union fs a = Union { getUnion :: K1 a :| fs } deriving Typeable
+-- | Flipped <http://hackage.haskell.org/package/kan-extensions/docs/Data-Functor-Coyoneda.html Coyoneda>
+data Flux a f where
+  Flux :: (a -> b) -> f a -> Flux b f
 
--- | /O(log n)/ Lift a value.
-liftU :: (f ∈ fs) => f a -> Union fs a
-liftU = Union . embed . K1
-{-# INLINE liftU #-}
+-- | 'fmap' for the content.
+mapFlux :: (a -> b) -> Flux a f -> Flux b f
+mapFlux f (Flux g m) = Flux (f . g) m
+{-# INLINE mapFlux #-}
 
-instance Show (Union '[] a) where
-  show (Union u) = exhaust u
-
-instance (Show (f a), Show (Union fs a)) => Show (Union (f ': fs) a) where
-  showsPrec d (Union u) = (\(K1 f) -> showParen (d > 10) $ showString "liftU " . showsPrec 11 f)
-    <:| showsPrec d . Union
-    $ u
-
-instance Functor (Union '[]) where
-  fmap _ = exhaust . getUnion
-
--- | slow fmap
-instance (Functor f, Functor (Union fs)) => Functor (Union (f ': fs)) where
-  fmap f (Union (UnionAt pos (K1 h))) = case runPosition pos of
-    Left Refl -> Union $ UnionAt pos $ K1 (fmap f h)
-    Right pos' -> case fmap f (Union (UnionAt pos' (K1 h))) of
-      Union (UnionAt _ h') -> Union (UnionAt (unsafeCoerce pos) h')
+-- | Prepend a clause for @'Match' ('Flux' x)@ as well as ('<?!').
+(<$?~) :: (forall b. f b -> (b -> a) -> a) -> Match (Flux x) a :* fs -> Match (Flux x) a :* (f ': fs)
+(<$?~) f = (<:*) (Match (f . meltdown))
+infixr 1 <$?~
