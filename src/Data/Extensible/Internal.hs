@@ -23,9 +23,10 @@ import Data.Type.Equality
 import Data.Proxy
 import Control.Applicative
 import Unsafe.Coerce
+import Data.Typeable
 
 -- | The position of @x@ in the type level set @xs@.
-newtype Position (xs :: [k]) (x :: k) = Position Int deriving (Show, Eq, Ord)
+newtype Position (xs :: [k]) (x :: k) = Position Int deriving (Show, Eq, Ord, Typeable)
 
 -- | Embodies a type equivalence to ensure that the 'Position' points the first element.
 runPosition :: Position (y ': xs) x -> Either (x :~: y) (Position xs x)

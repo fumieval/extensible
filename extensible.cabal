@@ -1,5 +1,5 @@
 name:                extensible
-version:             0.1.1
+version:             0.2
 synopsis:            Poly-kinded, extensible ADTs
 homepage:            https://github.com/fumieval/extensible
 description:         Extensible Products/Unions
@@ -19,7 +19,17 @@ source-repository head
   location: https://github.com/fumieval/extensible.git
 
 library
-  exposed-modules:     Data.Extensible, Data.Extensible.Internal
+  exposed-modules:
+    Data.Extensible
+    Data.Extensible.Inclusion
+    Data.Extensible.Internal
+    Data.Extensible.League
+    Data.Extensible.Match
+    Data.Extensible.Plain
+    Data.Extensible.Product
+    Data.Extensible.Sum
+    Data.Extensible.Union
+  default-extensions: TypeOperators, DeriveDataTypeable
   build-depends:       base == 4.*, ghc-prim
   hs-source-dirs:      src
   ghc-options: -Wall
