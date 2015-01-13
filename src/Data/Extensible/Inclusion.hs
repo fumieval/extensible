@@ -30,7 +30,9 @@ inclusion = generateFor (Proxy :: Proxy (Member ys)) (const membership)
 -- | /O(m log n)/ Select some elements.
 shrink :: (xs ⊆ ys) => h :* ys -> h :* xs
 shrink h = hmap (\pos -> hlookup pos h) inclusion
+{-# INLINE shrink #-}
 
 -- | /O(log n)/ Embed to a larger union.
 spread :: (xs ⊆ ys) => h :| xs -> h :| ys
 spread (UnionAt pos h) = UnionAt (hlookup pos inclusion) h
+{-# INLINE spread #-}

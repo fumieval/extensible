@@ -49,4 +49,5 @@ mapFlux f (Flux g m) = Flux (f . g) m
 -- | Prepend a clause for @'Match' ('Flux' x)@ as well as ('<?!').
 (<$?~) :: (forall b. f b -> (b -> x) -> a) -> Match (Flux x) a :* fs -> Match (Flux x) a :* (f ': fs)
 (<$?~) f = (<:*) $ Match $ \(Flux g m) -> f m g
+{-# INLINE (<$?~ #-}
 infixr 1 <$?~

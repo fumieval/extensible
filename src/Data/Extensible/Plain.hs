@@ -57,10 +57,12 @@ infixr 5 <%
 -- | Extract a plain value.
 pluck :: (x ∈ xs) => AllOf xs -> x
 pluck = getK0 . hlookup membership
+{-# INLINE pluck #-}
 
 -- | Embed a plain value.
 bury :: (x ∈ xs) => x -> OneOf xs
 bury = embed . K0
+{-# INLINE bury #-}
 
 -- | Naive pattern matching for a plain value.
 (<%|) :: (x -> r) -> (OneOf xs -> r) -> OneOf (x ': xs) -> r
@@ -79,5 +81,6 @@ recordAt pos f = sectorAt pos $ unsafeCoerce f `asTypeOf` (fmap K0 . f . getK0)
 -- | Prepend a clause for a plain value.
 (<?%) :: (x -> a) -> Match K0 a :* xs -> Match K0 a :* (x ': xs)
 (<?%) = unsafeCoerce (<:*)
+{-# INLINE (<?%) #-}
 infixr 1 <?%
 

@@ -52,6 +52,7 @@ comparePosition :: Position xs x -> Position xs y -> Maybe (x :~: y)
 comparePosition (Position m) (Position n)
   | m == n = Just (unsafeCoerce Refl)
   | otherwise = Nothing
+{-# INLINE comparePosition #-}
 
 navigate :: Position xs x -> Nav xs x
 navigate (Position 0) = unsafeCoerce Here
@@ -66,12 +67,15 @@ data Nav xs x where
 
 here :: Position (x ': xs) x
 here = Position 0
+{-# INLINE here #-}
 
 navL :: Position (Half xs) y -> Position (x ': xs) y
 navL (Position x) = Position (x * 2 + 1)
+{-# INLINE navL #-}
 
 navR :: Position (Half (Tail xs)) y -> Position (x ': xs) y
 navR (Position x) = Position ((x + 1) * 2)
+{-# INLINE navR #-}
 
 -- | Unicode flipped alias for 'Member'
 type x ∈ xs = Member xs x
@@ -132,3 +136,4 @@ type family Succ (x :: Nat) :: Nat where
 -- GHC can't prove this
 lemmaHalfTail :: Proxy xs -> p (x ': Half (Tail xs)) -> p (Half (x ': xs))
 lemmaHalfTail _ = unsafeCoerce
+{-# INLINE lemmaHalfTail #-}

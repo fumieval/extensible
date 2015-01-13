@@ -67,3 +67,4 @@ picked :: forall f h x xs. (x ∈ xs, Applicative f) => (h x -> f (h x)) -> h :|
 picked f u@(UnionAt pos h) = case comparePosition (membership :: Position xs x) pos of
   Just Refl -> fmap (UnionAt pos) (f h)
   Nothing -> pure u
+{-# INLINE picked #-}
