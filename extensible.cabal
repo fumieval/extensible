@@ -1,5 +1,5 @@
 name:                extensible
-version:             0.2.1
+version:             0.2.2
 synopsis:            Poly-kinded, extensible ADTs
 homepage:            https://github.com/fumieval/extensible
 description:         Extensible Products/Unions
@@ -11,7 +11,7 @@ copyright:           Copyright (C) 2015 Fumiaki Kinoshita
 category:            Data
 build-type:          Simple
 extra-source-files:
-    .gitignore
+  .gitignore
 cabal-version:       >=1.10
 
 source-repository head
@@ -30,7 +30,7 @@ library
     Data.Extensible.Sum
     Data.Extensible.Union
   default-extensions: TypeOperators, DeriveDataTypeable
-  build-depends:       base == 4.*, ghc-prim, template-haskell
+  build-depends:       base >= 4.8 && <5, template-haskell
   hs-source-dirs:      src
   ghc-options: -Wall
   default-language:    Haskell2010
