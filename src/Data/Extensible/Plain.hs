@@ -21,6 +21,8 @@ module Data.Extensible.Plain (
   , record
   , recordAt
   , (<?%)
+  , K1(..)
+  , (<?!)
   )where
 import Data.Extensible.Internal
 import Data.Extensible.Product
@@ -84,3 +86,10 @@ recordAt pos f = sectorAt pos $ unsafeCoerce f `asTypeOf` (fmap K0 . f . getK0)
 {-# INLINE (<?%) #-}
 infixr 1 <?%
 
+-- | Wrap a type that has a kind @* -> *@.
+newtype K1 a f = K1 { getK1 :: f a } deriving (Eq, Ord, Read, Typeable)
+
+-- | Prepend a clause for a parameterized value.
+(<?!) :: (f x -> a) -> Match (K1 x) a :* xs -> Match (K1 x) a :* (f ': fs)
+(<?!) = unsafeCoerce (<:*)
+infixr 1 <?!
