@@ -137,3 +137,16 @@ type family Succ (x :: Nat) :: Nat where
 lemmaHalfTail :: Proxy xs -> p (x ': Half (Tail xs)) -> p (Half (x ': xs))
 lemmaHalfTail _ = unsafeCoerce
 {-# INLINE lemmaHalfTail #-}
+
+type family Map (f :: k -> k) (xs :: [k]) :: [k] where
+  Map f '[] = '[]
+  Map f (x ': xs) = f x ': Map f xs
+
+type family (++) (xs :: [k]) (ys :: [k]) :: [k] where
+  '[] ++ ys = ys
+  '(x : xs) ++ ys = x ': xs ++ ys
+
+type family Merge (xs :: [k) (ys :: [k]) :: [k] where
+  Merge (x ': xs) (y ': ys) = x ': y ': Merge xs ys
+  Merge xs Nil = xs
+  Merge Nil ys = ys
