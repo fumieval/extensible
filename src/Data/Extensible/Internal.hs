@@ -20,7 +20,10 @@ module Data.Extensible.Internal (Position
   , Succ
   , Half
   , Tail
-  , lemmaHalfTail) where
+  , lemmaHalfTail
+  , (++)()
+  , Map
+  , Merge) where
 import Data.Type.Equality
 import Data.Proxy
 import Control.Applicative
@@ -144,9 +147,9 @@ type family Map (f :: k -> k) (xs :: [k]) :: [k] where
 
 type family (++) (xs :: [k]) (ys :: [k]) :: [k] where
   '[] ++ ys = ys
-  '(x : xs) ++ ys = x ': xs ++ ys
+  (x ': xs) ++ ys = x ': xs ++ ys
 
-type family Merge (xs :: [k) (ys :: [k]) :: [k] where
+type family Merge (xs :: [k]) (ys :: [k]) :: [k] where
   Merge (x ': xs) (y ': ys) = x ': y ': Merge xs ys
-  Merge xs Nil = xs
-  Merge Nil ys = ys
+  Merge xs '[] = xs
+  Merge '[] ys = ys

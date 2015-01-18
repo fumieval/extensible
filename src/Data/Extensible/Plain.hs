@@ -69,6 +69,7 @@ bury = embed . K0
 -- | Naive pattern matching for a plain value.
 (<%|) :: (x -> r) -> (OneOf xs -> r) -> OneOf (x ': xs) -> r
 (<%|) = unsafeCoerce (<:|)
+infixr 1 <%|
 
 -- | /O(log n)/ A lens for a plain value in a product.
 record :: (x ∈ xs, Functor f) => (x -> f x) -> (AllOf xs -> f (AllOf xs))
