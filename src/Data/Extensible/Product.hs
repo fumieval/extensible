@@ -18,6 +18,7 @@ module Data.Extensible.Product (
   -- * Product
   (:*)(..)
   , (<:*)
+  , (*++*)
   , hhead
   , htail
   , huncons
@@ -77,10 +78,16 @@ a <:* Tree b c d = Tree a (lemmaHalfTail (Proxy :: Proxy (Tail xs)) $! b <:* d) 
 a <:* Nil = Tree a Nil Nil
 infixr 5 <:*
 
--- | Transform every elements in a union, preserving the order.
+-- | Transform every elements in a product, preserving the order.
 hmap :: (forall x. g x -> h x) -> g :* xs -> h :* xs
 hmap t (Tree h a b) = Tree (t h) (hmap t a) (hmap t b)
 hmap _ Nil = Nil
+
+-- | Serial combination of two products.
+(*++*) :: h :* xs -> h :* ys -> h :* (xs ++ ys)
+(*++*) Nil ys = ys
+(*++*) xs'@(Tree x _ _) ys = let xs = htail xs' in x <:* (xs *++* ys)
+infixr 5 *++*
 
 -- | 'zipWith' for heterogeneous product
 hzipWith :: (forall x. f x -> g x -> h x) -> f :* xs -> g :* xs -> h :* xs
