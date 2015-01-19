@@ -36,3 +36,4 @@ shrink h = hmap (\pos -> hlookup pos h) inclusion
 spread :: (xs ⊆ ys) => h :| xs -> h :| ys
 spread (UnionAt pos h) = UnionAt (hlookup pos inclusion) h
 {-# INLINE spread #-}
+

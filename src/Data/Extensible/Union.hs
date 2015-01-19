@@ -24,7 +24,7 @@ import Data.Extensible.Sum
 import Data.Extensible.Product
 import Data.Extensible.Match
 
--- | A much more efficient representation for 'Union' of 'Functor's.
+-- | A union of @* -> *@ types.
 newtype Union fs a = Union { getLeague :: Flux a :| fs } deriving Typeable
 
 -- | fast fmap
