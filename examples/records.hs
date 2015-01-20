@@ -12,7 +12,7 @@ mkField "description" [t|String|]
 mkField "featured" [t|Bool|]
 mkField "quantity" [t|Int|]
 
-type Stock = Records '["name", "weight", "price", "featured", "description", "quantity"]
+type Stock = Record '["name", "weight", "price", "featured", "description", "quantity"]
 
 s0 :: Stock
 s0 = Field "DA-192H"
@@ -33,5 +33,5 @@ s1 = shrink $ name @= "HHP-150"
   <:* quantity @= 10
   <:* Nil
 
-printSummary :: ("name" ∈ s, "description" ∈ s) => Records s -> IO ()
+printSummary :: ("name" ∈ s, "description" ∈ s) => Record s -> IO ()
 printSummary s = putStrLn $ view name s ++ ": " ++ view description s

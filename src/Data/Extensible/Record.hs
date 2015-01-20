@@ -1,7 +1,19 @@
 {-# LANGUAGE TemplateHaskell, PolyKinds, TypeFamilies, DataKinds, KindSignatures, FlexibleContexts, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses, UndecidableInstances, Rank2Types #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Extensible.Record
+-- Copyright   :  (c) Fumiaki Kinoshita 2015
+-- License     :  BSD3
+--
+-- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
+-- Stability   :  experimental
+-- Portability :  non-portable
+--
+-- Flexible records with well-typed fields
+------------------------------------------------------------------------
 module Data.Extensible.Record (FieldValue
   , Field(..)
-  , Records
+  , Record
   , RecordLens
   , (@=)
   , mkField
@@ -29,7 +41,7 @@ instance (KnownSymbol s, Show (FieldValue s)) => Show (Field s) where
     . showString " @= "
     . showsPrec 1 a
 
-type RecordLens p f xs a = p a (f a) -> Records xs -> f (Records xs)
+type RecordLens p f xs a = p a (f a) -> Record xs -> f (Record xs)
 
 class Labelable s p where
   unlabel :: proxy s -> p a b -> a -> b
@@ -50,7 +62,7 @@ data LabelPhantom s a b
 infix 1 @=
 
 -- | The type of records which contain several
-type Records = (:*) Field
+type Record = (:*) Field
 
 -- | Generate a field.
 -- @'mkField' "foo" Int@ defines:
