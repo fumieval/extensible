@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables, ConstraintKinds, FlexibleContexts #-}
+{-# LANGUAGE PolyKinds, ScopedTypeVariables, ConstraintKinds, FlexibleContexts #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Inclusion
@@ -10,7 +10,21 @@
 -- Portability :  non-portable
 --
 ------------------------------------------------------------------------
-module Data.Extensible.Inclusion where
+module Data.Extensible.Inclusion (
+    Position
+  , runPosition
+  , (∈)()
+  , Member(..)
+  , Expecting
+  , Missing
+  , Ambiguous
+  , ord
+  , (⊆)()
+  , Include
+  , inclusion
+  , shrink
+  , spread
+  ) where
 
 import Data.Extensible.Product
 import Data.Extensible.Sum

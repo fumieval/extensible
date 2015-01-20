@@ -54,10 +54,10 @@ instance Show (h :* '[]) where
   show Nil = "Nil"
 
 instance (Show (h :* xs), Show (h x)) => Show (h :* (x ': xs)) where
-  showsPrec d t = let (x, xs) = huncons t in showParen (d > 10) $
-     showsPrec 6 x
+  showsPrec d t = let (x, xs) = huncons t in showParen (d > 0) $
+     showsPrec 0 x
     . showString " <:* "
-    . showsPrec 6 xs
+    . showsPrec 0 xs
 
 -- | /O(1)/ Extract the head element.
 hhead :: h :* (x ': xs) -> h x
@@ -76,7 +76,7 @@ huncons t@(Tree a _ _) = (a, htail t)
 (<:*) :: forall h x xs. h x -> h :* xs -> h :* (x ': xs)
 a <:* Tree b c d = Tree a (lemmaHalfTail (Proxy :: Proxy (Tail xs)) $! b <:* d) c
 a <:* Nil = Tree a Nil Nil
-infixr 5 <:*
+infixr 0 <:*
 
 -- | Transform every elements in a product, preserving the order.
 hmap :: (forall x. g x -> h x) -> g :* xs -> h :* xs
@@ -87,7 +87,7 @@ hmap _ Nil = Nil
 (*++*) :: h :* xs -> h :* ys -> h :* (xs ++ ys)
 (*++*) Nil ys = ys
 (*++*) xs'@(Tree x _ _) ys = let xs = htail xs' in x <:* (xs *++* ys)
-infixr 5 *++*
+infixr 0 *++*
 
 -- | 'zipWith' for heterogeneous product
 hzipWith :: (forall x. f x -> g x -> h x) -> f :* xs -> g :* xs -> h :* xs

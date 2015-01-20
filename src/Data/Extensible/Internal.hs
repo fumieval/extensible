@@ -1,6 +1,6 @@
 {-# LANGUAGE DataKinds, ConstraintKinds, KindSignatures, PolyKinds #-}
 {-# LANGUAGE GADTs, TypeFamilies, TypeOperators #-}
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, UndecidableInstances #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, UndecidableInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 module Data.Extensible.Internal (Position
@@ -15,7 +15,7 @@ module Data.Extensible.Internal (Position
   , Member(..)
   , (∈)()
   , Nat(..)
-  , Record(..)
+  , ToInt(..)
   , Lookup
   , Succ
   , Half
@@ -23,7 +23,12 @@ module Data.Extensible.Internal (Position
   , lemmaHalfTail
   , (++)()
   , Map
-  , Merge) where
+  , Merge
+  , Check
+  , Expecting
+  , Missing
+  , Ambiguous
+  ) where
 import Data.Type.Equality
 import Data.Proxy
 import Control.Applicative
@@ -59,7 +64,7 @@ comparePosition (Position m) (Position n)
 
 navigate :: Position xs x -> Nav xs x
 navigate (Position 0) = unsafeCoerce Here
-navigate (Position n) = let (m, r) = divMod n 2 in case r of
+navigate (Position n) = let (m, r) = divMod (n - 1) 2 in case r of
   0 -> unsafeCoerce $ NavL $ Position m
   _ -> unsafeCoerce $ NavR $ Position m
 
@@ -87,8 +92,17 @@ type x ∈ xs = Member xs x
 class Member (xs :: [k]) (x :: k) where
   membership :: Position xs x
 
-instance Record (Lookup x xs) => Member xs x where
-  membership = Position $ theInt (Proxy :: Proxy (Lookup x xs))
+data Expecting a
+data Missing a
+data Ambiguous a
+
+type family Check x xs where
+  Check x '[n] = Expecting n
+  Check x '[] = Missing x
+  Check x xs = Ambiguous x
+
+instance (Check x (Lookup x xs) ~ Expecting one, ToInt one) => Member xs x where
+  membership = Position $ theInt (Proxy :: Proxy one)
   {-# INLINE membership #-}
 
 type family Half (xs :: [k]) :: [k] where
@@ -100,7 +114,7 @@ type family Tail (xs :: [k]) :: [k] where
   Tail (x ': xs) = xs
   Tail '[] = '[]
 
-data Nat = Zero | DNat Nat | SDNat Nat | NotFound
+data Nat = Zero | DNat Nat | SDNat Nat
 
 retagD :: (Proxy n -> a) -> proxy (DNat n) -> a
 retagD f _ = f Proxy
@@ -110,31 +124,34 @@ retagSD :: (Proxy n -> a) -> proxy (SDNat n) -> a
 retagSD f _ = f Proxy
 {-# INLINE retagSD #-}
 
-class Record n where
+class ToInt n where
   theInt :: Proxy n -> Int
 
-instance Record Zero where
+instance ToInt Zero where
   theInt _ = 0
   {-# INLINE theInt #-}
 
-instance Record n => Record (DNat n) where
+instance ToInt n => ToInt (DNat n) where
   theInt = (*2) <$> retagD theInt
   {-# INLINE theInt #-}
 
-instance Record n => Record (SDNat n) where
+instance ToInt n => ToInt (SDNat n) where
   theInt = (+1) <$> (*2) <$> retagSD theInt
   {-# INLINE theInt #-}
 
-type family Lookup (x :: k) (xs :: [k]) :: Nat where
-  Lookup x (x ': xs) = Zero
-  Lookup x (y ': ys) = Succ (Lookup x ys)
-  Lookup x '[] = NotFound
+type family Lookup (x :: k) (xs :: [k]) :: [Nat] where
+  Lookup x (x ': xs) = Zero ': Lookup x xs
+  Lookup x (y ': ys) = MapSucc (Lookup x ys)
+  Lookup x '[] = '[]
 
 type family Succ (x :: Nat) :: Nat where
   Succ Zero = SDNat Zero
   Succ (DNat n) = SDNat n
   Succ (SDNat n) = DNat (Succ n)
-  Succ NotFound = NotFound
+
+type family MapSucc (xs :: [Nat]) :: [Nat] where
+  MapSucc '[] = '[]
+  MapSucc (x ': xs) = Succ x ': MapSucc xs
 
 -- GHC can't prove this
 lemmaHalfTail :: Proxy xs -> p (x ': Half (Tail xs)) -> p (Half (x ': xs))

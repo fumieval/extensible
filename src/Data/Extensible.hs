@@ -9,7 +9,7 @@
 -- Portability :  non-portable
 --
 -- This package defines an extensible type-indexed product type and a union type.
--- Both are determined from the type-level list @[k]@
+-- Extensible ADTs provided by this module are determined from a type-level list @[k]@
 -- and a wrapper @k -> *@.
 -- We can define ADTs not only for plain values, but also parameterized ones.
 --
@@ -28,18 +28,12 @@ module Data.Extensible (
   , module Data.Extensible.Plain
   , module Data.Extensible.Product
   , module Data.Extensible.Sum
-  -- * Lookup
-  , Position
-  , runPosition
-  , (∈)()
-  , Member(..)
-  , ord
   ) where
-import Data.Extensible.Internal
 import Data.Extensible.Inclusion
 import Data.Extensible.Match
 import Data.Extensible.Plain
 import Data.Extensible.Product
 import Data.Extensible.Sum
+
 -------------------------------------------------------------
 
