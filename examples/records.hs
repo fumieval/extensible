@@ -25,13 +25,20 @@ s0 = Field "DA-192H"
 
 -- Use shrink to permute elements
 s1 :: Stock
-s1 = shrink $ name @= "HHP-150"
+s1 = shrink
+    $ name @= "HHP-150"
   <:* featured @= False
   <:* description @= "Premium wooden headphone"
   <:* weight @= 150
   <:* price @= 330
-  <:* quantity @= 10
+  <:* quantity @= 55
   <:* Nil
+
+-- If "quantity" is missing,
+--    Couldn't match type Missing "quantity" with Expecting one
+--
+-- If there are duplicate "quantity",
+--    Couldn't match type Ambiguous "quantity" with Expecting one
 
 printSummary :: ("name" ∈ s, "description" ∈ s) => Record s -> IO ()
 printSummary s = putStrLn $ view name s ++ ": " ++ view description s
