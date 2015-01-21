@@ -34,11 +34,14 @@ s1 = shrink
   <:* quantity @= 55
   <:* Nil
 
+type S0 = '["name", "weight", "price", "featured", "description", "quantity"]
+type S1 = '["price", "featured", "description", "quantity", "name", "weight"]
+
 -- If "quantity" is missing,
---    Couldn't match type Missing "quantity" with Expecting one
+--    Couldn't match type ‘Missing "quantity"’ with ‘Expecting one’
 --
 -- If there are duplicate "quantity",
---    Couldn't match type Ambiguous "quantity" with Expecting one
+--    Couldn't match type ‘Ambiguous "quantity"’ with ‘Expecting one’
 
 printSummary :: ("name" ∈ s, "description" ∈ s) => Record s -> IO ()
 printSummary s = putStrLn $ view name s ++ ": " ++ view description s

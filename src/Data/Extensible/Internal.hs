@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds, ConstraintKinds, KindSignatures, PolyKinds #-}
 {-# LANGUAGE GADTs, TypeFamilies, TypeOperators #-}
 {-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, UndecidableInstances #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ScopedTypeVariables, BangPatterns #-}
 {-# LANGUAGE TemplateHaskell #-}
 module Data.Extensible.Internal (Position
   , runPosition
@@ -10,6 +10,7 @@ module Data.Extensible.Internal (Position
   , Nav(..)
   , navigate
   , here
+  , navNext
   , navL
   , navR
   , Member(..)
@@ -36,6 +37,7 @@ import Control.Monad
 import Unsafe.Coerce
 import Data.Typeable
 import Language.Haskell.TH
+import Debug.Trace
 
 ord :: Int -> Q Exp
 ord n = do
@@ -77,12 +79,16 @@ here :: Position (x ': xs) x
 here = Position 0
 {-# INLINE here #-}
 
+navNext :: Position xs y -> Position (x ': xs) y
+navNext (Position n) = Position (n + 1)
+{-# INLINE navNext #-}
+
 navL :: Position (Half xs) y -> Position (x ': xs) y
 navL (Position x) = Position (x * 2 + 1)
 {-# INLINE navL #-}
 
 navR :: Position (Half (Tail xs)) y -> Position (x ': xs) y
-navR (Position x) = Position ((x + 1) * 2)
+navR (Position x) = Position (x * 2 + 2)
 {-# INLINE navR #-}
 
 -- | Unicode flipped alias for 'Member'

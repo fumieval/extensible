@@ -43,7 +43,7 @@ import Data.Monoid
 -- | The extensible product type
 data (h :: k -> *) :* (s :: [k]) where
   Nil :: h :* '[]
-  Tree :: h x
+  Tree :: !(h x)
     -> h :* Half xs
     -> h :* Half (Tail xs)
     -> h :* (x ': xs)
@@ -66,7 +66,7 @@ hhead (Tree a _ _) = a
 -- | /O(n)/ Extract the tail of the product.
 htail :: h :* (x ': xs) -> h :* xs
 htail (Tree _ a@(Tree h _ _) b) = unsafeCoerce (Tree h) b (htail a)
-htail (Tree _ Nil _) = unsafeCoerce Nil
+htail _ = unsafeCoerce Nil
 
 -- | Split a product to the head and the tail.
 huncons :: forall h x xs. h :* (x ': xs) -> (h x, h :* xs)
@@ -167,9 +167,11 @@ class Generate (xs :: [k]) where
 
 instance Generate '[] where
   generate _ = Nil
+  {-# INLINE generate #-}
 
-instance (Generate (Half xs), Generate (Half (Tail xs))) => Generate (x ': xs) where
-  generate f = Tree (f here) (generate (f . navL)) (generate (f . navR)) where
+instance (Generate xs) => Generate (x ': xs) where
+  generate f = f here <:* generate (f . navNext)
+  {-# INLINE generate #-}
 
 -- | Guarantees the all elements satisfies the predicate.
 class Forall c (xs :: [k]) where
@@ -177,6 +179,8 @@ class Forall c (xs :: [k]) where
 
 instance Forall c '[] where
   generateFor _ _ = Nil
+  {-# INLINE generateFor #-}
 
-instance (c x, Forall c (Half xs), Forall c (Half (Tail xs))) => Forall c (x ': xs) where
-  generateFor proxy f = Tree (f here) (generateFor proxy (f . navL)) (generateFor proxy (f . navR)) where
+instance (c x, Forall c xs) => Forall c (x ': xs) where
+  generateFor proxy f = f here <:* generateFor proxy (f . navNext)
+  {-# INLINE generateFor #-}
