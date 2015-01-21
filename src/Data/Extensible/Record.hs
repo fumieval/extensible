@@ -76,7 +76,7 @@ instance (s ~ t) => Labelable s (LabelPhantom t) where
 infix 1 @=
 
 -- | Generate a field.
--- @'mkField' "foo" Int@ defines:
+-- @'mkField' "foo" [t|Int|]@ defines:
 -- @
 -- type instance FieldValue "foo" = Int
 -- foo :: FieldLens "foo"
