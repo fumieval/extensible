@@ -37,7 +37,6 @@ import Control.Monad
 import Unsafe.Coerce
 import Data.Typeable
 import Language.Haskell.TH
-import Debug.Trace
 
 ord :: Int -> Q Exp
 ord n = do
