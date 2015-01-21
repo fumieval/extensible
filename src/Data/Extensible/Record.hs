@@ -78,7 +78,7 @@ infix 1 @=
 -- @'mkField' "foo" Int@ defines:
 -- @
 -- type instance FieldValue "foo" = Int
--- foo :: (Functor f, "foo" ∈ s) => FieldLens "foo"
+-- foo :: FieldLens "foo"
 -- @
 -- The yielding field is a <http://hackage.haskell.org/package/lens/docs/Control-Lens-Lens.html#t:Lens Lens>.
 mkField :: String -> TypeQ -> DecsQ
