@@ -19,6 +19,7 @@ module Data.Extensible.Internal (Position
   , ToInt(..)
   , Lookup
   , Succ
+  , MapSucc
   , Half
   , Tail
   , lemmaHalfTail

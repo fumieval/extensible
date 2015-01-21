@@ -9,18 +9,21 @@
 -- Stability   :  experimental
 -- Portability :  non-portable
 --
--- Flexible records with well-typed fields
+-- Flexible records with well-typed fields.
+-- Example: <https://github.com/fumieval/extensible/blob/master/examples/records.hs>
 ------------------------------------------------------------------------
-module Data.Extensible.Record (FieldValue
-  , Field(..)
+module Data.Extensible.Record (
+   module Data.Extensible.Inclusion
   , Record
-  , FieldLens
-  , FieldName
-  , (@=)
-  , mkField
   , (<:*)
   , (:*)(Nil)
-  , module Data.Extensible.Inclusion
+  , (@=)
+  , mkField
+  , Field(..)
+  , FieldValue
+  , FieldLens
+  , FieldName
+  -- * Internal
   , Labelable(..)
   , LabelPhantom
   ) where
@@ -46,19 +49,23 @@ instance (KnownSymbol s, Show (FieldValue s)) => Show (Field s) where
     . showsPrec 1 a
 
 -- | @FieldLens s@ is a type of lens that points a field named @s@.
--- @'FieldLens' s = (s '∈' xs) => Lens' ('Record' xs) ('FieldValue' s)@
+--
+-- @
+-- 'FieldLens' s = (s '∈' xs) => Lens' ('Record' xs) ('FieldValue' s)
+-- @
+--
 type FieldLens s = forall f p xs. (Functor f, Labelable s p, s ∈ xs)
   => p (FieldValue s) (f (FieldValue s)) -> Record xs -> f (Record xs)
 
 -- | When you see this type as an argument, it expects a 'FieldLens'.
--- This type hooks the name of 'FieldLens' so that an expression @field @= value@ has no ambiguousity.
+-- This type hooks the name of 'FieldLens' so that an expression @field \@= value@ has no ambiguousity.
 type FieldName s = LabelPhantom s (FieldValue s) (Proxy (FieldValue s))
   -> Record '[s] -> Proxy (Record '[s])
 
 -- | A ghostly type used to reify field names
 data LabelPhantom s a b
 
--- | Internal class to characterize 'FieldLens'
+-- | An internal class to characterize 'FieldLens'
 class Labelable s p where
   unlabel :: proxy s -> p a b -> a -> b
 
@@ -77,10 +84,13 @@ infix 1 @=
 
 -- | Generate a field.
 -- @'mkField' "foo" [t|Int|]@ defines:
+--
 -- @
 -- type instance FieldValue "foo" = Int
+--
 -- foo :: FieldLens "foo"
 -- @
+--
 -- The yielding field is a <http://hackage.haskell.org/package/lens/docs/Control-Lens-Lens.html#t:Lens Lens>.
 mkField :: String -> TypeQ -> DecsQ
 mkField s t = do
