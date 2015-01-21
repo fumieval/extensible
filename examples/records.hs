@@ -2,8 +2,6 @@
 import Data.Extensible.Record
 import Data.Extensible
 import Control.Lens
-import Data.Proxy
-import Data.Functor.Identity
 
 mkField "name" [t|String|]
 mkField "weight" [t|Float|]
@@ -33,9 +31,6 @@ s1 = shrink
   <:* price @= 330
   <:* quantity @= 55
   <:* Nil
-
-type S0 = '["name", "weight", "price", "featured", "description", "quantity"]
-type S1 = '["price", "featured", "description", "quantity", "name", "weight"]
 
 -- If "quantity" is missing,
 --    Couldn't match type ‘Missing "quantity"’ with ‘Expecting one’
