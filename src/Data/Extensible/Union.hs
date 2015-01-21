@@ -25,7 +25,7 @@ import Data.Extensible.Product
 import Data.Extensible.Match
 
 -- | A union of @* -> *@ types.
-newtype Union fs a = Union { getLeague :: Flux a :| fs } deriving Typeable
+newtype Union fs a = Union { getUnion :: Flux a :| fs } deriving Typeable
 
 -- | fast fmap
 instance Functor (Union fs) where
