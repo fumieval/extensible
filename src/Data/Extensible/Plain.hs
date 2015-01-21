@@ -47,7 +47,10 @@ instance Monad K0 where
 instance Show a => Show (K0 a) where
   showsPrec d (K0 a) = showParen (d > 10) $ showString "K0 " . showsPrec 11 a
 
+-- | Alias for plain products
 type AllOf xs = K0 :* xs
+
+-- | Alias for plain sums
 type OneOf xs = K0 :| xs
 
 -- | /O(log n)/ Add a plain value to a product.

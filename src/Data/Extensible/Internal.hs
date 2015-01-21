@@ -38,6 +38,7 @@ import Unsafe.Coerce
 import Data.Typeable
 import Language.Haskell.TH
 
+-- | Generates 'Position' for an ordinal (0-origin).
 ord :: Int -> Q Exp
 ord n = do
   let names = map mkName $ take (n + 1) $ concatMap (flip replicateM ['a'..'z']) [1..]
@@ -97,8 +98,13 @@ type x ∈ xs = Member xs x
 class Member (xs :: [k]) (x :: k) where
   membership :: Position xs x
 
+-- | A type sugar to make type error more readable.
 data Expecting a
+
+-- | A type sugar to make type error more readable.
 data Missing a
+
+-- | A type sugar to make type error more readable.
 data Ambiguous a
 
 type family Check x xs where
