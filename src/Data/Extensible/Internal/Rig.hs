@@ -39,10 +39,16 @@ newtype Const' a x = Const' { getConst' :: a } deriving Show
 -- | Poly-kinded Maybe
 data Nullable h x = Null | Eine (h x) deriving (Show, Eq, Ord, Typeable)
 
+-- | Destruct 'Nullable'.
+nullable :: r -> (h x -> r) -> Nullable h x -> r
+nullable r _ Null = r
+nullable _ f (Eine h) = f h
+{-# INLINE nullable #-}
+
 -- | Apply a function to its content.
 mapNullable :: (g x -> h y) -> Nullable g x -> Nullable h y
-mapNullable _ Null = Null
 mapNullable f (Eine g) = Eine (f g)
+mapNullable _ Null = Null
 {-# INLINE mapNullable #-}
 
 -- | Composition for a class and a wrapper

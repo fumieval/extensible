@@ -32,6 +32,7 @@ module Data.Extensible.Inclusion (
   , wrench
   , retrench
   , Nullable(..)
+  , nullable
   , mapNullable
   ) where
 
