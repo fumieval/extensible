@@ -1,5 +1,5 @@
 {-# LANGUAGE PolyKinds, Rank2Types, ScopedTypeVariables, ConstraintKinds, FlexibleContexts #-}
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DataKinds, GADTs #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Inclusion
@@ -12,6 +12,7 @@
 --
 ------------------------------------------------------------------------
 module Data.Extensible.Inclusion (
+  -- * Membership
     Position
   , runPosition
   , (∈)()
@@ -20,17 +21,26 @@ module Data.Extensible.Inclusion (
   , Missing
   , Ambiguous
   , ord
+  -- * Inclusion
   , (⊆)()
   , Include
   , inclusion
   , shrink
   , spread
+  -- * Inverse
+  , coinclusion
+  , wrench
+  , retrench
+  , Nullable(..)
+  , mapNullable
   ) where
 
 import Data.Extensible.Product
 import Data.Extensible.Sum
 import Data.Extensible.Internal
+import Data.Extensible.Internal.Rig
 import Data.Proxy
+import Data.Monoid
 
 -- | Unicode alias for 'Include'
 type xs ⊆ ys = Include ys xs
@@ -52,3 +62,17 @@ spread :: (xs ⊆ ys) => h :| xs -> h :| ys
 spread (UnionAt pos h) = UnionAt (hlookup pos inclusion) h
 {-# INLINE spread #-}
 
+-- | The inverse of 'inclusion'.
+coinclusion :: forall xs ys. (Include ys xs, Generate ys) => Nullable (Position xs) :* ys
+coinclusion = flip appEndo (generate (const Null))
+  $ hfoldMap getConst'
+  $ htabulate (\src dst -> Const' $ Endo $ sectorAt dst `over` const (Eine src))
+  $ inclusion
+
+-- | Extend a product and fill missing fields by 'Null'.
+wrench :: (Generate ys, xs ⊆ ys) => h :* xs -> Nullable h :* ys
+wrench xs = hmap (mapNullable $ \pos -> view (sectorAt pos) xs) coinclusion
+
+-- | Narrow the range of the sum, if possible.
+retrench :: (Generate ys, xs ⊆ ys) => h :| ys -> Nullable ((:|) h) xs
+retrench (UnionAt pos h) = flip UnionAt h `mapNullable` view (sectorAt pos) coinclusion

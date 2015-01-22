@@ -1,4 +1,4 @@
-{-# LANGUAGE DataKinds, DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
+{-# LANGUAGE DataKinds #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Plain
@@ -25,27 +25,12 @@ module Data.Extensible.Plain (
   , (<?!)
   )where
 import Data.Extensible.Internal
+import Data.Extensible.Internal.Rig
 import Data.Extensible.Product
 import Data.Extensible.Sum
 import Data.Extensible.Match
 import Data.Typeable
 import Unsafe.Coerce
-import Data.Foldable (Foldable)
-import Data.Traversable (Traversable)
-import Control.Applicative
--- | Just a value.
-newtype K0 a = K0 { getK0 :: a } deriving (Eq, Ord, Read, Typeable, Functor, Foldable, Traversable)
-
-instance Applicative K0 where
-  pure = K0
-  K0 f <*> K0 a = K0 (f a)
-
-instance Monad K0 where
-  return = K0
-  K0 a >>= k = k a
-
-instance Show a => Show (K0 a) where
-  showsPrec d (K0 a) = showParen (d > 10) $ showString "K0 " . showsPrec 11 a
 
 -- | Alias for plain products
 type AllOf xs = K0 :* xs

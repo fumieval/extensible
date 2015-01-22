@@ -23,6 +23,7 @@ library
     Data.Extensible
     Data.Extensible.Inclusion
     Data.Extensible.Internal
+    Data.Extensible.Internal.Rig
     Data.Extensible.League
     Data.Extensible.Match
     Data.Extensible.Plain

@@ -137,7 +137,7 @@ retagSD f _ = f Proxy
 {-# INLINE retagSD #-}
 
 class ToInt n where
-  theInt :: Proxy n -> Int
+  theInt :: proxy n -> Int
 
 instance ToInt Zero where
   theInt _ = 0
@@ -165,8 +165,8 @@ type family MapSucc (xs :: [Nat]) :: [Nat] where
   MapSucc '[] = '[]
   MapSucc (x ': xs) = Succ x ': MapSucc xs
 
--- GHC can't prove this
-lemmaHalfTail :: Proxy xs -> p (x ': Half (Tail xs)) -> p (Half (x ': xs))
+-- | GHC can't prove this
+lemmaHalfTail :: proxy xs -> p (x ': Half (Tail xs)) -> p (Half (x ': xs))
 lemmaHalfTail _ = unsafeCoerce
 {-# INLINE lemmaHalfTail #-}
 

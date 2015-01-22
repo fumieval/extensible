@@ -27,14 +27,15 @@ module Data.Extensible.Product (
   , hzipWith3
   , hfoldMap
   , htraverse
+  , htabulate
   , hlookup
   , sector
   , sectorAt
   , Generate(..)
-  , Forall(..)
-  , ClassComp) where
+  , Forall(..)) where
 
 import Data.Extensible.Internal
+import Data.Extensible.Internal.Rig
 import Unsafe.Coerce
 import Data.Typeable
 import Control.Applicative
@@ -117,9 +118,12 @@ hlookup :: Position xs x -> h :* xs -> h x
 hlookup = view . sectorAt
 {-# INLINE hlookup #-}
 
--- | Composition for a class and a wrapper
-class c (h x) => ClassComp c h x
-instance c (h x) => ClassComp c h x
+-- | 'hmap' with its indices.
+htabulate :: forall g h xs. (forall x. Position xs x -> g x -> h x) -> g :* xs -> h :* xs
+htabulate f = go id where
+  go :: (forall x. Position t x -> Position xs x) -> g :* t -> h :* t
+  go k (Tree g a b) = Tree (f (k here) g) (go (k . navL) a) (go (k . navR) b)
+  go _ Nil = Nil
 
 instance Forall (ClassComp Eq h) xs => Eq (h :* xs) where
   (==) = (aggr.) . hzipWith3 (\pos -> (Const' .) . unwrapEq (view (sectorAt pos) dic))
@@ -135,8 +139,6 @@ instance (Forall (ClassComp Eq h) xs, Forall (ClassComp Ord h) xs) => Ord (h :* 
       aggr = hfoldMap getConst'
       c = Proxy :: Proxy (ClassComp Ord h)
 
-newtype Const' a x = Const' { getConst' :: a } deriving Show
-
 newtype WrapEq h x = WrapEq { unwrapEq :: h x -> h x -> Bool }
 
 newtype WrapOrd h x = WrapOrd { unwrapOrd :: h x -> h x -> Ordering }
@@ -145,10 +147,6 @@ newtype WrapOrd h x = WrapOrd { unwrapOrd :: h x -> h x -> Ordering }
 sector :: (Functor f, x ∈ xs) => (h x -> f (h x)) -> h :* xs -> f (h :* xs)
 sector = sectorAt membership
 {-# INLINE sector #-}
-
-view :: ((a -> Const a a) -> (s -> Const a s)) -> s -> a
-view l = unsafeCoerce (l Const)
-{-# INLINE view #-}
 
 -- | /O(log n)/ A lens for a value in a known position.
 sectorAt :: forall h x xs f. (Functor f) => Position xs x -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)
@@ -175,7 +173,7 @@ instance (Generate xs) => Generate (x ': xs) where
 
 -- | Guarantees the all elements satisfies the predicate.
 class Forall c (xs :: [k]) where
-  generateFor :: Proxy c -> (forall x. c x => Position xs x -> h x) -> h :* xs
+  generateFor :: proxy c -> (forall x. c x => Position xs x -> h x) -> h :* xs
 
 instance Forall c '[] where
   generateFor _ _ = Nil

@@ -47,7 +47,7 @@ instance Show (h :| '[]) where
   show = exhaust
 
 instance (Show (h x), Show (h :| xs)) => Show (h :| (x ': xs)) where
-  showsPrec d = (\h -> showParen (d > 10) $ showString "inS " . showsPrec 11 h)
+  showsPrec d = (\h -> showParen (d > 10) $ showString "embed " . showsPrec 11 h)
     <:| showsPrec d
 
 -- | /O(1)/ Naive pattern match
