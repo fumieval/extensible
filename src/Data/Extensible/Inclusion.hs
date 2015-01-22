@@ -64,7 +64,7 @@ spread (UnionAt pos h) = UnionAt (hlookup pos inclusion) h
 {-# INLINE spread #-}
 
 -- | The inverse of 'inclusion'.
-coinclusion :: forall xs ys. (Include ys xs, Generate ys) => Nullable (Position xs) :* ys
+coinclusion :: (Include ys xs, Generate ys) => Nullable (Position xs) :* ys
 coinclusion = flip appEndo (generate (const Null))
   $ hfoldMap getConst'
   $ htabulate (\src dst -> Const' $ Endo $ sectorAt dst `over` const (Eine src))

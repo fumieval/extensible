@@ -51,7 +51,7 @@ instance (KnownSymbol s, Show (FieldValue s)) => Show (Field s) where
 -- | @FieldLens s@ is a type of lens that points a field named @s@.
 --
 -- @
--- 'FieldLens' s = (s '∈' xs) => Lens' ('Record' xs) ('FieldValue' s)
+-- 'FieldLens' s = (s ∈ xs) => Lens' ('Record' xs) ('FieldValue' s)
 -- @
 --
 type FieldLens s = forall f p xs. (Functor f, Labelable s p, s ∈ xs)
