@@ -32,6 +32,7 @@ import Data.Extensible.Internal
 import Language.Haskell.TH
 import GHC.TypeLits hiding (Nat)
 import Data.Extensible.Inclusion
+import Data.Extensible.Internal.Dictionary ()
 import Data.Proxy
 
 -- | Associates names with concrete types.

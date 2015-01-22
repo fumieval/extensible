@@ -34,6 +34,7 @@ import Data.Extensible.Match
 import Data.Extensible.Plain
 import Data.Extensible.Product
 import Data.Extensible.Sum
+import Data.Extensible.Internal.Dictionary ()
 
 -------------------------------------------------------------
 

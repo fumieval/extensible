@@ -150,6 +150,7 @@ instance Generate '[] where
 
 instance (Generate (Half xs), Generate (Half (Tail xs))) => Generate (x ': xs) where
   generate f = Tree (f here) (generate (f . navL)) (generate (f . navR))
+  {-# INLINE generate #-}
 
 -- | Guarantees the all elements satisfies the predicate.
 class Forall c (xs :: [k]) where
@@ -161,3 +162,4 @@ instance Forall c '[] where
 
 instance (c x, Forall c (Half xs), Forall c (Half (Tail xs))) => Forall c (x ': xs) where
   generateFor proxy f = Tree (f here) (generateFor proxy (f . navL)) (generateFor proxy (f . navR))
+  {-# INLINE generateFor #-}
