@@ -1,8 +1,7 @@
-{-# LANGUAGE Rank2Types, GADTs #-}
-{-# LANGUAGE DataKinds, KindSignatures, PolyKinds, ConstraintKinds #-}
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, UndecidableInstances #-}
+{-# LANGUAGE MultiParamTypeClasses, UndecidableInstances #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Product
@@ -124,24 +123,6 @@ htabulate f = go id where
   go :: (forall x. Position t x -> Position xs x) -> g :* t -> h :* t
   go k (Tree g a b) = Tree (f (k here) g) (go (k . navL) a) (go (k . navR) b)
   go _ Nil = Nil
-
-instance Forall (ClassComp Eq h) xs => Eq (h :* xs) where
-  (==) = (aggr.) . hzipWith3 (\pos -> (Const' .) . unwrapEq (view (sectorAt pos) dic))
-    (generateFor c id) where
-      dic = generateFor c $ const $ WrapEq (==)
-      aggr = getAll . hfoldMap (All . getConst')
-      c = Proxy :: Proxy (ClassComp Eq h)
-
-instance (Forall (ClassComp Eq h) xs, Forall (ClassComp Ord h) xs) => Ord (h :* xs) where
-  compare = (aggr.) . hzipWith3 (\pos -> (Const' .) . unwrapOrd (view (sectorAt pos) dic))
-    (generateFor c id) where
-      dic = generateFor c $ const $ WrapOrd compare
-      aggr = hfoldMap getConst'
-      c = Proxy :: Proxy (ClassComp Ord h)
-
-newtype WrapEq h x = WrapEq { unwrapEq :: h x -> h x -> Bool }
-
-newtype WrapOrd h x = WrapOrd { unwrapOrd :: h x -> h x -> Ordering }
 
 -- | /O(log n)/ A lens for a specific element.
 sector :: (Functor f, x ∈ xs) => (h x -> f (h x)) -> h :* xs -> f (h :* xs)

@@ -1,6 +1,6 @@
-{-# LANGUAGE DataKinds, ConstraintKinds, KindSignatures, PolyKinds #-}
-{-# LANGUAGE GADTs, TypeFamilies, TypeOperators #-}
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, UndecidableInstances #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE MultiParamTypeClasses, UndecidableInstances #-}
 {-# LANGUAGE ScopedTypeVariables, BangPatterns #-}
 {-# LANGUAGE TemplateHaskell #-}
 module Data.Extensible.Internal (Position
@@ -23,6 +23,7 @@ module Data.Extensible.Internal (Position
   , Half
   , Tail
   , lemmaHalfTail
+  , lemmaMerging
   , (++)()
   , Map
   , Merge
@@ -169,6 +170,9 @@ type family MapSucc (xs :: [Nat]) :: [Nat] where
 lemmaHalfTail :: proxy xs -> p (x ': Half (Tail xs)) -> p (Half (x ': xs))
 lemmaHalfTail _ = unsafeCoerce
 {-# INLINE lemmaHalfTail #-}
+
+lemmaMerging :: p (Merge (Half xs) (Half (Tail xs))) -> p xs
+lemmaMerging = unsafeCoerce
 
 type family Map (f :: k -> k) (xs :: [k]) :: [k] where
   Map f '[] = '[]

@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell, PolyKinds, TypeFamilies, DataKinds, KindSignatures, FlexibleContexts, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses, UndecidableInstances, Rank2Types #-}
+{-# LANGUAGE TemplateHaskell, PolyKinds, TypeFamilies, FunctionalDependencies, MultiParamTypeClasses, UndecidableInstances #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Record

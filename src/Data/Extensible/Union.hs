@@ -1,4 +1,3 @@
-{-# LANGUAGE DataKinds, FlexibleContexts, FlexibleInstances, GADTs, Rank2Types #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Union

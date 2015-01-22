@@ -1,5 +1,4 @@
-{-# LANGUAGE PolyKinds, Rank2Types, ScopedTypeVariables, ConstraintKinds, FlexibleContexts #-}
-{-# LANGUAGE DataKinds, GADTs #-}
+{-# LANGUAGE PolyKinds, ScopedTypeVariables #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Inclusion

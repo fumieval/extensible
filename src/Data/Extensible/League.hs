@@ -1,4 +1,3 @@
-{-# LANGUAGE Rank2Types, DataKinds #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.League

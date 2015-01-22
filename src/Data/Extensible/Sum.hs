@@ -1,7 +1,6 @@
-{-# LANGUAGE Rank2Types, GADTs #-}
-{-# LANGUAGE DataKinds, KindSignatures, PolyKinds, ConstraintKinds #-}
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 -----------------------------------------------------------------------------
 -- |
@@ -23,9 +22,11 @@ module Data.Extensible.Sum (
   , picked
   ) where
 
+import Data.Extensible.Internal.Rig
 import Data.Extensible.Internal
 import Data.Type.Equality
 import Control.Applicative
+import Data.Extensible.Product
 import Data.Typeable
 
 -- | The extensible sum type
@@ -42,13 +43,6 @@ hoist f (UnionAt pos h) = UnionAt pos (f h)
 embed :: (x ∈ xs) => h x -> h :| xs
 embed = UnionAt membership
 {-# INLINE embed #-}
-
-instance Show (h :| '[]) where
-  show = exhaust
-
-instance (Show (h x), Show (h :| xs)) => Show (h :| (x ': xs)) where
-  showsPrec d = (\h -> showParen (d > 10) $ showString "embed " . showsPrec 11 h)
-    <:| showsPrec d
 
 -- | /O(1)/ Naive pattern match
 (<:|) :: (h x -> r) -> (h :| xs -> r) -> h :| (x ': xs) -> r
