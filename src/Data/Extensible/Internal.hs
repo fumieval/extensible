@@ -119,8 +119,8 @@ instance (Check x (Lookup x xs) ~ Expecting one, ToInt one) => Member xs x where
 
 type family Half (xs :: [k]) :: [k] where
   Half '[] = '[]
-  Half (x ': y ': zs) = x ': zs
-  Half (x ': '[]) = x ': '[]
+  Half (x ': y ': zs) = x ': Half zs
+  Half (x ': '[]) = '[x]
 
 type family Tail (xs :: [k]) :: [k] where
   Tail (x ': xs) = xs

@@ -1,5 +1,17 @@
 {-# LANGUAGE PolyKinds, MultiParamTypeClasses, ConstraintKinds, UndecidableInstances, FlexibleInstances, DeriveFunctor #-}
 {-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable#-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Extensible.Rig
+-- Copyright   :  (c) Fumiaki Kinoshita 2015
+-- License     :  BSD3
+--
+-- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
+-- Stability   :  experimental
+-- Portability :  non-portable
+--
+-- Miscellaneous utilities
+------------------------------------------------------------------------
 module Data.Extensible.Internal.Rig where
 import Unsafe.Coerce
 import Control.Applicative
@@ -7,10 +19,12 @@ import Data.Typeable
 import Data.Foldable (Foldable)
 import Data.Traversable (Traversable)
 
+-- | @'view' :: Lens' s a -> (a -> a) -> (s -> s)@
 view :: ((a -> Const a a) -> (s -> Const a s)) -> s -> a
 view l = views l id
 {-# INLINE view #-}
 
+-- | @'views' :: Lens' s a -> (a -> r) -> (s -> r)@
 views :: ((a -> Const r a) -> (s -> Const r s)) -> (a -> r) -> s -> r
 views = unsafeCoerce
 {-# INLINE views #-}
@@ -29,6 +43,7 @@ instance Monad K0 where
 instance Show a => Show (K0 a) where
   showsPrec d (K0 a) = showParen (d > 10) $ showString "K0 " . showsPrec 11 a
 
+-- | @'over' :: Lens' s a -> (a -> a) -> (s -> s)@
 over :: ((a -> K0 a) -> s -> K0 s) -> (a -> a) -> s -> s
 over = unsafeCoerce
 {-# INLINE over #-}
