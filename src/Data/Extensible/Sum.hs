@@ -22,11 +22,8 @@ module Data.Extensible.Sum (
   , picked
   ) where
 
-import Data.Extensible.Internal.Rig
 import Data.Extensible.Internal
-import Data.Type.Equality
 import Control.Applicative
-import Data.Extensible.Product
 import Data.Typeable
 
 -- | The extensible sum type
@@ -59,6 +56,6 @@ exhaust _ = error "Impossible"
 -- | A traversal that tries to point a specific element.
 picked :: forall f h x xs. (x ∈ xs, Applicative f) => (h x -> f (h x)) -> h :| xs -> f (h :| xs)
 picked f u@(UnionAt pos h) = case comparePosition (membership :: Position xs x) pos of
-  Just Refl -> fmap (UnionAt pos) (f h)
-  Nothing -> pure u
+  Right Refl -> fmap (UnionAt pos) (f h)
+  _ -> pure u
 {-# INLINE picked #-}

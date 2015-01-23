@@ -39,7 +39,6 @@ import Data.Extensible.Product
 import Data.Extensible.Sum
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
-import Data.Proxy
 import Data.Monoid
 
 -- | Unicode alias for 'Include'

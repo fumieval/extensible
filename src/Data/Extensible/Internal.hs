@@ -31,6 +31,8 @@ module Data.Extensible.Internal (Position
   , Expecting
   , Missing
   , Ambiguous
+  , module Data.Type.Equality
+  , module Data.Proxy
   ) where
 import Data.Type.Equality
 import Data.Proxy
@@ -60,10 +62,10 @@ runPosition (Position 0) = Left (unsafeCoerce Refl)
 runPosition (Position n) = Right (Position (n - 1))
 {-# INLINE runPosition #-}
 
-comparePosition :: Position xs x -> Position xs y -> Maybe (x :~: y)
-comparePosition (Position m) (Position n)
-  | m == n = Just (unsafeCoerce Refl)
-  | otherwise = Nothing
+comparePosition :: Position xs x -> Position xs y -> Either Ordering (x :~: y)
+comparePosition (Position m) (Position n) = case compare m n of
+  EQ -> Right (unsafeCoerce Refl)
+  x -> Left x
 {-# INLINE comparePosition #-}
 
 navigate :: Position xs x -> Nav xs x

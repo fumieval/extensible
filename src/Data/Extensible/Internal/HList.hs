@@ -3,7 +3,6 @@ module Data.Extensible.Internal.HList where
 
 import Data.Extensible.Internal
 import Data.Extensible.Product
-import Data.Proxy
 
 data HList (h :: k -> *) (s :: [k]) where
   HNil :: HList h '[]

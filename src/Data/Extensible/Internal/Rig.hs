@@ -1,4 +1,4 @@
-{-# LANGUAGE PolyKinds, MultiParamTypeClasses, ConstraintKinds, UndecidableInstances, FlexibleInstances, DeriveFunctor #-}
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable#-}
 -----------------------------------------------------------------------------
 -- |
@@ -72,7 +72,3 @@ mapNullable :: (g x -> h y) -> Nullable g x -> Nullable h y
 mapNullable f (Eine g) = Eine (f g)
 mapNullable _ Null = Null
 {-# INLINE mapNullable #-}
-
--- | Composition for a class and a wrapper
-class c (h x) => ClassComp c h x
-instance c (h x) => ClassComp c h x

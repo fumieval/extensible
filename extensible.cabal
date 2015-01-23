@@ -25,7 +25,7 @@ library
     Data.Extensible.Internal
     Data.Extensible.Internal.Rig
     Data.Extensible.Internal.HList
-    Data.Extensible.Internal.Dictionary
+    Data.Extensible.Dictionary
     Data.Extensible.League
     Data.Extensible.Match
     Data.Extensible.Plain
