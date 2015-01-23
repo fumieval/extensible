@@ -17,6 +17,7 @@ extra-source-files:
   examples/*.hs
   .gitignore
   .travis.yml
+  README.md
 cabal-version:       >=1.10
 
 source-repository head

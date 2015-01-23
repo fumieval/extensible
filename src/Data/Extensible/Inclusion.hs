@@ -25,6 +25,7 @@ module Data.Extensible.Inclusion (
   , Include
   , inclusion
   , shrink
+  , subset
   , spread
   -- * Inverse
   , coinclusion
@@ -55,6 +56,12 @@ inclusion = generateFor (Proxy :: Proxy (Member ys)) (const membership)
 shrink :: (xs ⊆ ys) => h :* ys -> h :* xs
 shrink h = hmap (\pos -> hlookup pos h) inclusion
 {-# INLINE shrink #-}
+
+subset :: (xs ⊆ ys, Functor f) => (h :* xs -> f (h :* xs)) -> h :* ys -> f (h :* ys)
+subset f ys = fmap (write ys) $ f (shrink ys) where
+  write y xs = flip appEndo y
+    $ hfoldMap getConst'
+    $ hzipWith (\dst src -> Const' $ Endo $ sectorAt dst `over` const src) inclusion xs
 
 -- | /O(log n)/ Embed to a larger union.
 spread :: (xs ⊆ ys) => h :| xs -> h :| ys
