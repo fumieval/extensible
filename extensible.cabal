@@ -1,17 +1,22 @@
 name:                extensible
-version:             0.2.4
-synopsis:            Poly-kinded, extensible ADTs
+version:             0.2.5
+synopsis:            Extensible, efficient, lens-friendly data types
 homepage:            https://github.com/fumieval/extensible
-description:         Extensible Products/Unions
+bug-reports:         http://github.com/fumieval/extensible/issues
+description:         Combinators and types for extensible product and sum
 license:             BSD3
 license-file:        LICENSE
 author:              Fumiaki Kinoshita
 maintainer:          Fumiaki Kinoshita <fumiexcel@gmail.com>
 copyright:           Copyright (C) 2015 Fumiaki Kinoshita
-category:            Data
+category:            Data, Records
 build-type:          Simple
+stability:           provisional
+
 extra-source-files:
+  examples/*.hs
   .gitignore
+  .travis.yml
 cabal-version:       >=1.10
 
 source-repository head

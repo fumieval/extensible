@@ -38,7 +38,7 @@ type OneOf xs = K0 :| xs
 
 -- | /O(log n)/ Add a plain value to a product.
 (<%) :: x -> AllOf xs -> AllOf (x ': xs)
-(<%) = unsafeCoerce (<:)
+(<%) = unsafeCoerce (<:*)
 {-# INLINE (<%) #-}
 infixr 5 <%
 

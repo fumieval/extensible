@@ -60,9 +60,10 @@ hhead (Tree a _ _) = a
 {-# INLINE hhead #-}
 
 -- | /O(n)/ Extract the tail of the product.
+-- FIXME: unsafeCoerce
 htail :: h :* (x ': xs) -> h :* xs
 htail (Tree _ a@(Tree h _ _) b) = unsafeCoerce (Tree h) b (htail a)
-htail _ = unsafeCoerce Nil
+htail (Tree _ Nil _) = unsafeCoerce Nil
 
 -- | Split a product to the head and the tail.
 huncons :: forall h x xs. h :* (x ': xs) -> (h x, h :* xs)
