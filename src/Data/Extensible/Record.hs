@@ -15,6 +15,7 @@
 module Data.Extensible.Record (
    module Data.Extensible.Inclusion
   , Record
+  , (<:)
   , (<:*)
   , (:*)(Nil)
   , (@=)

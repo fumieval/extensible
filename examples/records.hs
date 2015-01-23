@@ -14,23 +14,23 @@ type Stock = Record '["name", "weight", "price", "featured", "description", "qua
 
 s0 :: Stock
 s0 = Field "DA-192H"
-  <:* Field 260
-  <:* Field 120
-  <:* Field True
-  <:* Field "High-quality (24bit 192kHz), lightweight portable DAC"
-  <:* Field 20
-  <:* Nil
+  <: Field 260
+  <: Field 120
+  <: Field True
+  <: Field "High-quality (24bit 192kHz), lightweight portable DAC"
+  <: Field 20
+  <: Nil
 
 -- Use shrink to permute elements
 s1 :: Stock
 s1 = shrink
-    $ name @= "HHP-150"
-  <:* featured @= False
-  <:* description @= "Premium wooden headphone"
-  <:* weight @= 150
-  <:* price @= 330
-  <:* quantity @= 55
-  <:* Nil
+   $ name @= "HHP-150"
+  <: featured @= False
+  <: description @= "Premium wooden headphone"
+  <: weight @= 150
+  <: price @= 330
+  <: quantity @= 55
+  <: Nil
 
 -- If "quantity" is missing,
 --    Couldn't match type ‘Missing "quantity"’ with ‘Expecting one’

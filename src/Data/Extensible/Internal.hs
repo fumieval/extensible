@@ -27,6 +27,7 @@ module Data.Extensible.Internal (Position
   , (++)()
   , Map
   , Merge
+  , Concat
   , Check
   , Expecting
   , Missing
@@ -183,6 +184,10 @@ type family Map (f :: k -> k) (xs :: [k]) :: [k] where
 type family (++) (xs :: [k]) (ys :: [k]) :: [k] where
   '[] ++ ys = ys
   (x ': xs) ++ ys = x ': xs ++ ys
+
+type family Concat (xs :: [[k]]) :: [k] where
+  Concat '[] = '[]
+  Concat (x ': xs) = x ++ Concat xs
 
 type family Merge (xs :: [k]) (ys :: [k]) :: [k] where
   Merge (x ': xs) (y ': ys) = x ': y ': Merge xs ys

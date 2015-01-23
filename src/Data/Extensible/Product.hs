@@ -16,6 +16,7 @@
 module Data.Extensible.Product (
   -- * Product
   (:*)(..)
+  , (<:)
   , (<:*)
   , (*++*)
   , hhead
@@ -31,10 +32,13 @@ module Data.Extensible.Product (
   , sector
   , sectorAt
   , Generate(..)
-  , Forall(..)) where
+  , Forall(..)
+  , fromHList
+  , toHList) where
 
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
+import Data.Extensible.Internal.HList
 import Unsafe.Coerce
 import Data.Typeable
 import Control.Applicative
@@ -53,6 +57,7 @@ deriving instance Typeable (:*)
 -- | /O(1)/ Extract the head element.
 hhead :: h :* (x ': xs) -> h x
 hhead (Tree a _ _) = a
+{-# INLINE hhead #-}
 
 -- | /O(n)/ Extract the tail of the product.
 htail :: h :* (x ': xs) -> h :* xs
@@ -62,19 +67,26 @@ htail _ = unsafeCoerce Nil
 -- | Split a product to the head and the tail.
 huncons :: forall h x xs. h :* (x ': xs) -> (h x, h :* xs)
 huncons t@(Tree a _ _) = (a, htail t)
+{-# INLINE huncons #-}
 
--- | /O(log n)/ Add an element to a product.
+-- | An alias for ('<:').
 (<:*) :: forall h x xs. h x -> h :* xs -> h :* (x ': xs)
-a <:* Tree b c d = Tree a (lemmaHalfTail (Proxy :: Proxy (Tail xs)) $! b <:* d) c
+a <:* Tree b c d = Tree a (lemmaHalfTail (Proxy :: Proxy (Tail xs)) $ b <: d) c
 a <:* Nil = Tree a Nil Nil
 infixr 0 <:*
+
+-- | /O(log n)/ Add an element to a product.
+(<:) :: h x -> h :* xs -> h :* (x ': xs)
+(<:) = (<:*)
+{-# INLINE (<:) #-}
+infixr 0 <:
 
 -- | Transform every elements in a product, preserving the order.
 hmap :: (forall x. g x -> h x) -> g :* xs -> h :* xs
 hmap t (Tree h a b) = Tree (t h) (hmap t a) (hmap t b)
 hmap _ Nil = Nil
 
--- | Serial combination of two products.
+-- | Combine products.
 (*++*) :: h :* xs -> h :* ys -> h :* (xs ++ ys)
 (*++*) Nil ys = ys
 (*++*) xs'@(Tree x _ _) ys = let xs = htail xs' in x <:* (xs *++* ys)
@@ -114,6 +126,7 @@ htabulate f = go id where
   go :: (forall x. Position t x -> Position xs x) -> g :* t -> h :* t
   go k (Tree g a b) = Tree (f (k here) g) (go (k . navL) a) (go (k . navR) b)
   go _ Nil = Nil
+{-# INLINE htabulate #-}
 
 -- | /O(log n)/ A lens for a specific element.
 sector :: (Functor f, x ∈ xs) => (h x -> f (h x)) -> h :* xs -> f (h :* xs)
@@ -156,3 +169,13 @@ instance Forall c '[] where
 instance (c x, Forall c (Half xs), Forall c (Half (Tail xs))) => Forall c (x ': xs) where
   generateFor proxy f = Tree (f here) (generateFor proxy (f . navL)) (generateFor proxy (f . navR))
   {-# INLINE generateFor #-}
+
+-- | Turn a product into 'HList'.
+toHList :: h :* xs -> HList h xs
+toHList (Tree h a b) = HCons h $ lemmaMerging $ toHList a `merge` toHList b
+toHList Nil = HNil
+
+-- | Build a product from 'HList'.
+fromHList :: HList h xs -> h :* xs
+fromHList (HCons x xs) = let (a, b) = split xs in Tree x (fromHList a) (fromHList b)
+fromHList HNil = Nil
