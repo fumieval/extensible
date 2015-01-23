@@ -1,4 +1,4 @@
-{-# LANGUAGE UndecidableInstances, MultiParamTypeClasses, ScopedTypeVariables #-}
+{-# LANGUAGE PolyKinds, UndecidableInstances, MultiParamTypeClasses, ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Data.Extensible.Dictionary where
 import Data.Monoid

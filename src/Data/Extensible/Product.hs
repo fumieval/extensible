@@ -50,15 +50,6 @@ data (h :: k -> *) :* (s :: [k]) where
 
 deriving instance Typeable (:*)
 
-instance Show (h :* '[]) where
-  show Nil = "Nil"
-
-instance (Show (h :* xs), Show (h x)) => Show (h :* (x ': xs)) where
-  showsPrec d t = let (x, xs) = huncons t in showParen (d > 0) $
-     showsPrec 0 x
-    . showString " <:* "
-    . showsPrec 0 xs
-
 -- | /O(1)/ Extract the head element.
 hhead :: h :* (x ': xs) -> h x
 hhead (Tree a _ _) = a
@@ -142,6 +133,7 @@ sectorAt pos0 f = go pos0 where
 
 -- | Given a function that maps types to values, we can "collect" entities all you want.
 class Generate (xs :: [k]) where
+  -- | /O(n)/ generates a product with the given function.
   generate :: (forall x. Position xs x -> h x) -> h :* xs
 
 instance Generate '[] where
@@ -154,6 +146,7 @@ instance (Generate (Half xs), Generate (Half (Tail xs))) => Generate (x ': xs) w
 
 -- | Guarantees the all elements satisfies the predicate.
 class Forall c (xs :: [k]) where
+  -- | /O(n)/ Analogous to 'generate', but it also supplies a context @c x@ for every elements in @xs@.
   generateFor :: proxy c -> (forall x. c x => Position xs x -> h x) -> h :* xs
 
 instance Forall c '[] where

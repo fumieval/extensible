@@ -40,9 +40,10 @@ type family FieldValue (s :: Symbol) :: *
 -- | The type of fields.
 data Field (s :: Symbol) = Field { getField :: FieldValue s }
 
--- | The type of records which contain several fields
+-- | The type of records which contain several fields.
 type Record = (:*) Field
 
+-- | Shows in @field \@= value@ style instead of the derived one.
 instance (KnownSymbol s, Show (FieldValue s)) => Show (Field s) where
   showsPrec d f@(Field a) = showParen (d >= 1) $ showString (symbolVal f)
     . showString " @= "
@@ -58,11 +59,11 @@ type FieldLens s = forall f p xs. (Functor f, Labelable s p, s ∈ xs)
   => p (FieldValue s) (f (FieldValue s)) -> Record xs -> f (Record xs)
 
 -- | When you see this type as an argument, it expects a 'FieldLens'.
--- This type hooks the name of 'FieldLens' so that an expression @field \@= value@ has no ambiguousity.
+-- This type is used to resolve the name of the field internally.
 type FieldName s = LabelPhantom s (FieldValue s) (Proxy (FieldValue s))
   -> Record '[s] -> Proxy (Record '[s])
 
--- | A ghostly type used to reify field names
+-- | A ghostly type which reifies the field name
 data LabelPhantom s a b
 
 -- | An internal class to characterize 'FieldLens'
