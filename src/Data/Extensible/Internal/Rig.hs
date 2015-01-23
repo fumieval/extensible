@@ -1,4 +1,3 @@
-{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable#-}
 -----------------------------------------------------------------------------
 -- |

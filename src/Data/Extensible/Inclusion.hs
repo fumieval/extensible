@@ -1,4 +1,4 @@
-{-# LANGUAGE PolyKinds, ScopedTypeVariables #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Inclusion

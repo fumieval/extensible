@@ -1,4 +1,4 @@
-{-# LANGUAGE PolyKinds, UndecidableInstances, MultiParamTypeClasses, ScopedTypeVariables #-}
+{-# LANGUAGE UndecidableInstances, MultiParamTypeClasses, ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 -----------------------------------------------------------------------
 --

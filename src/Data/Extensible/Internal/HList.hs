@@ -1,5 +1,5 @@
-{-# LANGUAGE PolyKinds, ScopedTypeVariables #-}
------------------------------------------------------------------------------
+{-# LANGUAGE ScopedTypeVariables #-}
+-----------------------------------------------------------------------
 --
 -- Module      :  Data.Extensible.Internal.HList
 -- Copyright   :  (c) Fumiaki Kinoshita 2015
@@ -10,7 +10,7 @@
 -- Portability :  non-portable
 --
 --
-------------------------------------------------------------------------
+-----------------------------------------------------------------------
 module Data.Extensible.Internal.HList where
 
 import Data.Extensible.Internal
