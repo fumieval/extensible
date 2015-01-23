@@ -30,7 +30,7 @@ dictEq = generateFor (Proxy :: Proxy (Instance1 Eq h)) $ const $ Wrap2 (==)
 dictOrd :: forall h. DictOf Ord h (Wrap2 h Ordering)
 dictOrd = generateFor (Proxy :: Proxy (Instance1 Ord h)) $ const $ Wrap2 compare
 
-data WrapMonoid h x = WrapMonoid (h x) (h x -> h x -> h x)
+data WrapMonoid h x = WrapMonoid { unwrapEmpty :: h x, unwrapAppend :: h x -> h x -> h x }
 
 dictMonoid :: forall h. DictOf Monoid h (WrapMonoid h)
 dictMonoid = generateFor (Proxy :: Proxy (Instance1 Monoid h)) $ const $ WrapMonoid mempty mappend
@@ -54,9 +54,9 @@ instance (Eq (h :* xs), WrapForall Ord h xs) => Ord (h :* xs) where
   {-# INLINE compare #-}
 
 instance WrapForall Monoid h xs => Monoid (h :* xs) where
-  mempty = hmap (\(WrapMonoid e _) -> e) dictMonoid
+  mempty = hmap unwrapEmpty dictMonoid
   {-# INLINE mempty #-}
-  mappend xs ys = hzipWith3 (\(WrapMonoid _ f) x y -> f x y) dictMonoid xs ys
+  mappend xs ys = hzipWith3 unwrapAppend dictMonoid xs ys
   {-# INLINE mappend #-}
 
 instance WrapForall Show h xs => Show (h :| xs) where
