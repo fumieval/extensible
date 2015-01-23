@@ -54,7 +54,7 @@ import Unsafe.Coerce
 import Data.Typeable
 import Language.Haskell.TH
 
--- | Generates 'Position' for an ordinal (0-origin).
+-- | Generates a 'Position' that corresponds to the given ordinal (0-origin).
 ord :: Int -> Q Exp
 ord n = do
   let names = map mkName $ take (n + 1) $ concatMap (flip replicateM ['a'..'z']) [1..]
