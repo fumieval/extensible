@@ -16,6 +16,7 @@ module Data.Extensible.Internal.Rig where
 import Unsafe.Coerce
 import Control.Applicative
 import Data.Typeable
+import Data.Monoid
 import Data.Foldable (Foldable)
 import Data.Traversable (Traversable)
 
@@ -72,3 +73,14 @@ mapNullable :: (g x -> h y) -> Nullable g x -> Nullable h y
 mapNullable f (Eine g) = Eine (f g)
 mapNullable _ Null = Null
 {-# INLINE mapNullable #-}
+
+newtype MergeList a = MergeList { getMerged :: [a] } deriving (Show, Eq, Ord, Functor, Foldable, Traversable)
+
+instance Monoid (MergeList a) where
+  mempty = MergeList []
+  {-# INLINE mempty #-}
+  mappend (MergeList a) (MergeList b) = MergeList $ merge a b where
+    merge (x:xs) (y:ys) = x : y : merge xs ys
+    merge xs [] = xs
+    merge [] ys = ys
+  {-# INLINE mappend #-}

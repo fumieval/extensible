@@ -24,9 +24,10 @@ dictMonoid = generateFor (Proxy :: Proxy (Instance1 Monoid h)) $ const $ WrapMon
 instance WrapForall Show h xs => Show (h :* xs) where
   showsPrec d = showParen (d > 0)
     . (.showString "Nil")
-    . appEndo
+    . foldr (.) id
+    . getMerged
     . hfoldMap getConst'
-    . hzipWith (\(Match f) h -> Const' $ Endo $ f h 0 . showString " <:* ") dictShow
+    . hzipWith (\(Match f) h -> Const' $ MergeList [f h 0 . showString " <:* "]) dictShow
 
 instance WrapForall Eq h xs => Eq (h :* xs) where
   xs == ys = getAll $ hfoldMap (All . getConst')
