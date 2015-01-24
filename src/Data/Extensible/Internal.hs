@@ -66,7 +66,16 @@ ord n = do
     $ conT ''Position `appT` pure t `appT` varT (names !! n)
 
 -- | The position of @x@ in the type level set @xs@.
-newtype Position (xs :: [k]) (x :: k) = Position Int deriving (Show, Eq, Ord, Typeable)
+newtype Position (xs :: [k]) (x :: k) = Position Int deriving Typeable
+
+instance Show (Position xs x) where
+  show (Position n) = "$(ord " ++ show n ++ ")"
+
+instance Eq (Position xs x) where
+  _ == _ = True
+
+instance Ord (Position xs x) where
+  compare _ _ = EQ
 
 -- | Embodies a type equivalence to ensure that the 'Position' points the first element.
 runPosition :: Position (y ': xs) x -> Either (x :~: y) (Position xs x)
