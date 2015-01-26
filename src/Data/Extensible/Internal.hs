@@ -205,6 +205,8 @@ type family (++) (xs :: [k]) (ys :: [k]) :: [k] where
   '[] ++ ys = ys
   (x ': xs) ++ ys = x ': xs ++ ys
 
+infixr 5 ++
+
 type family Concat (xs :: [[k]]) :: [k] where
   Concat '[] = '[]
   Concat (x ': xs) = x ++ Concat xs
