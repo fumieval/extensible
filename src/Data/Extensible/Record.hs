@@ -20,6 +20,7 @@ module Data.Extensible.Record (
   , (:*)(Nil)
   , (@=)
   , mkField
+  , recordType
   , Field(..)
   , FieldValue
   , FieldLens
@@ -31,6 +32,7 @@ module Data.Extensible.Record (
 import Data.Extensible.Product
 import Data.Extensible.Internal
 import Language.Haskell.TH
+import Language.Haskell.TH.Quote
 import GHC.TypeLits hiding (Nat)
 import Data.Extensible.Inclusion
 import Data.Extensible.Dictionary ()
@@ -110,3 +112,10 @@ mkField s t = do
     , funD (mkName s) [clause [varP f] (normalB $ varE 'sector `appE` wf) []]
     , return $ PragmaD $ InlineP (mkName s) Inline FunLike AllPhases
     ]
+
+recordType :: QuasiQuoter
+recordType = QuasiQuoter { quoteType = appT (conT ''Record) . foldr (\e t -> promotedConsT `appT` e `appT` t)
+promotedNilT . map (litT . strTyLit) . words
+  , quoteDec = error "Unsupported"
+  , quoteExp = error "Unsupported"
+  , quotePat = error "Unsupported" }
