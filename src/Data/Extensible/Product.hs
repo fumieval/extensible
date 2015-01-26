@@ -22,6 +22,7 @@ module Data.Extensible.Product (
   , htail
   , huncons
   , hmap
+  , htrans
   , hzipWith
   , hzipWith3
   , hfoldMap
@@ -85,6 +86,11 @@ infixr 0 <:
 hmap :: (forall x. g x -> h x) -> g :* xs -> h :* xs
 hmap t (Tree h a b) = Tree (t h) (hmap t a) (hmap t b)
 hmap _ Nil = Nil
+
+-- | Transform every elements in a product, preserving the order.
+htrans :: (forall x. g x -> h (t x)) -> g :* xs -> h :* Map t xs
+htrans t (Tree h a b) = unsafeCoerce (Tree (t h)) (htrans t a) (htrans t b)
+htrans _ Nil = Nil
 
 -- | Combine products.
 (*++*) :: h :* xs -> h :* ys -> h :* (xs ++ ys)
