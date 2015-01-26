@@ -48,8 +48,8 @@ import Data.Monoid
 data (h :: k -> *) :* (s :: [k]) where
   Nil :: h :* '[]
   Tree :: !(h x)
-    -> !(h :* Half xs)
-    -> !(h :* Half (Tail xs))
+    -> h :* Half xs
+    -> h :* Half (Tail xs)
     -> h :* (x ': xs)
 
 deriving instance Typeable (:*)

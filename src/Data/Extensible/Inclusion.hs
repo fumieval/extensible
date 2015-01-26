@@ -78,7 +78,9 @@ coinclusion = flip appEndo (generate (const Null))
 -- | Extend a product and fill missing fields by 'Null'.
 wrench :: (Generate ys, xs ⊆ ys) => h :* xs -> Nullable h :* ys
 wrench xs = mapNullable (flip hlookup xs) `hmap` coinclusion
+{-# INLINE wrench #-}
 
 -- | Narrow the range of the sum, if possible.
 retrench :: (Generate ys, xs ⊆ ys) => h :| ys -> Nullable ((:|) h) xs
 retrench (UnionAt pos h) = flip UnionAt h `mapNullable` hlookup pos coinclusion
+{-# INLINE retrench #-}
