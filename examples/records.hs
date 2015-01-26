@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell, DataKinds, TypeOperators, KindSignatures, TypeFamilies, FlexibleContexts #-}
+{-# LANGUAGE TemplateHaskell, DataKinds, TypeOperators, TypeFamilies, FlexibleContexts #-}
 import Data.Extensible.Record
 import Data.Extensible
 import Control.Lens
