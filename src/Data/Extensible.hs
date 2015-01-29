@@ -27,8 +27,8 @@ module Data.Extensible (
   , module Data.Extensible.League
   , module Data.Extensible.Match
   , module Data.Extensible.Plain
-  , module Data.Extensible.Product
   , module Data.Extensible.Record
+  , module Data.Extensible.Product
   , module Data.Extensible.Sum
   , module Data.Extensible.Union
   ) where

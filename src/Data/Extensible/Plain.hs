@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase, TemplateHaskell #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Plain
@@ -22,6 +23,9 @@ module Data.Extensible.Plain (
   , (<?%)
   , K1(..)
   , (<?!)
+  , accessing
+  , decFields
+  , decFieldsDeriving
   )where
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
@@ -29,6 +33,9 @@ import Data.Extensible.Product
 import Data.Extensible.Sum
 import Data.Typeable
 import Unsafe.Coerce
+import Language.Haskell.TH hiding (Match(..))
+import Data.Char
+import Data.Coerce
 
 -- | Alias for plain products
 type AllOf xs = K0 :* xs
@@ -80,3 +87,41 @@ newtype K1 a f = K1 { getK1 :: f a } deriving (Eq, Ord, Read, Typeable)
 (<?!) :: (f x -> a) -> Match (K1 x) a :* xs -> Match (K1 x) a :* (f ': fs)
 (<?!) = unsafeCoerce (<:*)
 infixr 1 <?!
+
+-- | An accessor for newtype constructors.
+accessing :: (Coercible b a, b ∈ xs) => (a -> b) -> Lens' (AllOf xs) a
+accessing c f = record (fmap c . f . coerce)
+{-# INLINE accessing #-}
+
+-- | Generate newtype wrappers and lenses from type synonyms.
+--
+-- @
+-- decFields [d|type Foo = Int|]
+-- @
+--
+-- Generates:
+--
+-- @
+-- newtype Foo = Foo Int
+-- foo :: (Foo ∈ xs) => Lens' (AllOf xs) Int
+-- foo = accessing Foo
+-- @
+--
+decFields :: DecsQ -> DecsQ
+decFields = decFieldsDeriving []
+
+decFieldsDeriving :: [Name] -> DecsQ -> DecsQ
+decFieldsDeriving drv' ds = ds >>= fmap concat . mapM mkBody
+  where
+    mkBody (NewtypeD cx name_ tvs (NormalC nc [(st, ty)]) drv) = do
+      let name = let (x:xs) = nameBase name_ in mkName (toLower x : xs)
+      xs <- newName "xs"
+      sequence [return $ NewtypeD cx name_ tvs (NormalC nc [(st, ty)]) (drv' ++ drv)
+        ,sigD name
+          $ forallT (PlainTV xs : tvs) (sequence [classP ''Member [varT xs, conT name_]])
+          $ conT ''Lens' `appT` (conT ''AllOf `appT` varT xs) `appT` return ty
+        , valD (varP name) (normalB $ varE 'accessing `appE` conE nc) []
+        , return $ PragmaD $ InlineP name Inline FunLike AllPhases
+        ]
+    mkBody (TySynD name_ tvs ty) = mkBody (NewtypeD [] name_ tvs (NormalC (mkName (nameBase name_)) [(NotStrict, ty)]) [])
+    mkBody _ = fail "Unsupported declaration: genField handles newtype declarations or type synonyms"

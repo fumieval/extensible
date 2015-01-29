@@ -135,12 +135,12 @@ htabulate f = go id where
 {-# INLINE htabulate #-}
 
 -- | /O(log n)/ A lens for a specific element.
-sector :: (Functor f, x ∈ xs) => (h x -> f (h x)) -> h :* xs -> f (h :* xs)
+sector :: (x ∈ xs) => Lens' (h :* xs) (h x)
 sector = sectorAt membership
 {-# INLINE sector #-}
 
 -- | /O(log n)/ A lens for a value in a known position.
-sectorAt :: forall h x xs f. (Functor f) => Position xs x -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)
+sectorAt :: forall h x xs f. Functor f => Position xs x -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)
 sectorAt pos0 f = go pos0 where
   go :: forall t. Position t x -> h :* t -> f (h :* t)
   go pos (Tree h a b) = case navigate pos of

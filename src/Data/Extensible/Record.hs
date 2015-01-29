@@ -107,7 +107,6 @@ mkField s t = do
         `appE` (varE '(.) `appE` (varE 'unlabel `appE` lbl `appE` varE f) `appE` varE 'getField)
   sequence [tySynInstD ''FieldValue (tySynEqn [litT (strTyLit s)] t)
     , sigD (mkName s)
-      $ forallT [] (return [])
       $ conT ''FieldLens `appT` st
     , funD (mkName s) [clause [varP f] (normalB $ varE 'sector `appE` wf) []]
     , return $ PragmaD $ InlineP (mkName s) Inline FunLike AllPhases

@@ -23,7 +23,7 @@ import Data.Extensible.Product
 import Data.Extensible.Sum
 
 -- | A lens for a specific clause.
-clause :: (x ∈ xs, Functor f) => ((h x -> a) -> f (h x -> a)) -> Match h a :* xs -> f (Match h a :* xs)
+clause :: (x ∈ xs) => Lens' (Match h a :* xs) (h x -> a)
 clause f = sector (fmap Match . f . runMatch)
 
 -- | Applies a function to the result of 'Match'.
