@@ -27,7 +27,7 @@ import Data.Typeable
 
 -- | The extensible sum type
 data (h :: k -> *) :| (s :: [k]) where
-  UnionAt :: Position xs x -> h x -> h :| xs
+  UnionAt :: Membership xs x -> h x -> h :| xs
 deriving instance Typeable (:|)
 
 -- | Change the wrapper.
@@ -42,7 +42,7 @@ embed = UnionAt membership
 
 -- | /O(1)/ Naive pattern match
 (<:|) :: (h x -> r) -> (h :| xs -> r) -> h :| (x ': xs) -> r
-(<:|) r c = \(UnionAt pos h) -> case runPosition pos of
+(<:|) r c = \(UnionAt pos h) -> case runMembership pos of
   Left Refl -> r h
   Right pos' -> c (UnionAt pos' h)
 infixr 1 <:|
@@ -54,7 +54,7 @@ exhaust _ = error "Impossible"
 
 -- | A traversal that tries to point a specific element.
 picked :: forall f h x xs. (x ∈ xs, Applicative f) => (h x -> f (h x)) -> h :| xs -> f (h :| xs)
-picked f u@(UnionAt pos h) = case comparePosition (membership :: Position xs x) pos of
+picked f u@(UnionAt pos h) = case compareMembership (membership :: Membership xs x) pos of
   Right Refl -> fmap (UnionAt pos) (f h)
   _ -> pure u
 {-# INLINE picked #-}

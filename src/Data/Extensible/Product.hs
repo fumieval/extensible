@@ -122,14 +122,14 @@ htraverse f (Tree h a b) = Tree <$> f h <*> htraverse f a <*> htraverse f b
 htraverse _ Nil = pure Nil
 
 -- | /O(log n)/ Pick up an elemtnt.
-hlookup :: Position xs x -> h :* xs -> h x
+hlookup :: Membership xs x -> h :* xs -> h x
 hlookup = view . sectorAt
 {-# INLINE hlookup #-}
 
 -- | 'hmap' with its indices.
-htabulate :: forall g h xs. (forall x. Position xs x -> g x -> h x) -> g :* xs -> h :* xs
+htabulate :: forall g h xs. (forall x. Membership xs x -> g x -> h x) -> g :* xs -> h :* xs
 htabulate f = go id where
-  go :: (forall x. Position t x -> Position xs x) -> g :* t -> h :* t
+  go :: (forall x. Membership t x -> Membership xs x) -> g :* t -> h :* t
   go k (Tree g a b) = Tree (f (k here) g) (go (k . navL) a) (go (k . navR) b)
   go _ Nil = Nil
 {-# INLINE htabulate #-}
@@ -140,9 +140,9 @@ sector = sectorAt membership
 {-# INLINE sector #-}
 
 -- | /O(log n)/ A lens for a value in a known position.
-sectorAt :: forall h x xs f. Functor f => Position xs x -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)
+sectorAt :: forall h x xs f. Functor f => Membership xs x -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)
 sectorAt pos0 f = go pos0 where
-  go :: forall t. Position t x -> h :* t -> f (h :* t)
+  go :: forall t. Membership t x -> h :* t -> f (h :* t)
   go pos (Tree h a b) = case navigate pos of
     Here -> fmap (\h' -> Tree h' a b) (f h)
     NavL p -> fmap (\a' -> Tree h a' b) $ go p a
@@ -153,7 +153,7 @@ sectorAt pos0 f = go pos0 where
 -- | Given a function that maps types to values, we can "collect" entities all you want.
 class Generate (xs :: [k]) where
   -- | /O(n)/ generates a product with the given function.
-  generate :: (forall x. Position xs x -> h x) -> h :* xs
+  generate :: (forall x. Membership xs x -> h x) -> h :* xs
 
 instance Generate '[] where
   generate _ = Nil
@@ -166,7 +166,7 @@ instance (Generate (Half xs), Generate (Half (Tail xs))) => Generate (x ': xs) w
 -- | Guarantees the all elements satisfies the predicate.
 class Forall c (xs :: [k]) where
   -- | /O(n)/ Analogous to 'generate', but it also supplies a context @c x@ for every elements in @xs@.
-  generateFor :: proxy c -> (forall x. c x => Position xs x -> h x) -> h :* xs
+  generateFor :: proxy c -> (forall x. c x => Membership xs x -> h x) -> h :* xs
 
 instance Forall c '[] where
   generateFor _ _ = Nil

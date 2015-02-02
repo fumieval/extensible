@@ -14,9 +14,9 @@
 --
 -- A bunch of combinators that contains magic
 ------------------------------------------------------------------------
-module Data.Extensible.Internal (Position
-  , runPosition
-  , comparePosition
+module Data.Extensible.Internal (Membership
+  , runMembership
+  , compareMembership
   , ord
   , Nav(..)
   , navigate
@@ -54,66 +54,66 @@ import Unsafe.Coerce
 import Data.Typeable
 import Language.Haskell.TH
 
--- | Generates a 'Position' that corresponds to the given ordinal (0-origin).
+-- | Generates a 'Membership' that corresponds to the given ordinal (0-origin).
 ord :: Int -> Q Exp
 ord n = do
   let names = map mkName $ take (n + 1) $ concatMap (flip replicateM ['a'..'z']) [1..]
   let rest = mkName "any"
   let cons x xs = PromotedConsT `AppT` x `AppT` xs
   let t = foldr cons (VarT rest) (map VarT names)
-  sigE (conE 'Position `appE` litE (IntegerL $ toInteger n))
+  sigE (conE 'Membership `appE` litE (IntegerL $ toInteger n))
     $ forallT (PlainTV rest : map PlainTV names) (pure [])
-    $ conT ''Position `appT` pure t `appT` varT (names !! n)
+    $ conT ''Membership `appT` pure t `appT` varT (names !! n)
 
 -- | The position of @x@ in the type level set @xs@.
-newtype Position (xs :: [k]) (x :: k) = Position Int deriving Typeable
+newtype Membership (xs :: [k]) (x :: k) = Membership Int deriving Typeable
 
-instance Show (Position xs x) where
-  show (Position n) = "$(ord " ++ show n ++ ")"
+instance Show (Membership xs x) where
+  show (Membership n) = "$(ord " ++ show n ++ ")"
 
-instance Eq (Position xs x) where
+instance Eq (Membership xs x) where
   _ == _ = True
 
-instance Ord (Position xs x) where
+instance Ord (Membership xs x) where
   compare _ _ = EQ
 
--- | Embodies a type equivalence to ensure that the 'Position' points the first element.
-runPosition :: Position (y ': xs) x -> Either (x :~: y) (Position xs x)
-runPosition (Position 0) = Left (unsafeCoerce Refl)
-runPosition (Position n) = Right (Position (n - 1))
-{-# INLINE runPosition #-}
+-- | Embodies a type equivalence to ensure that the 'Membership' points the first element.
+runMembership :: Membership (y ': xs) x -> Either (x :~: y) (Membership xs x)
+runMembership (Membership 0) = Left (unsafeCoerce Refl)
+runMembership (Membership n) = Right (Membership (n - 1))
+{-# INLINE runMembership #-}
 
-comparePosition :: Position xs x -> Position xs y -> Either Ordering (x :~: y)
-comparePosition (Position m) (Position n) = case compare m n of
+compareMembership :: Membership xs x -> Membership xs y -> Either Ordering (x :~: y)
+compareMembership (Membership m) (Membership n) = case compare m n of
   EQ -> Right (unsafeCoerce Refl)
   x -> Left x
-{-# INLINE comparePosition #-}
+{-# INLINE compareMembership #-}
 
-navigate :: Position xs x -> Nav xs x
-navigate (Position 0) = unsafeCoerce Here
-navigate (Position n) = let (m, r) = divMod (n - 1) 2 in case r of
-  0 -> unsafeCoerce $ NavL $ Position m
-  _ -> unsafeCoerce $ NavR $ Position m
+navigate :: Membership xs x -> Nav xs x
+navigate (Membership 0) = unsafeCoerce Here
+navigate (Membership n) = let (m, r) = divMod (n - 1) 2 in case r of
+  0 -> unsafeCoerce $ NavL $ Membership m
+  _ -> unsafeCoerce $ NavR $ Membership m
 
 data Nav xs x where
   Here :: Nav (x ': xs) x
-  NavL :: Position (Half xs) x -> Nav (e ': xs) x
-  NavR :: Position (Half (Tail xs)) x -> Nav (e ': xs) x
+  NavL :: Membership (Half xs) x -> Nav (e ': xs) x
+  NavR :: Membership (Half (Tail xs)) x -> Nav (e ': xs) x
 
-here :: Position (x ': xs) x
-here = Position 0
+here :: Membership (x ': xs) x
+here = Membership 0
 {-# INLINE here #-}
 
-navNext :: Position xs y -> Position (x ': xs) y
-navNext (Position n) = Position (n + 1)
+navNext :: Membership xs y -> Membership (x ': xs) y
+navNext (Membership n) = Membership (n + 1)
 {-# INLINE navNext #-}
 
-navL :: Position (Half xs) y -> Position (x ': xs) y
-navL (Position x) = Position (x * 2 + 1)
+navL :: Membership (Half xs) y -> Membership (x ': xs) y
+navL (Membership x) = Membership (x * 2 + 1)
 {-# INLINE navL #-}
 
-navR :: Position (Half (Tail xs)) y -> Position (x ': xs) y
-navR (Position x) = Position (x * 2 + 2)
+navR :: Membership (Half (Tail xs)) y -> Membership (x ': xs) y
+navR (Membership x) = Membership (x * 2 + 2)
 {-# INLINE navR #-}
 
 -- | Unicode flipped alias for 'Member'
@@ -121,7 +121,7 @@ type x ∈ xs = Member xs x
 
 -- | @Member x xs@ or @x ∈ xs@ indicates that @x@ is an element of @xs@.
 class Member (xs :: [k]) (x :: k) where
-  membership :: Position xs x
+  membership :: Membership xs x
 
 -- | A type sugar to make type error more readable.
 data Expecting a
@@ -138,7 +138,7 @@ type family Check x xs where
   Check x xs = Ambiguous x
 
 instance (Check x (Lookup x xs) ~ Expecting one, ToInt one) => Member xs x where
-  membership = Position $ theInt (Proxy :: Proxy one)
+  membership = Membership $ theInt (Proxy :: Proxy one)
   {-# INLINE membership #-}
 
 type family Half (xs :: [k]) :: [k] where
