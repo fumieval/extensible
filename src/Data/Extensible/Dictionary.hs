@@ -64,13 +64,13 @@ instance WrapForall Show h xs => Show (h :| xs) where
     . runMatch (hlookup pos dictShow) h 11
 
 instance WrapForall Eq h xs => Eq (h :| xs) where
-  UnionAt p g == UnionAt q h = case comparePosition p q of
+  UnionAt p g == UnionAt q h = case compareMembership p q of
     Left _ -> False
     Right Refl -> unwrap2 (hlookup p dictEq) g h
   {-# INLINE (==) #-}
 
 instance (Eq (h :| xs), WrapForall Ord h xs) => Ord (h :| xs) where
-  UnionAt p g `compare` UnionAt q h = case comparePosition p q of
+  UnionAt p g `compare` UnionAt q h = case compareMembership p q of
     Left x -> x
     Right Refl -> unwrap2 (hlookup p dictOrd) g h
   {-# INLINE compare #-}

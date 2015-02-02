@@ -70,7 +70,7 @@ record f = sector $ unsafeCoerce f `asTypeOf` (fmap K0 . f . getK0)
 {-# INLINE record #-}
 
 -- | /O(log n)/ A lens for a plain value in a product.
-recordAt :: (Functor f) => Position xs x -> (x -> f x) -> (AllOf xs -> f (AllOf xs))
+recordAt :: (Functor f) => Membership xs x -> (x -> f x) -> (AllOf xs -> f (AllOf xs))
 recordAt pos f = sectorAt pos $ unsafeCoerce f `asTypeOf` (fmap K0 . f . getK0)
 {-# INLINE recordAt #-}
 
