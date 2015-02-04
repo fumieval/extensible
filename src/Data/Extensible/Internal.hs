@@ -90,12 +90,14 @@ runMembership (Membership 0) = Left (unsafeCoerce Refl)
 runMembership (Membership n) = Right (Membership (n - 1))
 {-# INLINE runMembership #-}
 
+-- | PRIVILEGED: Compare two 'Membership's.
 compareMembership :: Membership xs x -> Membership xs y -> Either Ordering (x :~: y)
 compareMembership (Membership m) (Membership n) = case compare m n of
   EQ -> Right (unsafeCoerce Refl)
   x -> Left x
 {-# INLINE compareMembership #-}
 
+-- | PRIVILEGED: Navigate a tree.
 navigate :: (NavHere xs x -> r)
   -> (Membership (Half (Tail xs)) x -> r)
   -> (Membership (Half (Tail (Tail xs))) x -> r)
@@ -108,6 +110,7 @@ navigate h nl nr = \case
     else nl (Membership (shiftR x 1))
 {-# INLINE navigate #-}
 
+-- | Ensure that the first element of @xs@ is @x@
 data NavHere xs x where
   Here :: NavHere (x ': xs) x
 
@@ -197,6 +200,7 @@ lemmaHalfTail :: proxy xs -> p (x ': Half (Tail xs)) -> p (Half (x ': xs))
 lemmaHalfTail _ = unsafeCoerce
 {-# INLINE lemmaHalfTail #-}
 
+-- | GHC can't prove this
 lemmaMerging :: p (Merge (Half xs) (Half (Tail xs))) -> p xs
 lemmaMerging = unsafeCoerce
 
