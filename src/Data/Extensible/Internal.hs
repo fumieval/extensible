@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses, UndecidableInstances #-}
 {-# LANGUAGE ScopedTypeVariables, BangPatterns #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -18,7 +19,7 @@ module Data.Extensible.Internal (Membership
   , runMembership
   , compareMembership
   , ord
-  , Nav(..)
+  , NavHere(..)
   , navigate
   , here
   , navNext
@@ -54,6 +55,8 @@ import Unsafe.Coerce
 import Data.Typeable
 import Language.Haskell.TH
 import Control.DeepSeq
+import Data.Word
+import Data.Bits
 
 -- | Generates a 'Membership' that corresponds to the given ordinal (0-origin).
 ord :: Int -> Q Exp
@@ -67,7 +70,7 @@ ord n = do
     $ conT ''Membership `appT` pure t `appT` varT (names !! n)
 
 -- | The position of @x@ in the type level set @xs@.
-newtype Membership (xs :: [k]) (x :: k) = Membership Int deriving Typeable
+newtype Membership (xs :: [k]) (x :: k) = Membership Word8 deriving Typeable
 
 instance NFData (Membership xs x) where
   rnf (Membership a) = rnf a
@@ -93,16 +96,20 @@ compareMembership (Membership m) (Membership n) = case compare m n of
   x -> Left x
 {-# INLINE compareMembership #-}
 
-navigate :: Membership xs x -> Nav xs x
-navigate (Membership 0) = unsafeCoerce Here
-navigate (Membership n) = let (m, r) = divMod (n - 1) 2 in case r of
-  0 -> unsafeCoerce $ NavL $ Membership m
-  _ -> unsafeCoerce $ NavR $ Membership m
+navigate :: (NavHere xs x -> r)
+  -> (Membership (Half (Tail xs)) x -> r)
+  -> (Membership (Half (Tail (Tail xs))) x -> r)
+  -> Membership xs x
+  -> r
+navigate h nl nr = \case
+  Membership 0 -> h (unsafeCoerce Here)
+  Membership n -> let !x = n - 1 in if testBit x 0
+    then nr (Membership (shiftR x 1))
+    else nl (Membership (shiftR x 1))
+{-# INLINE navigate #-}
 
-data Nav xs x where
-  Here :: Nav (x ': xs) x
-  NavL :: Membership (Half xs) x -> Nav (e ': xs) x
-  NavR :: Membership (Half (Tail xs)) x -> Nav (e ': xs) x
+data NavHere xs x where
+  Here :: NavHere (x ': xs) x
 
 here :: Membership (x ': xs) x
 here = Membership 0
@@ -142,7 +149,7 @@ type family Check x xs where
   Check x xs = Ambiguous x
 
 instance (Check x (Lookup x xs) ~ Expecting one, ToInt one) => Member xs x where
-  membership = Membership $ theInt (Proxy :: Proxy one)
+  membership = Membership (theInt (Proxy :: Proxy one))
   {-# INLINE membership #-}
 
 type family Half (xs :: [k]) :: [k] where
@@ -157,18 +164,18 @@ type family Tail (xs :: [k]) :: [k] where
 data Nat = Zero | DNat Nat | SDNat Nat
 
 class ToInt n where
-  theInt :: proxy n -> Int
+  theInt :: proxy n -> Word8
 
 instance ToInt Zero where
   theInt _ = 0
   {-# INLINE theInt #-}
 
 instance ToInt n => ToInt (DNat n) where
-  theInt _ = theInt (Proxy :: Proxy n) * 2
+  theInt _ = theInt (Proxy :: Proxy n) `shiftL` 1
   {-# INLINE theInt #-}
 
 instance ToInt n => ToInt (SDNat n) where
-  theInt _ = theInt (Proxy :: Proxy n) * 2 + 1
+  theInt _ = (theInt (Proxy :: Proxy n) `shiftL` 1) + 1
   {-# INLINE theInt #-}
 
 type family Lookup (x :: k) (xs :: [k]) :: [Nat] where

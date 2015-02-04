@@ -16,6 +16,7 @@ module Data.Extensible.Dictionary where
 import Data.Monoid
 import Data.Extensible.Product
 import Data.Extensible.Sum
+import Data.Extensible.Match
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
 

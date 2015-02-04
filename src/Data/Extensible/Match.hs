@@ -33,7 +33,7 @@ mapMatch f (Match g) = Match (f . g)
 
 -- | /O(log n)/ Perform pattern matching.
 match :: Match h a :* xs -> h :| xs -> a
-match p (UnionAt pos h) = runMatch (hlookup pos p) h
+match p (UnionAt pos h) = views (sectorAt pos) runMatch p h
 {-# INLINE match #-}
 
 -- | Flipped `match`

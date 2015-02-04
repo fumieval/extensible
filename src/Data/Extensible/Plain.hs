@@ -51,7 +51,7 @@ infixr 5 <%
 
 -- | Extract a plain value.
 pluck :: (x ∈ xs) => AllOf xs -> x
-pluck = getK0 . hlookup membership
+pluck = views sector getK0
 {-# INLINE pluck #-}
 
 -- | Embed a plain value.

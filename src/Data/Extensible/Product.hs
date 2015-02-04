@@ -140,14 +140,14 @@ sector = sectorAt membership
 {-# INLINE sector #-}
 
 -- | /O(log n)/ A lens for a value in a known position.
-sectorAt :: forall h x xs f. Functor f => Membership xs x -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)
-sectorAt pos0 f = go pos0 where
-  go :: forall t. Membership t x -> h :* t -> f (h :* t)
-  go pos (Tree h a b) = case navigate pos of
-    Here -> fmap (\h' -> Tree h' a b) (f h)
-    NavL p -> fmap (\a' -> Tree h a' b) (go p a)
-    NavR p -> fmap (\b' -> Tree h a b') (go p b)
-  go _ Nil = error "Impossible"
+sectorAt :: forall f h x xs. Functor f => Membership xs x -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)
+sectorAt pos f = flip go pos where
+  go :: forall t. h :* t -> Membership t x -> f (h :* t)
+  go (Tree h a b) = navigate
+    (\Here -> fmap (\h' -> Tree h' a b) (f h))
+    (fmap (\a' -> Tree h a' b) . go a)
+    (fmap (\b' -> Tree h a b') . go b)
+  go Nil = error "Impossible"
 {-# INLINE sectorAt #-}
 
 -- | Given a function that maps types to values, we can "collect" entities all you want.
