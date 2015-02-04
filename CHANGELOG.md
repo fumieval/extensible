@@ -1,9 +1,13 @@
+0.2.8
+-----------------------------------------------------
+* Improved performance considerably
+
 0.2.7
 -----------------------------------------------------
 * Added `accessing`
 * Added `decFields` and `decFieldsDeriving`
 * Renamed `Position` to `Membership`
-*
+
 0.2.6
 -----------------------------------------------------
 * Right-associated `(++)`

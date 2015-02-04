@@ -1,5 +1,5 @@
 name:                extensible
-version:             0.2.7
+version:             0.2.8
 synopsis:            Extensible, efficient, lens-friendly data types
 homepage:            https://github.com/fumieval/extensible
 bug-reports:         http://github.com/fumieval/extensible/issues
@@ -15,6 +15,7 @@ stability:           provisional
 
 extra-source-files:
   examples/*.hs
+  benchmarks/*.hs
   .gitignore
   .travis.yml
   README.md
