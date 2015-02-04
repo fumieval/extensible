@@ -53,6 +53,7 @@ import Control.Monad
 import Unsafe.Coerce
 import Data.Typeable
 import Language.Haskell.TH
+import Control.DeepSeq
 
 -- | Generates a 'Membership' that corresponds to the given ordinal (0-origin).
 ord :: Int -> Q Exp
@@ -67,6 +68,9 @@ ord n = do
 
 -- | The position of @x@ in the type level set @xs@.
 newtype Membership (xs :: [k]) (x :: k) = Membership Int deriving Typeable
+
+instance NFData (Membership xs x) where
+  rnf (Membership a) = rnf a
 
 instance Show (Membership xs x) where
   show (Membership n) = "$(ord " ++ show n ++ ")"
@@ -152,14 +156,6 @@ type family Tail (xs :: [k]) :: [k] where
 
 data Nat = Zero | DNat Nat | SDNat Nat
 
-retagD :: (Proxy n -> a) -> proxy (DNat n) -> a
-retagD f _ = f Proxy
-{-# INLINE retagD #-}
-
-retagSD :: (Proxy n -> a) -> proxy (SDNat n) -> a
-retagSD f _ = f Proxy
-{-# INLINE retagSD #-}
-
 class ToInt n where
   theInt :: proxy n -> Int
 
@@ -168,11 +164,11 @@ instance ToInt Zero where
   {-# INLINE theInt #-}
 
 instance ToInt n => ToInt (DNat n) where
-  theInt = (*2) <$> retagD theInt
+  theInt _ = theInt (Proxy :: Proxy n) * 2
   {-# INLINE theInt #-}
 
 instance ToInt n => ToInt (SDNat n) where
-  theInt = (+1) <$> (*2) <$> retagSD theInt
+  theInt _ = theInt (Proxy :: Proxy n) * 2 + 1
   {-# INLINE theInt #-}
 
 type family Lookup (x :: k) (xs :: [k]) :: [Nat] where

@@ -27,7 +27,7 @@ import Data.Typeable
 
 -- | The extensible sum type
 data (h :: k -> *) :| (s :: [k]) where
-  UnionAt :: Membership xs x -> h x -> h :| xs
+  UnionAt :: !(Membership xs x) -> h x -> h :| xs
 deriving instance Typeable (:|)
 
 -- | Change the wrapper.
