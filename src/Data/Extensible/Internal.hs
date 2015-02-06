@@ -105,9 +105,9 @@ navigate :: (NavHere xs x -> r)
   -> r
 navigate h nl nr = \case
   Membership 0 -> h (unsafeCoerce Here)
-  Membership n -> let !x = n - 1 in if testBit x 0
-    then nr (Membership (shiftR x 1))
-    else nl (Membership (shiftR x 1))
+  Membership n -> if testBit n 0
+    then nl (Membership (shiftR (n - 1) 1))
+    else nr (Membership (shiftR (n - 1) 1))
 {-# INLINE navigate #-}
 
 -- | Ensure that the first element of @xs@ is @x@
