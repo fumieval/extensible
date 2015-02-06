@@ -55,8 +55,8 @@ import Unsafe.Coerce
 import Data.Typeable
 import Language.Haskell.TH
 import Control.DeepSeq
-import Data.Word
 import Data.Bits
+import Data.Word
 
 -- | Generates a 'Membership' that corresponds to the given ordinal (0-origin).
 ord :: Int -> Q Exp
@@ -70,7 +70,7 @@ ord n = do
     $ conT ''Membership `appT` pure t `appT` varT (names !! n)
 
 -- | The position of @x@ in the type level set @xs@.
-newtype Membership (xs :: [k]) (x :: k) = Membership Word8 deriving Typeable
+newtype Membership (xs :: [k]) (x :: k) = Membership Word deriving Typeable
 
 instance NFData (Membership xs x) where
   rnf (Membership a) = rnf a
@@ -105,9 +105,9 @@ navigate :: (NavHere xs x -> r)
   -> r
 navigate h nl nr = \case
   Membership 0 -> h (unsafeCoerce Here)
-  Membership n -> if testBit n 0
-    then nl (Membership (shiftR (n - 1) 1))
-    else nr (Membership (shiftR (n - 1) 1))
+  Membership n -> if n .&. 1 == 0
+    then nr (Membership (unsafeShiftR (n - 1) 1))
+    else nl (Membership (unsafeShiftR (n - 1) 1))
 {-# INLINE navigate #-}
 
 -- | Ensure that the first element of @xs@ is @x@
@@ -167,18 +167,18 @@ type family Tail (xs :: [k]) :: [k] where
 data Nat = Zero | DNat Nat | SDNat Nat
 
 class ToInt n where
-  theInt :: proxy n -> Word8
+  theInt :: proxy n -> Word
 
 instance ToInt Zero where
   theInt _ = 0
   {-# INLINE theInt #-}
 
 instance ToInt n => ToInt (DNat n) where
-  theInt _ = theInt (Proxy :: Proxy n) `shiftL` 1
+  theInt _ = theInt (Proxy :: Proxy n) `unsafeShiftL` 1
   {-# INLINE theInt #-}
 
 instance ToInt n => ToInt (SDNat n) where
-  theInt _ = (theInt (Proxy :: Proxy n) `shiftL` 1) + 1
+  theInt _ = (theInt (Proxy :: Proxy n) `unsafeShiftL` 1) + 1
   {-# INLINE theInt #-}
 
 type family Lookup (x :: k) (xs :: [k]) :: [Nat] where
