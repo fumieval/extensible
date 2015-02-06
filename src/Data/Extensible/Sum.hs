@@ -35,7 +35,7 @@ hoist :: (forall x. g x -> h x) -> g :| xs -> h :| xs
 hoist f (UnionAt pos h) = UnionAt pos (f h)
 {-# INLINE hoist #-}
 
--- | /O(log n)/ lift a value.
+-- | /O(1)/ lift a value.
 embed :: (x ∈ xs) => h x -> h :| xs
 embed = UnionAt membership
 {-# INLINE embed #-}

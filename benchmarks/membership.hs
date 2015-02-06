@@ -1,4 +1,4 @@
-{-# LANGUAGE ViewPatterns, TypeOperators, GADTs #-}
+{-# LANGUAGE ViewPatterns, TypeOperators, GADTs, Rank2Types, ScopedTypeVariables #-}
 import Data.Extensible
 import Data.Extensible.Internal
 import Control.Applicative
@@ -44,13 +44,58 @@ testExt = match match26
 main = defaultMain [
    bgroup "product" [
       bench "A" $ whnf (\(pluck -> A x) -> x) extensible26
+    , bench "B"  $ whnf (\(pluck -> B x) -> x) extensible26
+    , bench "C"  $ whnf (\(pluck -> C x) -> x) extensible26
+    , bench "D"  $ whnf (\(pluck -> D x) -> x) extensible26
+    , bench "E"  $ whnf (\(pluck -> E x) -> x) extensible26
+    , bench "F"  $ whnf (\(pluck -> F x) -> x) extensible26
     , bench "G"  $ whnf (\(pluck -> G x) -> x) extensible26
+    , bench "H"  $ whnf (\(pluck -> H x) -> x) extensible26
+    , bench "I"  $ whnf (\(pluck -> I x) -> x) extensible26
+    , bench "J"  $ whnf (\(pluck -> J x) -> x) extensible26
+    , bench "K"  $ whnf (\(pluck -> K x) -> x) extensible26
+    , bench "L"  $ whnf (\(pluck -> L x) -> x) extensible26
+    , bench "M"  $ whnf (\(pluck -> M x) -> x) extensible26
     , bench "N"  $ whnf (\(pluck -> N x) -> x) extensible26
-    , bench "Z" $ whnf (\(pluck -> Z x) -> x) extensible26
-    , bench "A" $ whnf (\(hOccursFst -> A x) -> x) hlist26
+    , bench "O"  $ whnf (\(pluck -> O x) -> x) extensible26
+    , bench "P"  $ whnf (\(pluck -> P x) -> x) extensible26
+    , bench "Q"  $ whnf (\(pluck -> Q x) -> x) extensible26
+    , bench "R"  $ whnf (\(pluck -> R x) -> x) extensible26
+    , bench "S"  $ whnf (\(pluck -> S x) -> x) extensible26
+    , bench "T"  $ whnf (\(pluck -> T x) -> x) extensible26
+    , bench "U"  $ whnf (\(pluck -> U x) -> x) extensible26
+    , bench "V"  $ whnf (\(pluck -> V x) -> x) extensible26
+    , bench "W"  $ whnf (\(pluck -> W x) -> x) extensible26
+    , bench "X"  $ whnf (\(pluck -> X x) -> x) extensible26
+    , bench "Y"  $ whnf (\(pluck -> Y x) -> x) extensible26
+    , bench "Z"  $ whnf (\(pluck -> Z x) -> x) extensible26
+    , bench "A"  $ whnf (\(hOccursFst -> A x) -> x) hlist26
+    , bench "B"  $ whnf (\(hOccursFst -> B x) -> x) hlist26
+    , bench "C"  $ whnf (\(hOccursFst -> C x) -> x) hlist26
+    , bench "D"  $ whnf (\(hOccursFst -> D x) -> x) hlist26
+    , bench "E"  $ whnf (\(hOccursFst -> E x) -> x) hlist26
+    , bench "F"  $ whnf (\(hOccursFst -> F x) -> x) hlist26
     , bench "G"  $ whnf (\(hOccursFst -> G x) -> x) hlist26
+    , bench "H"  $ whnf (\(hOccursFst -> H x) -> x) hlist26
+    , bench "I"  $ whnf (\(hOccursFst -> I x) -> x) hlist26
+    , bench "J"  $ whnf (\(hOccursFst -> J x) -> x) hlist26
+    , bench "K"  $ whnf (\(hOccursFst -> K x) -> x) hlist26
+    , bench "L"  $ whnf (\(hOccursFst -> L x) -> x) hlist26
+    , bench "M"  $ whnf (\(hOccursFst -> M x) -> x) hlist26
     , bench "N"  $ whnf (\(hOccursFst -> N x) -> x) hlist26
-    , bench "Z" $ whnf (\(hOccursFst -> Z x) -> x) hlist26
+    , bench "O"  $ whnf (\(hOccursFst -> O x) -> x) hlist26
+    , bench "P"  $ whnf (\(hOccursFst -> P x) -> x) hlist26
+    , bench "Q"  $ whnf (\(hOccursFst -> Q x) -> x) hlist26
+    , bench "R"  $ whnf (\(hOccursFst -> R x) -> x) hlist26
+    , bench "S"  $ whnf (\(hOccursFst -> S x) -> x) hlist26
+    , bench "T"  $ whnf (\(hOccursFst -> T x) -> x) hlist26
+    , bench "U"  $ whnf (\(hOccursFst -> U x) -> x) hlist26
+    , bench "V"  $ whnf (\(hOccursFst -> V x) -> x) hlist26
+    , bench "W"  $ whnf (\(hOccursFst -> W x) -> x) hlist26
+    , bench "X"  $ whnf (\(hOccursFst -> X x) -> x) hlist26
+    , bench "Y"  $ whnf (\(hOccursFst -> Y x) -> x) hlist26
+    , bench "Z"  $ whnf (\(hOccursFst -> Z x) -> x) hlist26
+
     ]
   , bgroup "sum" [
      bench "A" $ whnf testExt (bury (A 0))
