@@ -45,7 +45,7 @@ mapFuse f (Fuse g) = Fuse (\h -> g (h . f))
 {-# INLINE mapFuse #-}
 
 -- | Prepend a clause for @'Match' ('Fuse' x)@ as well as ('<?!').
-(<?~) :: (f x -> a) -> Match (Fuse x) a :* fs -> Match (Fuse x) a :* (f ': fs)
-(<?~) f = (<:) (Match (f . meltdown))
-{-# INLINE (<?~) #-}
-infixr 1 <?~
+(<?!$) :: (f x -> a) -> Match (Fuse x) a :* fs -> Match (Fuse x) a :* (f ': fs)
+(<?!$) f = (<:) (Match (f . meltdown))
+{-# INLINE (<?!$) #-}
+infixr 1 <?!$
