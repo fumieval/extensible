@@ -13,7 +13,7 @@
 --
 ------------------------------------------------------------------------
 module Data.Extensible.Product (
-  -- * Product
+  -- * Basic operations
   (:*)(..)
   , (<:)
   , (<:*)
@@ -28,11 +28,16 @@ module Data.Extensible.Product (
   , hfoldMap
   , htraverse
   , htabulate
+  -- * Lookup
   , hlookup
   , sector
   , sectorAt
+  -- * Generation
   , Generate(..)
+  , generate
   , Forall(..)
+  , generateFor
+  -- * HList
   , fromHList
   , toHList) where
 
@@ -153,28 +158,37 @@ sectorAt pos f = flip go pos where
 -- | Given a function that maps types to values, we can "collect" entities all you want.
 class Generate (xs :: [k]) where
   -- | /O(n)/ generates a product with the given function.
-  generate :: (forall x. Membership xs x -> h x) -> h :* xs
+  generateA :: Applicative f => (forall x. Membership xs x -> f (h x)) -> f (h :* xs)
 
 instance Generate '[] where
-  generate _ = Nil
-  {-# INLINE generate #-}
+  generateA _ = pure Nil
+  {-# INLINE generateA #-}
 
 instance (Generate (Half xs), Generate (Half (Tail xs))) => Generate (x ': xs) where
-  generate f = Tree (f here) (generate (f . navL)) (generate (f . navR))
-  {-# INLINE generate #-}
+  generateA f = Tree <$> f here <*> generateA (f . navL) <*> generateA (f . navR)
+  {-# INLINE generateA #-}
+
+generate :: Generate xs => (forall x. Membership xs x -> h x) -> h :* xs
+generate f = getK0 (generateA (K0 . f))
 
 -- | Guarantees the all elements satisfies the predicate.
 class Forall c (xs :: [k]) where
   -- | /O(n)/ Analogous to 'generate', but it also supplies a context @c x@ for every elements in @xs@.
-  generateFor :: proxy c -> (forall x. c x => Membership xs x -> h x) -> h :* xs
+  generateForA :: Applicative f => proxy c -> (forall x. c x => Membership xs x -> f (h x)) -> f (h :* xs)
 
 instance Forall c '[] where
-  generateFor _ _ = Nil
-  {-# INLINE generateFor #-}
+  generateForA _ _ = pure Nil
+  {-# INLINE generateForA #-}
 
 instance (c x, Forall c (Half xs), Forall c (Half (Tail xs))) => Forall c (x ': xs) where
-  generateFor proxy f = Tree (f here) (generateFor proxy (f . navL)) (generateFor proxy (f . navR))
-  {-# INLINE generateFor #-}
+  generateForA proxy f = Tree
+    <$> f here
+    <*> generateForA proxy (f . navL)
+    <*> generateForA proxy (f . navR)
+  {-# INLINE generateForA #-}
+
+generateFor :: Forall c xs => proxy c -> (forall x. c x => Membership xs x -> h x) -> h :* xs
+generateFor p f = getK0 (generateForA p (K0 . f))
 
 -- | Turn a product into 'HList'.
 toHList :: h :* xs -> HList h xs
