@@ -85,9 +85,9 @@ instance Ord (Membership xs x) where
   compare _ _ = EQ
 
 -- | Embodies a type equivalence to ensure that the 'Membership' points the first element.
-runMembership :: Membership (y ': xs) x -> Either (x :~: y) (Membership xs x)
-runMembership (Membership 0) = Left (unsafeCoerce Refl)
-runMembership (Membership n) = Right (Membership (n - 1))
+runMembership :: Membership (y ': xs) x -> (x :~: y -> r) -> (Membership xs x -> r) -> r
+runMembership (Membership 0) l _ = l (unsafeCoerce Refl)
+runMembership (Membership n) _ r = r (Membership (n - 1))
 {-# INLINE runMembership #-}
 
 -- | PRIVILEGED: Compare two 'Membership's.

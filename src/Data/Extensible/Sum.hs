@@ -42,9 +42,9 @@ embed = UnionAt membership
 
 -- | /O(1)/ Naive pattern match
 (<:|) :: (h x -> r) -> (h :| xs -> r) -> h :| (x ': xs) -> r
-(<:|) r c = \(UnionAt pos h) -> case runMembership pos of
-  Left Refl -> r h
-  Right pos' -> c (UnionAt pos' h)
+(<:|) r c = \(UnionAt pos h) -> runMembership pos
+  (\Refl -> r h)
+  (\pos' -> c (UnionAt pos' h))
 infixr 1 <:|
 {-# INLINE (<:|) #-}
 
