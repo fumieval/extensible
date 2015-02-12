@@ -114,18 +114,22 @@ navigate h nl nr = \case
 data NavHere xs x where
   Here :: NavHere (x ': xs) x
 
+-- | The 'Membership' points the first element
 here :: Membership (x ': xs) x
 here = Membership 0
 {-# INLINE here #-}
 
+-- | The next membership
 navNext :: Membership xs y -> Membership (x ': xs) y
 navNext (Membership n) = Membership (n + 1)
 {-# INLINE navNext #-}
 
+-- | Describes the relation of 'Membership' within a tree
 navL :: Membership (Half xs) y -> Membership (x ': xs) y
 navL (Membership x) = Membership (x * 2 + 1)
 {-# INLINE navL #-}
 
+-- | Describes the relation of 'Membership' within a tree
 navR :: Membership (Half (Tail xs)) y -> Membership (x ': xs) y
 navR (Membership x) = Membership (x * 2 + 2)
 {-# INLINE navR #-}
@@ -146,6 +150,7 @@ data Missing a
 -- | A type sugar to make type error more readable.
 data Ambiguous a
 
+-- | Elaborate the result of 'Lookup'
 type family Check x xs where
   Check x '[n] = Expecting n
   Check x '[] = Missing x
@@ -155,17 +160,21 @@ instance (Check x (Lookup x xs) ~ Expecting one, ToInt one) => Member xs x where
   membership = Membership (theInt (Proxy :: Proxy one))
   {-# INLINE membership #-}
 
+-- | Interleaved list
 type family Half (xs :: [k]) :: [k] where
   Half '[] = '[]
   Half (x ': y ': zs) = x ': Half zs
   Half (x ': '[]) = '[x]
 
+-- | Type-level tail
 type family Tail (xs :: [k]) :: [k] where
   Tail (x ': xs) = xs
   Tail '[] = '[]
 
+-- | Type level binary number
 data Nat = Zero | DNat Nat | SDNat Nat
 
+-- | Converts type naturals into 'Word'.
 class ToInt n where
   theInt :: proxy n -> Word
 
@@ -181,16 +190,19 @@ instance ToInt n => ToInt (SDNat n) where
   theInt _ = (theInt (Proxy :: Proxy n) `unsafeShiftL` 1) + 1
   {-# INLINE theInt #-}
 
+-- | Lookup types
 type family Lookup (x :: k) (xs :: [k]) :: [Nat] where
   Lookup x (x ': xs) = Zero ': Lookup x xs
   Lookup x (y ': ys) = MapSucc (Lookup x ys)
   Lookup x '[] = '[]
 
+-- | The successor of the number
 type family Succ (x :: Nat) :: Nat where
   Succ Zero = SDNat Zero
   Succ (DNat n) = SDNat n
   Succ (SDNat n) = DNat (Succ n)
 
+-- | Ideally, it will be 'Map Succ'
 type family MapSucc (xs :: [Nat]) :: [Nat] where
   MapSucc '[] = '[]
   MapSucc (x ': xs) = Succ x ': MapSucc xs
@@ -204,20 +216,24 @@ lemmaHalfTail _ = unsafeCoerce
 lemmaMerging :: p (Merge (Half xs) (Half (Tail xs))) -> p xs
 lemmaMerging = unsafeCoerce
 
+-- | Type level map
 type family Map (f :: k -> k) (xs :: [k]) :: [k] where
   Map f '[] = '[]
   Map f (x ': xs) = f x ': Map f xs
 
+-- | Type level ++
 type family (++) (xs :: [k]) (ys :: [k]) :: [k] where
   '[] ++ ys = ys
   (x ': xs) ++ ys = x ': xs ++ ys
 
 infixr 5 ++
 
+-- | Type level concat
 type family Concat (xs :: [[k]]) :: [k] where
   Concat '[] = '[]
   Concat (x ': xs) = x ++ Concat xs
 
+-- | Type level merging
 type family Merge (xs :: [k]) (ys :: [k]) :: [k] where
   Merge (x ': xs) (y ': ys) = x ': y ': Merge xs ys
   Merge xs '[] = xs

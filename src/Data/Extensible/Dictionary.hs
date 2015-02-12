@@ -20,11 +20,13 @@ import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
 import qualified Data.Binary as B
 
+-- | Reifiable classes
 class Reifiable c where
+  -- | The associated dictionary which subsumes essential methods.
   data Dictionary c (h :: k -> *) (x :: k)
-  library :: WrapForall c h xs => Dictionary c h :* xs
 
-type DictOf c g h = forall xs. WrapForall c g xs => h :* xs
+  -- | Fetch the 'Dictionary'.
+  library :: WrapForall c h xs => Dictionary c h :* xs
 
 instance Reifiable Show where
   data Dictionary Show h x = DictShow { getShowsPrec :: Int -> h x -> ShowS }
@@ -95,6 +97,7 @@ instance (Eq (h :| xs), WrapForall Ord h xs) => Ord (h :| xs) where
     Right Refl -> views (sectorAt p) getCompare library g h
   {-# INLINE compare #-}
 
+-- | Forall upon a wrapper
 type WrapForall c h = Forall (Instance1 c h)
 
 -- | Composition for a class and a wrapper

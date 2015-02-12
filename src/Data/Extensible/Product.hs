@@ -168,6 +168,7 @@ instance (Generate (Half xs), Generate (Half (Tail xs))) => Generate (x ': xs) w
   generateA f = Tree <$> f here <*> generateA (f . navL) <*> generateA (f . navR)
   {-# INLINE generateA #-}
 
+-- | Pure version of 'generateA'.
 generate :: Generate xs => (forall x. Membership xs x -> h x) -> h :* xs
 generate f = getK0 (generateA (K0 . f))
 
@@ -187,6 +188,7 @@ instance (c x, Forall c (Half xs), Forall c (Half (Tail xs))) => Forall c (x ': 
     <*> generateForA proxy (f . navR)
   {-# INLINE generateForA #-}
 
+-- | Pure version of 'generateForA'.
 generateFor :: Forall c xs => proxy c -> (forall x. c x => Membership xs x -> h x) -> h :* xs
 generateFor p f = getK0 (generateForA p (K0 . f))
 

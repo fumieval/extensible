@@ -110,6 +110,7 @@ accessing c f = record (fmap c . f . coerce)
 decFields :: DecsQ -> DecsQ
 decFields = decFieldsDeriving []
 
+-- | 'decFields' with additional deriving clauses
 decFieldsDeriving :: [Name] -> DecsQ -> DecsQ
 decFieldsDeriving drv' ds = ds >>= fmap concat . mapM mkBody
   where

@@ -19,6 +19,7 @@ import Data.Monoid
 import Data.Foldable (Foldable)
 import Data.Traversable (Traversable)
 
+-- | A type synonym for lenses
 type Lens' s a = forall f. Functor f => (a -> f a) -> s -> f s
 
 -- | @'view' :: Lens' s a -> (a -> a) -> (s -> s)@
@@ -59,8 +60,6 @@ newtype Match h a x = Match { runMatch :: h x -> a } deriving Typeable
 -- | Poly-kinded Maybe
 data Nullable h x = Null | Eine (h x) deriving (Show, Eq, Ord, Typeable)
 
-data Pair g h x = Pair (g x) (h x)
-
 -- | Destruct 'Nullable'.
 nullable :: r -> (h x -> r) -> Nullable h x -> r
 nullable r _ Null = r
@@ -73,6 +72,7 @@ mapNullable f (Eine g) = Eine (f g)
 mapNullable _ Null = Null
 {-# INLINE mapNullable #-}
 
+-- A list, but with Monoid instance based on merging
 newtype MergeList a = MergeList { getMerged :: [a] } deriving (Show, Eq, Ord, Functor, Foldable, Traversable)
 
 instance Monoid (MergeList a) where

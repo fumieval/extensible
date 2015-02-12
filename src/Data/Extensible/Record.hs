@@ -112,6 +112,7 @@ mkField s t = do
     , return $ PragmaD $ InlineP (mkName s) Inline FunLike AllPhases
     ]
 
+-- | @[recordType|foo bar baz|] --> Record '["foo", "bar", "baz"]@
 recordType :: QuasiQuoter
 recordType = QuasiQuoter { quoteType = appT (conT ''Record) . foldr (\e t -> promotedConsT `appT` e `appT` t)
 promotedNilT . map (litT . strTyLit) . words

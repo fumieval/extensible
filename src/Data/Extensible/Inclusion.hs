@@ -57,6 +57,7 @@ shrink :: (xs ⊆ ys) => h :* ys -> h :* xs
 shrink h = hmap (\pos -> hlookup pos h) inclusion
 {-# INLINE shrink #-}
 
+-- | A lens for a subset (inefficient)
 subset :: (xs ⊆ ys) => Lens' (h :* ys) (h :* xs)
 subset f ys = fmap (write ys) $ f (shrink ys) where
   write y xs = flip appEndo y
