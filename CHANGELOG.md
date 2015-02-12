@@ -1,3 +1,10 @@
+0.2.9
+-----------------------------------------------------
+* Renamed `(<?~)` to `(<?!$)`
+* Renamed `(<$?~)` to `(<?!~)`
+* Refactored `Data.Extensible.Dictionary`
+* Supported serialization/deserialization of products using `binary`
+
 0.2.8
 -----------------------------------------------------
 * Improved performance considerably
