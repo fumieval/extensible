@@ -83,7 +83,7 @@ instance WrapForall B.Binary h xs => B.Binary (h :* xs) where
 
 instance WrapForall Show h xs => Show (h :| xs) where
   showsPrec d (UnionAt pos h) = showParen (d > 10) $ showString "embed "
-    . getShowsPrec (hlookup pos library) 11 h
+    . views (sectorAt pos) getShowsPrec library 11 h
 
 instance WrapForall Eq h xs => Eq (h :| xs) where
   UnionAt p g == UnionAt q h = case compareMembership p q of

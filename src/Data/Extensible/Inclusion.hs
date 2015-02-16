@@ -54,7 +54,7 @@ inclusion = generateFor (Proxy :: Proxy (Member ys)) (const membership)
 
 -- | /O(m log n)/ Select some elements.
 shrink :: (xs ⊆ ys) => h :* ys -> h :* xs
-shrink h = hmap (\pos -> hlookup pos h) inclusion
+shrink h = hmap (`hlookup` h) inclusion
 {-# INLINE shrink #-}
 
 -- | A lens for a subset (inefficient)
@@ -66,7 +66,7 @@ subset f ys = fmap (write ys) $ f (shrink ys) where
 
 -- | /O(log n)/ Embed to a larger union.
 spread :: (xs ⊆ ys) => h :| xs -> h :| ys
-spread (UnionAt pos h) = UnionAt (hlookup pos inclusion) h
+spread (UnionAt pos h) = views (sectorAt pos) UnionAt inclusion h
 {-# INLINE spread #-}
 
 -- | The inverse of 'inclusion'.
@@ -83,5 +83,5 @@ wrench xs = mapNullable (flip hlookup xs) `hmap` coinclusion
 
 -- | Narrow the range of the sum, if possible.
 retrench :: (Generate ys, xs ⊆ ys) => h :| ys -> Nullable ((:|) h) xs
-retrench (UnionAt pos h) = flip UnionAt h `mapNullable` hlookup pos coinclusion
+retrench (UnionAt pos h) = views (sectorAt pos) (mapNullable (`UnionAt`h)) coinclusion
 {-# INLINE retrench #-}

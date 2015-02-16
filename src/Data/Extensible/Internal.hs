@@ -160,6 +160,12 @@ instance (Check x (Lookup x xs) ~ Expecting one, ToInt one) => Member xs x where
   membership = Membership (theInt (Proxy :: Proxy one))
   {-# INLINE membership #-}
 
+-- | Lookup types
+type family Lookup (x :: k) (xs :: [k]) :: [Nat] where
+  Lookup x (x ': xs) = Zero ': Lookup x xs
+  Lookup x (y ': ys) = MapSucc (Lookup x ys)
+  Lookup x '[] = '[]
+
 -- | Interleaved list
 type family Half (xs :: [k]) :: [k] where
   Half '[] = '[]
@@ -189,12 +195,6 @@ instance ToInt n => ToInt (DNat n) where
 instance ToInt n => ToInt (SDNat n) where
   theInt _ = (theInt (Proxy :: Proxy n) `unsafeShiftL` 1) + 1
   {-# INLINE theInt #-}
-
--- | Lookup types
-type family Lookup (x :: k) (xs :: [k]) :: [Nat] where
-  Lookup x (x ': xs) = Zero ': Lookup x xs
-  Lookup x (y ': ys) = MapSucc (Lookup x ys)
-  Lookup x '[] = '[]
 
 -- | The successor of the number
 type family Succ (x :: Nat) :: Nat where
