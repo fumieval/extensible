@@ -160,6 +160,7 @@ instance (Generate (Half xs), Generate (Half (Tail xs))) => Generate (x ': xs) w
 -- | Pure version of 'generateA'.
 generate :: Generate xs => (forall x. Membership xs x -> h x) -> h :* xs
 generate f = getK0 (generateA (K0 . f))
+{-# INLINE generate #-}
 
 -- | Guarantees the all elements satisfies the predicate.
 class Forall c (xs :: [k]) where
@@ -180,6 +181,7 @@ instance (c x, Forall c (Half xs), Forall c (Half (Tail xs))) => Forall c (x ': 
 -- | Pure version of 'generateForA'.
 generateFor :: Forall c xs => proxy c -> (forall x. c x => Membership xs x -> h x) -> h :* xs
 generateFor p f = getK0 (generateForA p (K0 . f))
+{-# INLINE generateFor #-}
 
 -- | Turn a product into 'HList'.
 toHList :: h :* xs -> HList h xs
