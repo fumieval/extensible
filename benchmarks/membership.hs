@@ -1,6 +1,7 @@
-{-# LANGUAGE ViewPatterns, TypeOperators, GADTs, Rank2Types, ScopedTypeVariables #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, UndecidableInstances, PolyKinds, ViewPatterns, TypeFamilies, TypeOperators, GADTs, Rank2Types, ScopedTypeVariables, DataKinds #-}
 import Data.Extensible
 import Data.Extensible.Internal
+import Data.Extensible.Internal.Rig
 import Control.Applicative
 import Criterion.Main
 import AtoZ
@@ -43,7 +44,8 @@ testExt = match match26
 
 main = defaultMain [
    bgroup "product" [
-      bench "A" $ whnf (\(pluck -> A x) -> x) extensible26
+     bench "Data"  $ whnf (\(getZ -> Z x) -> x) data26
+    , bench "A" $ whnf (\(pluck -> A x) -> x) extensible26
     , bench "B"  $ whnf (\(pluck -> B x) -> x) extensible26
     , bench "C"  $ whnf (\(pluck -> C x) -> x) extensible26
     , bench "D"  $ whnf (\(pluck -> D x) -> x) extensible26
@@ -95,7 +97,6 @@ main = defaultMain [
     , bench "X"  $ whnf (\(hOccursFst -> X x) -> x) hlist26
     , bench "Y"  $ whnf (\(hOccursFst -> Y x) -> x) hlist26
     , bench "Z"  $ whnf (\(hOccursFst -> Z x) -> x) hlist26
-
     ]
   , bgroup "sum" [
      bench "A" $ whnf testExt (bury (A 0))
@@ -107,7 +108,5 @@ main = defaultMain [
     , bench "T_" $ whnf testNaive (C19 (T 0))
     , bench "Z_" $ whnf testNaive (C25 (Z 0))
     ]
-  , bgroup "tuple" [
-      bench "A" $ whnf (\(a,b,c,d,e,f,g,h,i,j,k,l,M res,n,o,p,q,r,s,t,u,v,w,x,y,z) -> res) tuple26
-    ]
+
   ]

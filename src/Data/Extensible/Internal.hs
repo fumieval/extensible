@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MultiParamTypeClasses, UndecidableInstances #-}
-{-# LANGUAGE ScopedTypeVariables, BangPatterns #-}
+{-# LANGUAGE MultiParamTypeClasses, UndecidableInstances, FunctionalDependencies #-}
+{-# LANGUAGE ScopedTypeVariables, BangPatterns, StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 -----------------------------------------------------------------------------
 -- |
@@ -16,6 +16,7 @@
 -- A bunch of combinators that contains magic
 ------------------------------------------------------------------------
 module Data.Extensible.Internal (Membership
+  , getMemberId
   , runMembership
   , compareMembership
   , ord
@@ -25,14 +26,20 @@ module Data.Extensible.Internal (Membership
   , navNext
   , navL
   , navR
+  , (:*)(..)
   , Member(..)
   , (∈)()
   , Nat(..)
   , ToInt(..)
   , Lookup
+  , ListIndex
+  , LookupTree(..)
   , Succ
   , MapSucc
+  , Pred
+  , Div2
   , Half
+  , Head
   , Tail
   , lemmaHalfTail
   , lemmaMerging
@@ -53,7 +60,7 @@ import Control.Applicative
 import Control.Monad
 import Unsafe.Coerce
 import Data.Typeable
-import Language.Haskell.TH
+import Language.Haskell.TH hiding (Pred)
 import Control.DeepSeq
 import Data.Bits
 import Data.Word
@@ -70,7 +77,51 @@ ord n = do
     $ conT ''Membership `appT` pure t `appT` varT (names !! n)
 
 -- | The position of @x@ in the type level set @xs@.
-newtype Membership (xs :: [k]) (x :: k) = Membership Word deriving Typeable
+newtype Membership (xs :: [k]) (x :: k) = Membership { getMemberId :: Word } deriving Typeable
+
+-- | Lookup types
+type family ListIndex (n :: Nat) (xs :: [k]) :: k where
+  ListIndex Zero (x ': xs) = x
+  ListIndex (SDNat n) (y ': xs) = ListIndex n (Half xs)
+  ListIndex (DNat n) xs = ListIndex n (Half xs)
+
+type family Pred (n :: Nat) :: Nat where
+  Pred (SDNat Zero) = Zero
+  Pred (SDNat n) = DNat n
+  Pred (DNat n) = SDNat (Pred n)
+  Pred Zero = Zero
+
+type family Div2 (n :: Nat) :: Nat where
+  Div2 (SDNat n) = n
+  Div2 (DNat n) = n
+  Div2 Zero = Zero
+
+-- | The extensible product type
+data (h :: k -> *) :* (s :: [k]) where
+  Nil :: h :* '[]
+  Tree :: !(h x)
+    -> h :* Half xs
+    -> h :* Half (Tail xs)
+    -> h :* (x ': xs)
+
+deriving instance Typeable (:*)
+
+class LookupTree (n :: Nat) (xs :: [k]) x | n xs -> x where
+  lookupTree :: Functor f => proxy n
+    -> (h x -> f (h x))
+    -> h :* xs -> f (h :* xs)
+
+instance LookupTree Zero (x ': xs) x where
+  lookupTree _ f (Tree h a b) = fmap (\h' -> Tree h' a b) (f h)
+  {-# INLINE lookupTree #-}
+
+instance LookupTree n (Half xs) x => LookupTree (SDNat n) (t ': xs) x where
+  lookupTree _ f (Tree h a b) = fmap (\a' -> Tree h a' b) (lookupTree (Proxy :: Proxy n) f a)
+  {-# INLINE lookupTree #-}
+
+instance LookupTree (Pred n) (Half (Tail xs)) x => LookupTree (DNat n) (t ': xs) x where
+  lookupTree _ f (Tree h a b) = fmap (\b' -> Tree h a b') (lookupTree (Proxy :: Proxy (Div2 (Pred (DNat n)))) (unsafeCoerce f) b)
+  {-# INLINE lookupTree #-}
 
 instance NFData (Membership xs x) where
   rnf (Membership a) = rnf a
@@ -137,8 +188,10 @@ navR (Membership x) = Membership (x * 2 + 2)
 -- | Unicode flipped alias for 'Member'
 type x ∈ xs = Member xs x
 
--- | @Member x xs@ or @x ∈ xs@ indicates that @x@ is an element of @xs@.
-class Member (xs :: [k]) (x :: k) where
+type family Head (xs :: [k]) :: k where
+  Head (x ': xs) = x
+
+class (LookupTree (Head (Lookup x xs)) xs x) => Member xs x where
   membership :: Membership xs x
 
 -- | A type sugar to make type error more readable.
@@ -156,7 +209,7 @@ type family Check x xs where
   Check x '[] = Missing x
   Check x xs = Ambiguous x
 
-instance (Check x (Lookup x xs) ~ Expecting one, ToInt one) => Member xs x where
+instance (Check x (Lookup x xs) ~ Expecting one, ToInt one, LookupTree (Head (Lookup x xs)) xs x) => Member xs x where
   membership = Membership (theInt (Proxy :: Proxy one))
   {-# INLINE membership #-}
 

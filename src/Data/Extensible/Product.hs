@@ -45,19 +45,8 @@ import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
 import Data.Extensible.Internal.HList
 import Unsafe.Coerce
-import Data.Typeable
 import Control.Applicative
 import Data.Monoid
-
--- | The extensible product type
-data (h :: k -> *) :* (s :: [k]) where
-  Nil :: h :* '[]
-  Tree :: !(h x)
-    -> h :* Half xs
-    -> h :* Half (Tail xs)
-    -> h :* (x ': xs)
-
-deriving instance Typeable (:*)
 
 -- | /O(1)/ Extract the head element.
 hhead :: h :* (x ': xs) -> h x
@@ -140,8 +129,8 @@ htabulate f = go id where
 {-# INLINE htabulate #-}
 
 -- | /O(log n)/ A lens for a specific element.
-sector :: (x ∈ xs) => Lens' (h :* xs) (h x)
-sector = sectorAt membership
+sector :: forall h x xs. (x ∈ xs) => Lens' (h :* xs) (h x)
+sector = lookupTree (Proxy :: Proxy (Head (Lookup x xs)))
 {-# INLINE sector #-}
 
 -- | /O(log n)/ A lens for a value in a known position.

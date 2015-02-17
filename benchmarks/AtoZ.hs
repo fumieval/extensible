@@ -38,9 +38,39 @@ extensible26 = A 0 <% B 1 <% C 2 <% D 3 <% E 4 <% F 5 <% G 6
   <% O 14 <% P 15 <% Q 16 <% R 17 <% S 18 <% T 19 <% U 20
   <% V 21 <% W 22 <% X 23 <% Y 24 <% Z 25 <% Nil
 
-tuple26 :: (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z)
-tuple26 = (A 0, B 1, C 2, D 3, E 4, F 5, G 6, H 7, I 8, J 9, K 10, L 11, M 12
-  , N 13, O 14, P 15, Q 16, R 17, S 18, T 19, U 20, V 21, W 22, X 23, Y 24, Z 25)
+data Data26 = Data26
+  { getA :: A
+  , getB :: B
+  , getC :: C
+  , getD :: D
+  , getE :: E
+  , getF :: F
+  , getG :: G
+  , getH :: H
+  , getI :: I
+  , getJ :: J
+  , getK :: K
+  , getL :: L
+  , getM :: M
+  , getN :: N
+  , getO :: O
+  , getP :: P
+  , getQ :: Q
+  , getR :: R
+  , getS :: S
+  , getT :: T
+  , getU :: U
+  , getV :: V
+  , getW :: W
+  , getX :: X
+  , getY :: Y
+  , getZ :: Z
+  }
+
+data26 :: Data26
+data26 = Data26 (A 0) (B 1) (C 2) (D 3) (E 4) (F 5) (G 6) (H 7) (I 8) (J 9) (K 10)
+  (L 11) (M 12) (N 13) (O 14) (P 15) (Q 16) (R 17) (S 18) (T 19) (U 20) (V 21)
+  (W 22) (X 23) (Y 24) (Z 25)
 
 hlist26 :: HList AtoZ
 hlist26 = A 0 `HCons` B 1 `HCons` C 2 `HCons` D 3 `HCons` E 4 `HCons` F 5 `HCons` G 6

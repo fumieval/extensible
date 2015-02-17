@@ -23,12 +23,12 @@ import Data.Traversable (Traversable)
 type Lens' s a = forall f. Functor f => (a -> f a) -> s -> f s
 
 -- | @'view' :: Lens' s a -> (a -> a) -> (s -> s)@
-view :: ((a -> Const a a) -> (s -> Const a s)) -> s -> a
+view :: ((a -> Const a a) -> s -> Const a s) -> s -> a
 view l = views l id
 {-# INLINE view #-}
 
 -- | @'views' :: Lens' s a -> (a -> r) -> (s -> r)@
-views :: ((a -> Const r a) -> (s -> Const r s)) -> (a -> r) -> s -> r
+views :: ((a -> Const r a) -> s -> Const r s) -> (a -> r) -> s -> r
 views = unsafeCoerce
 {-# INLINE views #-}
 
