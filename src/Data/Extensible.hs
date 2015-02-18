@@ -31,6 +31,8 @@ module Data.Extensible (
   , module Data.Extensible.Product
   , module Data.Extensible.Sum
   , module Data.Extensible.Union
+  , Comp(..)
+  , comp
   ) where
 import Data.Extensible.Inclusion
 import Data.Extensible.Match
@@ -40,6 +42,7 @@ import Data.Extensible.Sum
 import Data.Extensible.League
 import Data.Extensible.Union
 import Data.Extensible.Record
+import Data.Extensible.Internal.Rig
 import Data.Extensible.Dictionary ()
 
 -------------------------------------------------------------

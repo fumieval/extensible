@@ -106,16 +106,17 @@ hzipWith3 _ Nil _ _ = Nil
 hzipWith3 _ _ Nil _ = Nil
 hzipWith3 _ _ _ Nil = Nil
 
--- | Combine all elements.
+-- | Map elements to a monoid and combine the results.
 hfoldMap :: Monoid a => (forall x. h x -> a) -> h :* xs -> a
 hfoldMap f (Tree h a b) = f h <> hfoldMap f a <> hfoldMap f b
 hfoldMap _ Nil = mempty
 
--- | Traverse all elements.
+-- | Traverse all elements and combine the result sequentially.
 htraverse :: Applicative g => (forall x. f x -> g (h x)) -> f :* xs -> g (h :* xs)
 htraverse f (Tree h a b) = Tree <$> f h <*> htraverse f a <*> htraverse f b
 htraverse _ Nil = pure Nil
 
+-- | 'sequence' analog for extensible products
 hsequence :: Applicative g => Comp g h :* xs -> g (h :* xs)
 hsequence = htraverse getComp
 {-# INLINE hsequence #-}
