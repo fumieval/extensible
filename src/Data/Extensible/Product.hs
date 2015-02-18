@@ -27,6 +27,7 @@ module Data.Extensible.Product (
   , hzipWith3
   , hfoldMap
   , htraverse
+  , hsequence
   , htabulate
   -- * Lookup
   , hlookup
@@ -114,6 +115,10 @@ hfoldMap _ Nil = mempty
 htraverse :: Applicative g => (forall x. f x -> g (h x)) -> f :* xs -> g (h :* xs)
 htraverse f (Tree h a b) = Tree <$> f h <*> htraverse f a <*> htraverse f b
 htraverse _ Nil = pure Nil
+
+hsequence :: Applicative g => Comp g h :* xs -> g (h :* xs)
+hsequence = htraverse getComp
+{-# INLINE hsequence #-}
 
 -- | /O(log n)/ Pick up an elemtnt.
 hlookup :: Membership xs x -> h :* xs -> h x
