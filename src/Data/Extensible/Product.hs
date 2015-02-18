@@ -111,7 +111,7 @@ hfoldMap f (Tree h a b) = f h <> hfoldMap f a <> hfoldMap f b
 hfoldMap _ Nil = mempty
 
 -- | Traverse all elements.
-htraverse :: Applicative f => (forall x. h x -> f (h x)) -> h :* xs -> f (h :* xs)
+htraverse :: Applicative g => (forall x. f x -> g (h x)) -> f :* xs -> g (h :* xs)
 htraverse f (Tree h a b) = Tree <$> f h <*> htraverse f a <*> htraverse f b
 htraverse _ Nil = pure Nil
 
