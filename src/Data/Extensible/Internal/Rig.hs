@@ -57,6 +57,12 @@ newtype Const' a x = Const' { getConst' :: a } deriving Show
 -- | Turn a wrapper type into one clause that returns @a@.
 newtype Match h a x = Match { runMatch :: h x -> a } deriving Typeable
 
+newtype Comp f g a = Comp { getComp :: f (g a) }
+
+comp :: Functor f => (a -> g b) -> f a -> Comp f g b
+comp f = Comp . fmap f
+{-# INLINE comp #-}
+
 -- | Poly-kinded Maybe
 data Nullable h x = Null | Eine (h x) deriving (Show, Eq, Ord, Typeable)
 

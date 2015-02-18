@@ -19,6 +19,7 @@ module Data.Extensible.Record (
   , (<:*)
   , (:*)(Nil)
   , (@=)
+  , (<@=>)
   , mkField
   , recordType
   , Field(..)
@@ -31,6 +32,7 @@ module Data.Extensible.Record (
   ) where
 import Data.Extensible.Product
 import Data.Extensible.Internal
+import Data.Extensible.Internal.Rig
 import Language.Haskell.TH
 import Language.Haskell.TH.Quote
 import GHC.TypeLits hiding (Nat)
@@ -85,6 +87,12 @@ instance (s ~ t) => Labelable s (LabelPhantom t) where
 (@=) _ = Field
 {-# INLINE (@=) #-}
 infix 1 @=
+
+-- | Lifted ('@=')
+(<@=>) :: Functor f => FieldName s -> f (FieldValue s) -> Comp f Field s
+(<@=>) _ = comp Field
+{-# INLINE (<@=>) #-}
+infix 1 <@=>
 
 -- | Generate a field.
 -- @'mkField' "foo" [t|Int|]@ defines:
