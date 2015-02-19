@@ -23,14 +23,17 @@ module Data.Extensible.Product (
   , huncons
   , hmap
   , htrans
+  , htabulate
   , hzipWith
   , hzipWith3
   , hfoldMap
   , htraverse
   , hsequence
-  , htabulate
+  , hcollect
+  , hdistribute
   -- * Lookup
   , hlookup
+  , hindex
   , sector
   , sectorAt
   -- * Generation
@@ -78,6 +81,11 @@ infixr 0 <:*
 infixr 0 <:
 
 -- | Transform every elements in a product, preserving the order.
+--
+-- @
+-- 'hmap' 'id' ≡ 'id'
+-- 'hmap' (f . g) ≡ 'hmap' f . 'hmap' g
+-- @
 hmap :: (forall x. g x -> h x) -> g :* xs -> h :* xs
 hmap t (Tree h a b) = Tree (t h) (hmap t a) (hmap t b)
 hmap _ Nil = Nil
@@ -107,24 +115,46 @@ hzipWith3 _ _ Nil _ = Nil
 hzipWith3 _ _ _ Nil = Nil
 
 -- | Map elements to a monoid and combine the results.
+--
+-- @'hfoldMap' f . 'hmap' g ≡ 'hfoldMap' (f . g)@
 hfoldMap :: Monoid a => (forall x. h x -> a) -> h :* xs -> a
 hfoldMap f (Tree h a b) = f h <> hfoldMap f a <> hfoldMap f b
 hfoldMap _ Nil = mempty
 
 -- | Traverse all elements and combine the result sequentially.
-htraverse :: Applicative g => (forall x. f x -> g (h x)) -> f :* xs -> g (h :* xs)
+-- @
+-- htraverse (fmap f . g) ≡ fmap (hmap f) . htraverse g
+-- htraverse pure ≡ pure
+-- htraverse (Comp . fmap g . f) ≡ Comp . fmap (htraverse g) . htraverse f
+-- @
+htraverse :: Applicative f => (forall x. g x -> f (h x)) -> g :* xs -> f (h :* xs)
 htraverse f (Tree h a b) = Tree <$> f h <*> htraverse f a <*> htraverse f b
 htraverse _ Nil = pure Nil
 
 -- | 'sequence' analog for extensible products
-hsequence :: Applicative g => Comp g h :* xs -> g (h :* xs)
+hsequence :: Applicative f => Comp f h :* xs -> f (h :* xs)
 hsequence = htraverse getComp
 {-# INLINE hsequence #-}
+
+-- | The dual of 'htraverse'
+hcollect :: (Functor f, Generate xs) => (a -> h :* xs) -> f a -> Comp f h :* xs
+hcollect f m = generate $ \pos -> Comp $ fmap (hlookup pos . f) m
+{-# INLINABLE hcollect #-}
+
+-- | The dual of 'hsequence'
+hdistribute :: (Functor f, Generate xs) => f (h :* xs) -> Comp f h :* xs
+hdistribute = hcollect id
+{-# INLINE hdistribute #-}
 
 -- | /O(log n)/ Pick up an elemtnt.
 hlookup :: Membership xs x -> h :* xs -> h x
 hlookup = view . sectorAt
-{-# INLINE hlookup #-}
+{-# INLINABLE hlookup #-}
+
+-- | Flipped 'hlookup'
+hindex :: h :* xs -> Membership xs x -> h x
+hindex = flip hlookup
+{-# INLINE hindex #-}
 
 -- | 'hmap' with its indices.
 htabulate :: forall g h xs. (forall x. Membership xs x -> g x -> h x) -> g :* xs -> h :* xs
@@ -164,6 +194,12 @@ instance (Generate (Half xs), Generate (Half (Tail xs))) => Generate (x ': xs) w
   {-# INLINE generateA #-}
 
 -- | Pure version of 'generateA'.
+--
+-- @
+-- 'hmap' f ('generate' g) ≡ 'generate' (f . g)
+-- 'generate' ('hindex' m) ≡ m
+-- 'hindex' ('generate' k) ≡ k
+-- @
 generate :: Generate xs => (forall x. Membership xs x -> h x) -> h :* xs
 generate f = getK0 (generateA (K0 . f))
 {-# INLINE generate #-}
