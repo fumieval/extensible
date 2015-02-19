@@ -1,3 +1,16 @@
+0.3
+-----------------------------------------------------
+* Renamed `generate` to `htabulate`
+* Renamed `generateA` to `hgenerate`
+* Renamed `generateFor` to `htabulateFor`
+* Renamed `generateForA` to `hgenerateFor`
+* Renamed `htabulate` to `hmapWithIndex`
+* Added `(<@=>)`
+* Added `Comp`
+* Fixed badly-specialized `htraverse`
+* Added `hsequence`, `hdistribute`, `hcollect`
+* Added `hindex`
+
 0.2.10
 -----------------------------------------------------
 * Optimized `sector` (~2x)

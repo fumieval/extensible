@@ -1,5 +1,5 @@
 name:                extensible
-version:             0.2.10
+version:             0.3
 synopsis:            Extensible, efficient, lens-friendly data types
 homepage:            https://github.com/fumieval/extensible
 bug-reports:         http://github.com/fumieval/extensible/issues
@@ -32,7 +32,6 @@ library
     Data.Extensible.Inclusion
     Data.Extensible.Internal
     Data.Extensible.Internal.Rig
-    Data.Extensible.Internal.HList
     Data.Extensible.Dictionary
     Data.Extensible.League
     Data.Extensible.Match

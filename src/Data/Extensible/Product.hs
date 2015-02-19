@@ -22,8 +22,8 @@ module Data.Extensible.Product (
   , htail
   , huncons
   , hmap
+  , hmapWithIndex
   , htrans
-  , htabulate
   , hzipWith
   , hzipWith3
   , hfoldMap
@@ -38,16 +38,12 @@ module Data.Extensible.Product (
   , sectorAt
   -- * Generation
   , Generate(..)
-  , generate
+  , htabulate
   , Forall(..)
-  , generateFor
-  -- * HList
-  , fromHList
-  , toHList) where
+  , htabulateFor) where
 
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
-import Data.Extensible.Internal.HList
 import Unsafe.Coerce
 import Control.Applicative
 import Data.Monoid
@@ -138,7 +134,7 @@ hsequence = htraverse getComp
 
 -- | The dual of 'htraverse'
 hcollect :: (Functor f, Generate xs) => (a -> h :* xs) -> f a -> Comp f h :* xs
-hcollect f m = generate $ \pos -> Comp $ fmap (hlookup pos . f) m
+hcollect f m = htabulate $ \pos -> Comp $ fmap (hlookup pos . f) m
 {-# INLINABLE hcollect #-}
 
 -- | The dual of 'hsequence'
@@ -157,12 +153,12 @@ hindex = flip hlookup
 {-# INLINE hindex #-}
 
 -- | 'hmap' with its indices.
-htabulate :: forall g h xs. (forall x. Membership xs x -> g x -> h x) -> g :* xs -> h :* xs
-htabulate f = go id where
+hmapWithIndex :: forall g h xs. (forall x. Membership xs x -> g x -> h x) -> g :* xs -> h :* xs
+hmapWithIndex f = go id where
   go :: (forall x. Membership t x -> Membership xs x) -> g :* t -> h :* t
   go k (Tree g a b) = Tree (f (k here) g) (go (k . navL) a) (go (k . navR) b)
   go _ Nil = Nil
-{-# INLINE htabulate #-}
+{-# INLINE hmapWithIndex #-}
 
 -- | /O(log n)/ A lens for a specific element.
 sector :: forall h x xs. (x ∈ xs) => Lens' (h :* xs) (h x)
@@ -182,55 +178,45 @@ sectorAt pos f = flip go pos where
 
 -- | Given a function that maps types to values, we can "collect" entities all you want.
 class Generate (xs :: [k]) where
-  -- | /O(n)/ generates a product with the given function.
-  generateA :: Applicative f => (forall x. Membership xs x -> f (h x)) -> f (h :* xs)
+  -- | /O(n)/ htabulates a product with the given function.
+  hgenerate :: Applicative f => (forall x. Membership xs x -> f (h x)) -> f (h :* xs)
 
 instance Generate '[] where
-  generateA _ = pure Nil
-  {-# INLINE generateA #-}
+  hgenerate _ = pure Nil
+  {-# INLINE hgenerate #-}
 
 instance (Generate (Half xs), Generate (Half (Tail xs))) => Generate (x ': xs) where
-  generateA f = Tree <$> f here <*> generateA (f . navL) <*> generateA (f . navR)
-  {-# INLINE generateA #-}
+  hgenerate f = Tree <$> f here <*> hgenerate (f . navL) <*> hgenerate (f . navR)
+  {-# INLINE hgenerate #-}
 
--- | Pure version of 'generateA'.
+-- | Pure version of 'hgenerate'.
 --
 -- @
--- 'hmap' f ('generate' g) ≡ 'generate' (f . g)
--- 'generate' ('hindex' m) ≡ m
--- 'hindex' ('generate' k) ≡ k
+-- 'hmap' f ('htabulate' g) ≡ 'htabulate' (f . g)
+-- 'htabulate' ('hindex' m) ≡ m
+-- 'hindex' ('htabulate' k) ≡ k
 -- @
-generate :: Generate xs => (forall x. Membership xs x -> h x) -> h :* xs
-generate f = getK0 (generateA (K0 . f))
-{-# INLINE generate #-}
+htabulate :: Generate xs => (forall x. Membership xs x -> h x) -> h :* xs
+htabulate f = getK0 (hgenerate (K0 . f))
+{-# INLINE htabulate #-}
 
 -- | Guarantees the all elements satisfies the predicate.
 class Forall c (xs :: [k]) where
-  -- | /O(n)/ Analogous to 'generate', but it also supplies a context @c x@ for every elements in @xs@.
-  generateForA :: Applicative f => proxy c -> (forall x. c x => Membership xs x -> f (h x)) -> f (h :* xs)
+  -- | /O(n)/ Analogous to 'htabulate', but it also supplies a context @c x@ for every elements in @xs@.
+  hgenerateFor :: Applicative f => proxy c -> (forall x. c x => Membership xs x -> f (h x)) -> f (h :* xs)
 
 instance Forall c '[] where
-  generateForA _ _ = pure Nil
-  {-# INLINE generateForA #-}
+  hgenerateFor _ _ = pure Nil
+  {-# INLINE hgenerateFor #-}
 
 instance (c x, Forall c (Half xs), Forall c (Half (Tail xs))) => Forall c (x ': xs) where
-  generateForA proxy f = Tree
+  hgenerateFor proxy f = Tree
     <$> f here
-    <*> generateForA proxy (f . navL)
-    <*> generateForA proxy (f . navR)
-  {-# INLINE generateForA #-}
+    <*> hgenerateFor proxy (f . navL)
+    <*> hgenerateFor proxy (f . navR)
+  {-# INLINE hgenerateFor #-}
 
--- | Pure version of 'generateForA'.
-generateFor :: Forall c xs => proxy c -> (forall x. c x => Membership xs x -> h x) -> h :* xs
-generateFor p f = getK0 (generateForA p (K0 . f))
-{-# INLINE generateFor #-}
-
--- | Turn a product into 'HList'.
-toHList :: h :* xs -> HList h xs
-toHList (Tree h a b) = HCons h $ lemmaMerging $ toHList a `merge` toHList b
-toHList Nil = HNil
-
--- | Build a product from 'HList'.
-fromHList :: HList h xs -> h :* xs
-fromHList (HCons x xs) = let (a, b) = split xs in Tree x (fromHList a) (fromHList b)
-fromHList HNil = Nil
+-- | Pure version of 'hgenerateFor'.
+htabulateFor :: Forall c xs => proxy c -> (forall x. c x => Membership xs x -> h x) -> h :* xs
+htabulateFor p f = getK0 (hgenerateFor p (K0 . f))
+{-# INLINE htabulateFor #-}

@@ -50,7 +50,7 @@ type Include ys = Forall (Member ys)
 
 -- | Reify the inclusion of type level sets.
 inclusion :: forall xs ys. Include ys xs => Membership ys :* xs
-inclusion = generateFor (Proxy :: Proxy (Member ys)) (const membership)
+inclusion = htabulateFor (Proxy :: Proxy (Member ys)) (const membership)
 
 -- | /O(m log n)/ Select some elements.
 shrink :: (xs ⊆ ys) => h :* ys -> h :* xs
@@ -71,9 +71,9 @@ spread (UnionAt pos h) = views (sectorAt pos) UnionAt inclusion h
 
 -- | The inverse of 'inclusion'.
 coinclusion :: (Include ys xs, Generate ys) => Nullable (Membership xs) :* ys
-coinclusion = flip appEndo (generate (const Null))
+coinclusion = flip appEndo (htabulate (const Null))
   $ hfoldMap getConst'
-  $ htabulate (\src dst -> Const' $ Endo $ sectorAt dst `over` const (Eine src))
+  $ hmapWithIndex (\src dst -> Const' $ Endo $ sectorAt dst `over` const (Eine src))
   $ inclusion
 
 -- | Extend a product and fill missing fields by 'Null'.

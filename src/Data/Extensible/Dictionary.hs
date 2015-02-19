@@ -31,27 +31,27 @@ class Reifiable c where
 instance Reifiable Show where
   data Dictionary Show h x = DictShow { getShowsPrec :: Int -> h x -> ShowS }
   library :: forall h xs. WrapForall Show h xs => Dictionary Show h :* xs
-  library = generateFor (Proxy :: Proxy (Instance1 Show h)) $ const $ DictShow showsPrec
+  library = htabulateFor (Proxy :: Proxy (Instance1 Show h)) $ const $ DictShow showsPrec
 
 instance Reifiable Eq where
   data Dictionary Eq h x = DictEq { getEq :: h x -> h x -> Bool }
   library :: forall h xs. WrapForall Eq h xs => Dictionary Eq h :* xs
-  library = generateFor (Proxy :: Proxy (Instance1 Eq h)) $ const $ DictEq (==)
+  library = htabulateFor (Proxy :: Proxy (Instance1 Eq h)) $ const $ DictEq (==)
 
 instance Reifiable Ord where
   data Dictionary Ord h x = DictOrd { getCompare :: h x -> h x -> Ordering }
   library :: forall h xs. WrapForall Ord h xs => Dictionary Ord h :* xs
-  library = generateFor (Proxy :: Proxy (Instance1 Ord h)) $ const $ DictOrd compare
+  library = htabulateFor (Proxy :: Proxy (Instance1 Ord h)) $ const $ DictOrd compare
 
 instance Reifiable Monoid where
   data Dictionary Monoid h x = DictMonoid { getMempty :: h x, getMappend :: h x -> h x -> h x }
   library :: forall h xs. WrapForall Monoid h xs => Dictionary Monoid h :* xs
-  library = generateFor (Proxy :: Proxy (Instance1 Monoid h)) $ const $ DictMonoid mempty mappend
+  library = htabulateFor (Proxy :: Proxy (Instance1 Monoid h)) $ const $ DictMonoid mempty mappend
 
 instance Reifiable B.Binary where
   data Dictionary B.Binary h x = DictBinary { getGet :: B.Get (h x), getPut :: h x -> B.Put }
   library :: forall h xs. WrapForall B.Binary h xs => Dictionary B.Binary h :* xs
-  library = generateFor (Proxy :: Proxy (Instance1 B.Binary h)) $ const $ DictBinary B.get B.put
+  library = htabulateFor (Proxy :: Proxy (Instance1 B.Binary h)) $ const $ DictBinary B.get B.put
 
 instance WrapForall Show h xs => Show (h :* xs) where
   showsPrec d = showParen (d > 0)
@@ -78,7 +78,7 @@ instance WrapForall Monoid h xs => Monoid (h :* xs) where
   {-# INLINE mappend #-}
 
 instance WrapForall B.Binary h xs => B.Binary (h :* xs) where
-  get = generateForA (Proxy :: Proxy (Instance1 B.Binary h)) (const B.get)
+  get = hgenerateFor (Proxy :: Proxy (Instance1 B.Binary h)) (const B.get)
   put = flip appEndo (return ()) . hfoldMap getConst' . hzipWith (\dic x -> Const' $ Endo $ (getPut dic x >>)) library
 
 instance WrapForall Show h xs => Show (h :| xs) where
