@@ -19,12 +19,11 @@ import Data.Extensible.Sum
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
 import qualified Data.Binary as B
+import Data.Constraint
 
-library :: forall c h xs. WrapForall c h xs => Dictionary c h :* xs
-library = htabulateFor (Proxy :: Proxy (Instance1 c h)) $ const Dictionary
-
-data Dictionary c h x where
-  Dictionary :: c (h x) => Dictionary c h x
+library :: forall c xs. Forall c xs => Comp Dict c :* xs
+library = htabulateFor (Proxy :: Proxy c) $ const (Comp Dict)
+{-# INLINE library #-}
 
 instance WrapForall Show h xs => Show (h :* xs) where
   showsPrec d = showParen (d > 0)
@@ -32,42 +31,42 @@ instance WrapForall Show h xs => Show (h :* xs) where
     . foldr (.) id
     . getMerged
     . hfoldMap getConst'
-    . hzipWith (\Dictionary h -> Const' $ MergeList [showsPrec 0 h . showString " <: "]) (library :: Dictionary Show h :* xs)
+    . hzipWith (\(Comp Dict) h -> Const' $ MergeList [showsPrec 0 h . showString " <: "]) (library :: Comp Dict (Instance1 Show h) :* xs)
 
 instance WrapForall Eq h xs => Eq (h :* xs) where
   xs == ys = getAll $ hfoldMap (All . getConst')
-    $ hzipWith3 (\Dictionary x y -> Const' $ x == y) (library :: Dictionary Eq h :* xs) xs ys
+    $ hzipWith3 (\(Comp Dict) x y -> Const' $ x == y) (library :: Comp Dict (Instance1 Eq h) :* xs) xs ys
   {-# INLINE (==) #-}
 
 instance (Eq (h :* xs), WrapForall Ord h xs) => Ord (h :* xs) where
   compare xs ys = hfoldMap getConst'
-    $ hzipWith3 (\Dictionary x y -> Const' $ compare x y) (library :: Dictionary Ord h :* xs) xs ys
+    $ hzipWith3 (\(Comp Dict) x y -> Const' $ compare x y) (library :: Comp Dict (Instance1 Ord h) :* xs) xs ys
   {-# INLINE compare #-}
 
 instance WrapForall Monoid h xs => Monoid (h :* xs) where
-  mempty = hmap (\Dictionary -> mempty) (library :: Dictionary Monoid h :* xs)
+  mempty = hmap (\(Comp Dict) -> mempty) (library :: Comp Dict (Instance1 Monoid h) :* xs)
   {-# INLINE mempty #-}
-  mappend xs ys = hzipWith3 (\Dictionary -> mappend) (library :: Dictionary Monoid h :* xs) xs ys
+  mappend xs ys = hzipWith3 (\(Comp Dict) -> mappend) (library :: Comp Dict (Instance1 Monoid h) :* xs) xs ys
   {-# INLINE mappend #-}
 
 instance WrapForall B.Binary h xs => B.Binary (h :* xs) where
   get = hgenerateFor (Proxy :: Proxy (Instance1 B.Binary h)) (const B.get)
-  put = flip appEndo (return ()) . hfoldMap getConst' . hzipWith (\Dictionary x -> Const' $ Endo $ (B.put x >>)) (library :: Dictionary B.Binary h :* xs)
+  put = flip appEndo (return ()) . hfoldMap getConst' . hzipWith (\(Comp Dict) x -> Const' $ Endo $ (B.put x >>)) (library :: Comp Dict (Instance1 B.Binary h) :* xs)
 
 instance WrapForall Show h xs => Show (h :| xs) where
   showsPrec d (UnionAt pos h) = showParen (d > 10) $ showString "embed "
-    . views (sectorAt pos) (\Dictionary -> showsPrec 11 h) (library :: Dictionary Show h :* xs)
+    . views (sectorAt pos) (\(Comp Dict) -> showsPrec 11 h) (library :: Comp Dict (Instance1 Show h) :* xs)
 
 instance WrapForall Eq h xs => Eq (h :| xs) where
   UnionAt p g == UnionAt q h = case compareMembership p q of
     Left _ -> False
-    Right Refl -> views (sectorAt p) (\Dictionary -> g == h) (library :: Dictionary Eq h :* xs)
+    Right Refl -> views (sectorAt p) (\(Comp Dict) -> g == h) (library :: Comp Dict (Instance1 Eq h) :* xs)
   {-# INLINE (==) #-}
 
 instance (Eq (h :| xs), WrapForall Ord h xs) => Ord (h :| xs) where
   UnionAt p g `compare` UnionAt q h = case compareMembership p q of
     Left x -> x
-    Right Refl -> views (sectorAt p) (\Dictionary -> compare g h) (library :: Dictionary Ord h :* xs)
+    Right Refl -> views (sectorAt p) (\(Comp Dict) -> compare g h) (library :: Comp Dict (Instance1 Ord h) :* xs)
   {-# INLINE compare #-}
 
 -- | Forall upon a wrapper

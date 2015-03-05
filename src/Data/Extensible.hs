@@ -23,7 +23,8 @@
 -----------------------------------------------------------------------------
 module Data.Extensible (
   -- * Reexport
-  module Data.Extensible.Inclusion
+  module Data.Extensible.Dictionary
+  , module Data.Extensible.Inclusion
   , module Data.Extensible.League
   , module Data.Extensible.Match
   , module Data.Extensible.Plain
@@ -43,7 +44,7 @@ import Data.Extensible.League
 import Data.Extensible.Union
 import Data.Extensible.Record
 import Data.Extensible.Internal.Rig
-import Data.Extensible.Dictionary ()
+import Data.Extensible.Dictionary
 
 -------------------------------------------------------------
 
