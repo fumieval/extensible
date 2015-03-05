@@ -20,38 +20,11 @@ import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
 import qualified Data.Binary as B
 
--- | Reifiable classes
-class Reifiable c where
-  -- | The associated dictionary which subsumes essential methods.
-  data Dictionary c (h :: k -> *) (x :: k)
+library :: forall c h xs. WrapForall c h xs => Dictionary c h :* xs
+library = htabulateFor (Proxy :: Proxy (Instance1 c h)) $ const Dictionary
 
-  -- | Fetch the 'Dictionary'.
-  library :: WrapForall c h xs => Dictionary c h :* xs
-
-instance Reifiable Show where
-  data Dictionary Show h x = DictShow { getShowsPrec :: Int -> h x -> ShowS }
-  library :: forall h xs. WrapForall Show h xs => Dictionary Show h :* xs
-  library = htabulateFor (Proxy :: Proxy (Instance1 Show h)) $ const $ DictShow showsPrec
-
-instance Reifiable Eq where
-  data Dictionary Eq h x = DictEq { getEq :: h x -> h x -> Bool }
-  library :: forall h xs. WrapForall Eq h xs => Dictionary Eq h :* xs
-  library = htabulateFor (Proxy :: Proxy (Instance1 Eq h)) $ const $ DictEq (==)
-
-instance Reifiable Ord where
-  data Dictionary Ord h x = DictOrd { getCompare :: h x -> h x -> Ordering }
-  library :: forall h xs. WrapForall Ord h xs => Dictionary Ord h :* xs
-  library = htabulateFor (Proxy :: Proxy (Instance1 Ord h)) $ const $ DictOrd compare
-
-instance Reifiable Monoid where
-  data Dictionary Monoid h x = DictMonoid { getMempty :: h x, getMappend :: h x -> h x -> h x }
-  library :: forall h xs. WrapForall Monoid h xs => Dictionary Monoid h :* xs
-  library = htabulateFor (Proxy :: Proxy (Instance1 Monoid h)) $ const $ DictMonoid mempty mappend
-
-instance Reifiable B.Binary where
-  data Dictionary B.Binary h x = DictBinary { getGet :: B.Get (h x), getPut :: h x -> B.Put }
-  library :: forall h xs. WrapForall B.Binary h xs => Dictionary B.Binary h :* xs
-  library = htabulateFor (Proxy :: Proxy (Instance1 B.Binary h)) $ const $ DictBinary B.get B.put
+data Dictionary c h x where
+  Dictionary :: c (h x) => Dictionary c h x
 
 instance WrapForall Show h xs => Show (h :* xs) where
   showsPrec d = showParen (d > 0)
@@ -59,42 +32,42 @@ instance WrapForall Show h xs => Show (h :* xs) where
     . foldr (.) id
     . getMerged
     . hfoldMap getConst'
-    . hzipWith (\f h -> Const' $ MergeList [getShowsPrec f 0 h . showString " <: "]) library
+    . hzipWith (\Dictionary h -> Const' $ MergeList [showsPrec 0 h . showString " <: "]) (library :: Dictionary Show h :* xs)
 
 instance WrapForall Eq h xs => Eq (h :* xs) where
   xs == ys = getAll $ hfoldMap (All . getConst')
-    $ hzipWith3 (\f x y -> Const' $ getEq f x y) library xs ys
+    $ hzipWith3 (\Dictionary x y -> Const' $ x == y) (library :: Dictionary Eq h :* xs) xs ys
   {-# INLINE (==) #-}
 
 instance (Eq (h :* xs), WrapForall Ord h xs) => Ord (h :* xs) where
   compare xs ys = hfoldMap getConst'
-    $ hzipWith3 (\f x y -> Const' $ getCompare f x y) library xs ys
+    $ hzipWith3 (\Dictionary x y -> Const' $ compare x y) (library :: Dictionary Ord h :* xs) xs ys
   {-# INLINE compare #-}
 
 instance WrapForall Monoid h xs => Monoid (h :* xs) where
-  mempty = hmap getMempty library
+  mempty = hmap (\Dictionary -> mempty) (library :: Dictionary Monoid h :* xs)
   {-# INLINE mempty #-}
-  mappend xs ys = hzipWith3 getMappend library xs ys
+  mappend xs ys = hzipWith3 (\Dictionary -> mappend) (library :: Dictionary Monoid h :* xs) xs ys
   {-# INLINE mappend #-}
 
 instance WrapForall B.Binary h xs => B.Binary (h :* xs) where
   get = hgenerateFor (Proxy :: Proxy (Instance1 B.Binary h)) (const B.get)
-  put = flip appEndo (return ()) . hfoldMap getConst' . hzipWith (\dic x -> Const' $ Endo $ (getPut dic x >>)) library
+  put = flip appEndo (return ()) . hfoldMap getConst' . hzipWith (\Dictionary x -> Const' $ Endo $ (B.put x >>)) (library :: Dictionary B.Binary h :* xs)
 
 instance WrapForall Show h xs => Show (h :| xs) where
   showsPrec d (UnionAt pos h) = showParen (d > 10) $ showString "embed "
-    . views (sectorAt pos) getShowsPrec library 11 h
+    . views (sectorAt pos) (\Dictionary -> showsPrec 11 h) (library :: Dictionary Show h :* xs)
 
 instance WrapForall Eq h xs => Eq (h :| xs) where
   UnionAt p g == UnionAt q h = case compareMembership p q of
     Left _ -> False
-    Right Refl -> views (sectorAt p) getEq library g h
+    Right Refl -> views (sectorAt p) (\Dictionary -> g == h) (library :: Dictionary Eq h :* xs)
   {-# INLINE (==) #-}
 
 instance (Eq (h :| xs), WrapForall Ord h xs) => Ord (h :| xs) where
   UnionAt p g `compare` UnionAt q h = case compareMembership p q of
     Left x -> x
-    Right Refl -> views (sectorAt p) getCompare library g h
+    Right Refl -> views (sectorAt p) (\Dictionary -> compare g h) (library :: Dictionary Ord h :* xs)
   {-# INLINE compare #-}
 
 -- | Forall upon a wrapper
