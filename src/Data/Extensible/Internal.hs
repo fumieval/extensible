@@ -62,7 +62,6 @@ import Control.Monad
 import Unsafe.Coerce
 import Data.Typeable
 import Language.Haskell.TH hiding (Pred)
-import Control.DeepSeq
 import Data.Bits
 import Data.Word
 
@@ -130,9 +129,6 @@ instance LookupTree n (Half xs) x => LookupTree (SDNat n) (t ': xs) x where
 instance LookupTree (Pred n) (Half (Tail xs)) x => LookupTree (DNat n) (t ': xs) x where
   lookupTree _ f (Tree h a b) = fmap (\b' -> Tree h a b') (lookupTree (Proxy :: Proxy (Div2 (Pred (DNat n)))) (unsafeCoerce f) b)
   {-# INLINE lookupTree #-}
-
-instance NFData (Membership xs x) where
-  rnf (Membership a) = rnf a
 
 instance Show (Membership xs x) where
   show (Membership n) = "$(ord " ++ show n ++ ")"
