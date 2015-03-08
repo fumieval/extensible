@@ -161,8 +161,8 @@ hmapWithIndex f = go id where
 {-# INLINE hmapWithIndex #-}
 
 -- | /O(log n)/ A lens for a specific element.
-sector :: forall h x xs. (x ∈ xs) => Lens' (h :* xs) (h x)
-sector = lookupTree (Proxy :: Proxy (Head (Lookup x xs)))
+sector :: (x ∈ xs) => Lens' (h :* xs) (h x)
+sector = sectorAt membership
 {-# INLINE sector #-}
 
 -- | /O(log n)/ A lens for a value in a known position.

@@ -17,6 +17,7 @@ module Data.Extensible.Sum (
   , hoist
   , embed
   , strike
+  , strikeAt
   , (<:|)
   , exhaust
   , picked
@@ -42,9 +43,14 @@ embed = UnionAt membership
 {-# INLINE embed #-}
 
 strike :: forall h x xs. (x ∈ xs) => h :| xs -> Maybe (h x)
-strike (UnionAt p h) = case compareMembership p (membership :: Membership xs x) of
+strike = strikeAt membership
+{-# INLINE strike #-}
+
+strikeAt :: forall h x xs. Membership xs x -> h :| xs -> Maybe (h x)
+strikeAt q (UnionAt p h) = case compareMembership p q of
   Right Refl -> Just h
   _ -> Nothing
+{-# INLINE strikeAt #-}
 
 -- | /O(1)/ Naive pattern match
 (<:|) :: (h x -> r) -> (h :| xs -> r) -> h :| (x ': xs) -> r

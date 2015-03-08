@@ -16,6 +16,7 @@ module Data.Extensible.Inclusion (
   , runMembership
   , (∈)()
   , Member(..)
+  , remember
   , Expecting
   , Missing
   , Ambiguous

@@ -1,6 +1,9 @@
 0.3.1
 -----------------------------------------------------
 * Removed `Reifiable`
+* Now `library` yields desired dictionaries
+* Added `remember`
+* Added `strike` and `strikeAt`
 
 0.3
 -----------------------------------------------------

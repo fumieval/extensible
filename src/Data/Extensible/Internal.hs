@@ -28,6 +28,7 @@ module Data.Extensible.Internal (Membership
   , navR
   , (:*)(..)
   , Member(..)
+  , remember
   , (∈)()
   , Nat(..)
   , ToInt(..)
@@ -78,6 +79,13 @@ ord n = do
 
 -- | The position of @x@ in the type level set @xs@.
 newtype Membership (xs :: [k]) (x :: k) = Membership { getMemberId :: Word } deriving Typeable
+
+newtype Remembrance xs x r = Remembrance (Member xs x => r)
+
+-- | Remember that @Member xs x@ from 'Membership'.
+remember :: forall xs x r. Membership xs x -> (Member xs x => r) -> r
+remember pos r = unsafeCoerce (Remembrance r :: Remembrance xs x r) pos
+{-# INLINE remember #-}
 
 -- | Lookup types
 type family ListIndex (n :: Nat) (xs :: [k]) :: k where
@@ -141,7 +149,7 @@ runMembership (Membership 0) l _ = l (unsafeCoerce Refl)
 runMembership (Membership n) _ r = r (Membership (n - 1))
 {-# INLINE runMembership #-}
 
--- | PRIVILEGED: Compare two 'Membership's.
+-- | Compare two 'Membership's.
 compareMembership :: Membership xs x -> Membership xs y -> Either Ordering (x :~: y)
 compareMembership (Membership m) (Membership n) = case compare m n of
   EQ -> Right (unsafeCoerce Refl)
@@ -191,7 +199,7 @@ type x ∈ xs = Member xs x
 type family Head (xs :: [k]) :: k where
   Head (x ': xs) = x
 
-class (LookupTree (Head (Lookup x xs)) xs x) => Member xs x where
+class Member xs x where
   membership :: Membership xs x
 
 -- | A type sugar to make type error more readable.
@@ -209,7 +217,7 @@ type family Check x xs where
   Check x '[] = Missing x
   Check x xs = Ambiguous x
 
-instance (Check x (Lookup x xs) ~ Expecting one, ToInt one, LookupTree (Head (Lookup x xs)) xs x) => Member xs x where
+instance (Check x (Lookup x xs) ~ Expecting one, ToInt one) => Member xs x where
   membership = Membership (theInt (Proxy :: Proxy one))
   {-# INLINE membership #-}
 
