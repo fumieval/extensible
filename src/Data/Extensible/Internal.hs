@@ -103,7 +103,7 @@ type family Div2 (n :: Nat) :: Nat where
   Div2 (DNat n) = n
   Div2 Zero = Zero
 
--- | The extensible product type
+-- | The type of extensible products.
 data (h :: k -> *) :* (s :: [k]) where
   Nil :: h :* '[]
   Tree :: !(h x)
