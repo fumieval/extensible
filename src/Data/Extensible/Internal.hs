@@ -34,6 +34,9 @@ module Data.Extensible.Internal (Membership
   , ToInt(..)
   , Lookup
   , ListIndex
+  , Assoc(..)
+  , AssocKeys
+  , Associate(..)
   , LookupTree(..)
   , Succ
   , MapSucc
@@ -57,13 +60,16 @@ module Data.Extensible.Internal (Membership
   ) where
 import Data.Type.Equality
 import Data.Proxy
+#if !MIN_VERSION_base(4,8,0)
 import Control.Applicative
+import Data.Word
+#endif
 import Control.Monad
 import Unsafe.Coerce
 import Data.Typeable
 import Language.Haskell.TH hiding (Pred)
 import Data.Bits
-import Data.Word
+
 
 -- | Generates a 'Membership' that corresponds to the given ordinal (0-origin).
 ord :: Int -> Q Exp
@@ -88,20 +94,35 @@ remember pos r = unsafeCoerce (Remembrance r :: Remembrance xs x r) pos
 
 -- | Lookup types
 type family ListIndex (n :: Nat) (xs :: [k]) :: k where
-  ListIndex Zero (x ': xs) = x
-  ListIndex (SDNat n) (y ': xs) = ListIndex n (Half xs)
-  ListIndex (DNat n) xs = ListIndex n (Half xs)
+  ListIndex 'Zero (x ': xs) = x
+  ListIndex ('SDNat n) (y ': xs) = ListIndex n (Half xs)
+  ListIndex ('DNat n) xs = ListIndex n (Half xs)
 
 type family Pred (n :: Nat) :: Nat where
-  Pred (SDNat Zero) = Zero
-  Pred (SDNat n) = DNat n
-  Pred (DNat n) = SDNat (Pred n)
-  Pred Zero = Zero
+  Pred ('SDNat 'Zero) = 'Zero
+  Pred ('SDNat n) = 'DNat n
+  Pred ('DNat n) = 'SDNat (Pred n)
+  Pred 'Zero = 'Zero
 
 type family Div2 (n :: Nat) :: Nat where
-  Div2 (SDNat n) = n
-  Div2 (DNat n) = n
-  Div2 Zero = Zero
+  Div2 ('SDNat n) = n
+  Div2 ('DNat n) = n
+  Div2 'Zero = 'Zero
+
+-- | The kind of key-value pairs
+data Assoc k v = k :> v
+
+type family AssocKeys (xs :: [Assoc k v]) :: [k] where
+  AssocKeys ((k ':> v) ': xs) = k ': AssocKeys xs
+  AssocKeys '[] = '[]
+
+-- | @'Associate' k v xs@ is essentially identical to @(k :> v) ∈ xs@
+-- , but the type @v@ is inferred from @k@ and @xs@.
+class Associate k v xs | k xs -> v where
+  association :: Membership xs (k ':> v)
+
+instance (Check k (Lookup k (AssocKeys xs)) ~ Expecting one, ToInt one, (k ':> v) ~ ListIndex one xs) => Associate k v xs where
+  association = Membership (theInt (Proxy :: Proxy one))
 
 -- | The type of extensible products.
 data (h :: k -> *) :* (s :: [k]) where
@@ -118,16 +139,17 @@ class LookupTree (n :: Nat) (xs :: [k]) x | n xs -> x where
     -> (h x -> f (h x))
     -> h :* xs -> f (h :* xs)
 
-instance LookupTree Zero (x ': xs) x where
+instance LookupTree 'Zero (x ': xs) x where
   lookupTree _ f (Tree h a b) = fmap (\h' -> Tree h' a b) (f h)
   {-# INLINE lookupTree #-}
 
-instance LookupTree n (Half xs) x => LookupTree (SDNat n) (t ': xs) x where
+instance LookupTree n (Half xs) x => LookupTree ('SDNat n) (t ': xs) x where
   lookupTree _ f (Tree h a b) = fmap (\a' -> Tree h a' b) (lookupTree (Proxy :: Proxy n) f a)
   {-# INLINE lookupTree #-}
 
-instance LookupTree (Pred n) (Half (Tail xs)) x => LookupTree (DNat n) (t ': xs) x where
-  lookupTree _ f (Tree h a b) = fmap (\b' -> Tree h a b') (lookupTree (Proxy :: Proxy (Div2 (Pred (DNat n)))) (unsafeCoerce f) b)
+instance LookupTree (Pred n) (Half (Tail xs)) x => LookupTree ('DNat n) (t ': xs) x where
+  lookupTree _ f (Tree h a b) = fmap (\b' -> Tree h a b')
+    (lookupTree (Proxy :: Proxy (Div2 (Pred ('DNat n)))) (unsafeCoerce f) b)
   {-# INLINE lookupTree #-}
 
 instance Show (Membership xs x) where
@@ -219,7 +241,7 @@ instance (Check x (Lookup x xs) ~ Expecting one, ToInt one) => Member xs x where
 
 -- | Lookup types
 type family Lookup (x :: k) (xs :: [k]) :: [Nat] where
-  Lookup x (x ': xs) = Zero ': Lookup x xs
+  Lookup x (x ': xs) = 'Zero ': Lookup x xs
   Lookup x (y ': ys) = MapSucc (Lookup x ys)
   Lookup x '[] = '[]
 
@@ -241,23 +263,23 @@ data Nat = Zero | DNat Nat | SDNat Nat
 class ToInt n where
   theInt :: proxy n -> Word
 
-instance ToInt Zero where
+instance ToInt 'Zero where
   theInt _ = 0
   {-# INLINE theInt #-}
 
-instance ToInt n => ToInt (DNat n) where
+instance ToInt n => ToInt ('DNat n) where
   theInt _ = theInt (Proxy :: Proxy n) `unsafeShiftL` 1
   {-# INLINE theInt #-}
 
-instance ToInt n => ToInt (SDNat n) where
+instance ToInt n => ToInt ('SDNat n) where
   theInt _ = (theInt (Proxy :: Proxy n) `unsafeShiftL` 1) + 1
   {-# INLINE theInt #-}
 
 -- | The successor of the number
 type family Succ (x :: Nat) :: Nat where
-  Succ Zero = SDNat Zero
-  Succ (DNat n) = SDNat n
-  Succ (SDNat n) = DNat (Succ n)
+  Succ 'Zero = 'SDNat 'Zero
+  Succ ('DNat n) = 'SDNat n
+  Succ ('SDNat n) = 'DNat (Succ n)
 
 -- | Ideally, it will be 'Map Succ'
 type family MapSucc (xs :: [Nat]) :: [Nat] where

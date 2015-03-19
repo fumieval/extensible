@@ -35,6 +35,7 @@ module Data.Extensible.Product (
   , hlookup
   , hindex
   , sector
+  , sectorAssoc
   , sectorAt
   -- * Generation
   , Generate(..)
@@ -45,7 +46,9 @@ module Data.Extensible.Product (
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
 import Unsafe.Coerce
+#if !MIN_VERSION_base(4,8,0)
 import Control.Applicative
+#endif
 import Data.Monoid
 
 -- | /O(1)/ Extract the head element.
@@ -164,6 +167,11 @@ hmapWithIndex f = go id where
 sector :: (x ∈ xs) => Lens' (h :* xs) (h x)
 sector = sectorAt membership
 {-# INLINE sector #-}
+
+-- | /O(log n)/ A lens for a specific element.
+sectorAssoc :: (Associate k v xs) => Lens' (h :* xs) (h (k ':> v))
+sectorAssoc = sectorAt association
+{-# INLINE sectorAssoc #-}
 
 -- | /O(log n)/ A lens for a value in a known position.
 sectorAt :: forall f h x xs. Functor f => Membership xs x -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)

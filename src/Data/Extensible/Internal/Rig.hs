@@ -13,11 +13,13 @@
 ------------------------------------------------------------------------
 module Data.Extensible.Internal.Rig where
 import Unsafe.Coerce
-import Control.Applicative
 import Data.Typeable
+import Control.Applicative
+#if !MIN_VERSION_base(4,8,0)
 import Data.Monoid
 import Data.Foldable (Foldable)
 import Data.Traversable (Traversable)
+#endif
 
 -- | A type synonym for lenses
 type Lens' s a = forall f. Functor f => (a -> f a) -> s -> f s

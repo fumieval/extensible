@@ -119,7 +119,7 @@ decFieldsDeriving drv' ds = ds >>= fmap concat . mapM mkBody
       xs <- newName "xs"
       sequence [return $ NewtypeD cx name_ tvs (NormalC nc [(st, ty)]) (drv' ++ drv)
         ,sigD name
-          $ forallT (PlainTV xs : tvs) (sequence [classP ''Member [varT xs, conT name_]])
+          $ forallT (PlainTV xs : tvs) (sequence [conT ''Member `appT` varT xs `appT` conT name_])
           $ conT ''Lens' `appT` (conT ''AllOf `appT` varT xs) `appT` return ty
         , valD (varP name) (normalB $ varE 'accessing `appE` conE nc) []
         , return $ PragmaD $ InlineP name Inline FunLike AllPhases
