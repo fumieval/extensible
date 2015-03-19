@@ -34,6 +34,9 @@ module Data.Extensible.Internal (Membership
   , ToInt(..)
   , Lookup
   , ListIndex
+  , Assoc(..)
+  , AssocKeys
+  , Associate(..)
   , LookupTree(..)
   , Succ
   , MapSucc
@@ -102,6 +105,18 @@ type family Div2 (n :: Nat) :: Nat where
   Div2 (SDNat n) = n
   Div2 (DNat n) = n
   Div2 Zero = Zero
+
+data Assoc k v = k :> v
+
+type family AssocKeys (xs :: [Assoc k v]) :: [k] where
+  AssocKeys ((k :> v) ': xs) = k ': AssocKeys xs
+  AssocKeys '[] = '[]
+
+class Associate k v xs | k xs -> v where
+  association :: Membership xs (k :> v)
+
+instance (Check k (Lookup k (AssocKeys xs)) ~ Expecting one, ToInt one, (k :> v) ~ ListIndex one xs) => Associate k v xs where
+  association = Membership (theInt (Proxy :: Proxy one))
 
 -- | The type of extensible products.
 data (h :: k -> *) :* (s :: [k]) where

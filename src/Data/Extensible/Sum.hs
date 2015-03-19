@@ -21,6 +21,7 @@ module Data.Extensible.Sum (
   , (<:|)
   , exhaust
   , picked
+  , embedAssoc
   ) where
 
 import Data.Extensible.Internal
@@ -70,3 +71,6 @@ picked f u@(UnionAt pos h) = case compareMembership (membership :: Membership xs
   Right Refl -> fmap (UnionAt pos) (f h)
   _ -> pure u
 {-# INLINE picked #-}
+
+embedAssoc :: Associate k a xs => h (k :> a) -> h :| xs
+embedAssoc = UnionAt association
