@@ -1,3 +1,12 @@
+0.3.2
+-----------------------------------------------------
+* Added `Associate` class and combinators around it
+* `Data.Extensible.Record` now lets values be independent from keys
+    * `mkField` requires 1 argument
+* Added `Data.Extensible.Union`, partially taking `elevator`'s functionality
+* Removed old `Data.Extensible.Union` and `Data.Extensible.League`
+* Removed `(<?!)`
+
 0.3.1
 -----------------------------------------------------
 * Removed `Reifiable`
