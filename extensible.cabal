@@ -29,15 +29,16 @@ source-repository head
 library
   exposed-modules:
     Data.Extensible
+    Data.Extensible.Dictionary
     Data.Extensible.Inclusion
     Data.Extensible.Internal
     Data.Extensible.Internal.Rig
-    Data.Extensible.Dictionary
     Data.Extensible.Match
     Data.Extensible.Plain
     Data.Extensible.Product
-    Data.Extensible.Sum
     Data.Extensible.Record
+    Data.Extensible.Sum
+    Data.Extensible.Union
   default-extensions: TypeOperators
     , DeriveDataTypeable
     , KindSignatures

@@ -21,8 +21,6 @@ module Data.Extensible.Plain (
   , record
   , recordAt
   , (<?%)
-  , K1(..)
-  , (<?!)
   , accessing
   , decFields
   , decFieldsDeriving
@@ -31,7 +29,6 @@ import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
 import Data.Extensible.Product
 import Data.Extensible.Sum
-import Data.Typeable
 import Unsafe.Coerce
 import Language.Haskell.TH hiding (Match(..))
 import Data.Char
@@ -79,14 +76,6 @@ recordAt pos f = sectorAt pos $ unsafeCoerce f `asTypeOf` (fmap K0 . f . getK0)
 (<?%) = unsafeCoerce (<:*)
 {-# INLINE (<?%) #-}
 infixr 1 <?%
-
--- | Wrap a type that has a kind @* -> *@.
-newtype K1 a f = K1 { getK1 :: f a } deriving (Eq, Ord, Read, Typeable)
-
--- | Prepend a clause for a parameterized value.
-(<?!) :: (f x -> a) -> Match (K1 x) a :* xs -> Match (K1 x) a :* (f ': fs)
-(<?!) = unsafeCoerce (<:*)
-infixr 1 <?!
 
 -- | An accessor for newtype constructors.
 accessing :: (Coercible b a, b ∈ xs) => (a -> b) -> Lens' (AllOf xs) a
