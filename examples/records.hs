@@ -3,16 +3,16 @@ import Data.Extensible.Record
 import Data.Extensible
 import Control.Lens
 
-mkField "name" [t|String|]
-mkField "weight" [t|Float|]
-mkField "price" [t|Int|]
-mkField "description" [t|String|]
-mkField "featured" [t|Bool|]
-mkField "quantity" [t|Int|]
+mkField "name weight price description featured quantity"
 
-type Stock = Record '["name", "weight", "price", "featured", "description", "quantity"]
+type Stock c = Record '["name" :> String
+  , "weight" :> Float
+  , "price" :> c
+  , "featured" :> Bool
+  , "description" :> String
+  , "quantity" :> Int]
 
-s0 :: Stock
+s0 :: Num c => Stock c
 s0 = Field "DA-192H"
   <: Field 260
   <: Field 120
@@ -22,14 +22,14 @@ s0 = Field "DA-192H"
   <: Nil
 
 -- Use shrink to permute elements
-s1 :: Stock
-s1 = shrink
+s1 :: Num c => Stock c
+s1 = shrinkAssoc
    $ name @= "HHP-150"
   <: featured @= False
   <: description @= "Premium wooden headphone"
-  <: weight @= 150
   <: price @= 330
   <: quantity @= 55
+  <: weight @= 200
   <: Nil
 
 -- If "quantity" is missing,
@@ -38,5 +38,5 @@ s1 = shrink
 -- If there are duplicate "quantity",
 --    Couldn't match type ‘Ambiguous "quantity"’ with ‘Expecting one’
 
-printSummary :: ("name" ∈ s, "description" ∈ s) => Record s -> IO ()
+printSummary :: (Associate "name" String s, Associate "description" String s) => Record s -> IO ()
 printSummary s = putStrLn $ view name s ++ ": " ++ view description s

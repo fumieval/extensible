@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell, TypeFamilies, FunctionalDependencies, MultiParamTypeClasses, UndecidableInstances #-}
+{-# LANGUAGE TemplateHaskell, ScopedTypeVariables, TypeFamilies, FunctionalDependencies, MultiParamTypeClasses, UndecidableInstances #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Record
@@ -21,9 +21,8 @@ module Data.Extensible.Record (
   , (@=)
   , (<@=>)
   , mkField
-  , recordType
   , Field(..)
-  , FieldValue
+  , getField
   , FieldLens
   , FieldName
   -- * Internal
@@ -34,41 +33,43 @@ import Data.Extensible.Product
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
 import Language.Haskell.TH
-import Language.Haskell.TH.Quote
 import GHC.TypeLits hiding (Nat)
 import Data.Extensible.Inclusion
 import Data.Extensible.Dictionary ()
-
--- | Associates names with concrete types.
-type family FieldValue (s :: Symbol) :: *
+import Control.Monad
 
 -- | The type of fields.
-data Field (s :: Symbol) = Field { getField :: FieldValue s }
+data Field kv where
+  Field :: v -> Field (k ':> v)
+
+-- | Get a value of a field.
+getField :: Field (k ':> v) -> v
+getField (Field v) = v
 
 -- | The type of records which contain several fields.
 type Record = (:*) Field
 
 -- | Shows in @field \@= value@ style instead of the derived one.
-instance (KnownSymbol s, Show (FieldValue s)) => Show (Field s) where
-  showsPrec d f@(Field a) = showParen (d >= 1) $ showString (symbolVal f)
+instance (KnownSymbol k, Show v) => Show (Field (k ':> v)) where
+  showsPrec d (Field a) = showParen (d >= 1) $ showString (symbolVal (Proxy :: Proxy k))
     . showString " @= "
     . showsPrec 1 a
 
 -- | @FieldLens s@ is a type of lens that points a field named @s@.
 --
 -- @
--- 'FieldLens' s = (s ∈ xs) => Lens' ('Record' xs) ('FieldValue' s)
+-- 'FieldLens' "foo" = Associate "foo" a xs => Lens' ('Record' xs) a
 -- @
 --
-type FieldLens s = forall f p xs. (Functor f, Labelable s p, s ∈ xs)
-  => p (FieldValue s) (f (FieldValue s)) -> Record xs -> f (Record xs)
+type FieldLens k = forall f p xs v. (Functor f, Labelable k p, Associate k v xs)
+  => p v (f v) -> Record xs -> f (Record xs)
 
 -- | When you see this type as an argument, it expects a 'FieldLens'.
 -- This type is used to resolve the name of the field internally.
-type FieldName s = LabelPhantom s (FieldValue s) (Proxy (FieldValue s))
-  -> Record '[s] -> Proxy (Record '[s])
+type FieldName k = forall v. LabelPhantom k v (Proxy v)
+  -> Record '[k ':> v] -> Proxy (Record '[k ':> v])
 
--- | A ghostly type which reifies the field name
+-- | A ghostly type which spells the field name
 data LabelPhantom s a b
 
 -- | An internal class to characterize 'FieldLens'
@@ -83,47 +84,38 @@ instance (s ~ t) => Labelable s (LabelPhantom t) where
   unlabel _ = error "Impossible"
 
 -- | Annotate a value by the field name.
-(@=) :: FieldName s -> FieldValue s -> Field s
+(@=) :: FieldName k -> v -> Field (k ':> v)
 (@=) _ = Field
 {-# INLINE (@=) #-}
 infix 1 @=
 
 -- | Lifted ('@=')
-(<@=>) :: Functor f => FieldName s -> f (FieldValue s) -> Comp f Field s
+(<@=>) :: Functor f => FieldName k -> f v -> Comp f Field (k ':> v)
 (<@=>) _ = comp Field
 {-# INLINE (<@=>) #-}
 infix 1 <@=>
 
+type Assoc_ a b = a ':> b
+
 -- | Generate a field.
--- @'mkField' "foo" [t|Int|]@ defines:
+-- @'mkField' "foo bar"@ defines:
 --
 -- @
--- type instance FieldValue "foo" = Int
---
 -- foo :: FieldLens "foo"
+-- foo :: FieldLens "bar"
 -- @
 --
 -- The yielding field is a <http://hackage.haskell.org/package/lens/docs/Control-Lens-Lens.html#t:Lens Lens>.
-mkField :: String -> TypeQ -> DecsQ
-mkField s t = do
+mkField :: String -> DecsQ
+mkField str = fmap concat $ forM (words str) $ \s -> do
   f <- newName "f"
   let st = litT (strTyLit s)
-  let vt = conT ''FieldValue `appT` st
-  let fcon = sigE (conE 'Field) $ arrowT `appT` vt `appT` (conT ''Field `appT` st)
+  let vt = varT (mkName "v")
+  let fcon = sigE (conE 'Field) $ forallT [PlainTV $ mkName "v"] (pure []) $ arrowT `appT` vt `appT` (conT ''Field `appT` (conT ''Assoc_ `appT` st `appT` vt))
   let lbl = conE 'Proxy `sigE` (conT ''Proxy `appT` st)
   let wf = varE '(.) `appE` (varE 'fmap `appE` fcon)
         `appE` (varE '(.) `appE` (varE 'unlabel `appE` lbl `appE` varE f) `appE` varE 'getField)
-  sequence [tySynInstD ''FieldValue (tySynEqn [litT (strTyLit s)] t)
-    , sigD (mkName s)
-      $ conT ''FieldLens `appT` st
-    , funD (mkName s) [clause [varP f] (normalB $ varE 'sector `appE` wf) []]
+  sequence [sigD (mkName s) $ conT ''FieldLens `appT` st
+    , funD (mkName s) [clause [varP f] (normalB $ varE 'sectorAssoc `appE` wf) []]
     , return $ PragmaD $ InlineP (mkName s) Inline FunLike AllPhases
     ]
-
--- | @[recordType|foo bar baz|] --> Record '["foo", "bar", "baz"]@
-recordType :: QuasiQuoter
-recordType = QuasiQuoter { quoteType = appT (conT ''Record) . foldr (\e t -> promotedConsT `appT` e `appT` t)
-promotedNilT . map (litT . strTyLit) . words
-  , quoteDec = error "Unsupported"
-  , quoteExp = error "Unsupported"
-  , quotePat = error "Unsupported" }
