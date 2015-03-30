@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Inclusion
@@ -21,13 +22,20 @@ module Data.Extensible.Inclusion (
   , Missing
   , Ambiguous
   , ord
+  , Assoc(..)
+  , Associate(..)
   -- * Inclusion
   , (⊆)()
   , Include
   , inclusion
   , shrink
-  , subset
   , spread
+  -- * Dictionary-like
+  , IncludeAssoc
+  , Associated
+  , inclusionAssoc
+  , shrinkAssoc
+  , spreadAssoc
   -- * Inverse
   , coinclusion
   , wrench
@@ -58,13 +66,6 @@ shrink :: (xs ⊆ ys) => h :* ys -> h :* xs
 shrink h = hmap (`hlookup` h) inclusion
 {-# INLINE shrink #-}
 
--- | A lens for a subset (inefficient)
-subset :: (xs ⊆ ys) => Lens' (h :* ys) (h :* xs)
-subset f ys = fmap (write ys) $ f (shrink ys) where
-  write y xs = flip appEndo y
-    $ hfoldMap getConst'
-    $ hzipWith (\dst src -> Const' $ Endo $ sectorAt dst `over` const src) inclusion xs
-
 -- | /O(log n)/ Embed to a larger union.
 spread :: (xs ⊆ ys) => h :| xs -> h :| ys
 spread (UnionAt pos h) = views (sectorAt pos) UnionAt inclusion h
@@ -86,3 +87,28 @@ wrench xs = mapNullable (flip hlookup xs) `hmap` coinclusion
 retrench :: (Generate ys, xs ⊆ ys) => h :| ys -> Nullable ((:|) h) xs
 retrench (UnionAt pos h) = views (sectorAt pos) (mapNullable (`UnionAt`h)) coinclusion
 {-# INLINE retrench #-}
+
+------------------------------------------------------------------
+
+class Associated xs t where
+  getAssociation :: Membership xs t
+
+instance Associate k v xs => Associated xs (k ':> v) where
+  getAssociation = association
+
+-- | Similar to 'Include', but works nicely for key-value pairs.
+type IncludeAssoc ys xs = Forall (Associated ys) xs
+
+-- | Reify the inclusion of type level sets.
+inclusionAssoc :: forall xs ys. IncludeAssoc ys xs => Membership ys :* xs
+inclusionAssoc = htabulateFor (Proxy :: Proxy (Associated ys)) (const getAssociation)
+
+-- | /O(m log n)/ Select some elements.
+shrinkAssoc :: (IncludeAssoc ys xs) => h :* ys -> h :* xs
+shrinkAssoc h = hmap (`hlookup` h) inclusionAssoc
+{-# INLINE shrinkAssoc #-}
+
+-- | /O(log n)/ Embed to a larger union.
+spreadAssoc :: (IncludeAssoc ys xs) => h :| xs -> h :| ys
+spreadAssoc (UnionAt pos h) = views (sectorAt pos) UnionAt inclusionAssoc h
+{-# INLINE spreadAssoc #-}
