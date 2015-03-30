@@ -111,7 +111,7 @@ mkField str = fmap concat $ forM (words str) $ \s -> do
   f <- newName "f"
   let st = litT (strTyLit s)
   let vt = varT (mkName "v")
-  let fcon = sigE (conE 'Field) $ forallT [PlainTV $ mkName "v"] (pure []) $ arrowT `appT` vt `appT` (conT ''Field `appT` (conT ''Assoc_ `appT` st `appT` vt))
+  let fcon = sigE (conE 'Field) $ forallT [PlainTV $ mkName "v"] (return []) $ arrowT `appT` vt `appT` (conT ''Field `appT` (conT ''Assoc_ `appT` st `appT` vt))
   let lbl = conE 'Proxy `sigE` (conT ''Proxy `appT` st)
   let wf = varE '(.) `appE` (varE 'fmap `appE` fcon)
         `appE` (varE '(.) `appE` (varE 'unlabel `appE` lbl `appE` varE f) `appE` varE 'getField)
