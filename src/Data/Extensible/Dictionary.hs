@@ -18,7 +18,6 @@ import Data.Extensible.Product
 import Data.Extensible.Sum
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
-import qualified Data.Binary as B
 import Data.Constraint
 
 library :: forall c xs. Forall c xs => Comp Dict c :* xs
@@ -48,10 +47,6 @@ instance WrapForall Monoid h xs => Monoid (h :* xs) where
   {-# INLINE mempty #-}
   mappend xs ys = hzipWith3 (\(Comp Dict) -> mappend) (library :: Comp Dict (Instance1 Monoid h) :* xs) xs ys
   {-# INLINE mappend #-}
-
-instance WrapForall B.Binary h xs => B.Binary (h :* xs) where
-  get = hgenerateFor (Proxy :: Proxy (Instance1 B.Binary h)) (const B.get)
-  put = flip appEndo (return ()) . hfoldMap getConst' . hzipWith (\(Comp Dict) x -> Const' $ Endo $ (B.put x >>)) (library :: Comp Dict (Instance1 B.Binary h) :* xs)
 
 instance WrapForall Show h xs => Show (h :| xs) where
   showsPrec d (UnionAt pos h) = showParen (d > 10) $ showString "embed "
