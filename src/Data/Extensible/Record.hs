@@ -45,6 +45,7 @@ data Field kv where
 -- | Get a value of a field.
 getField :: Field (k ':> v) -> v
 getField (Field v) = v
+{-# INLINE getField #-}
 
 -- | The type of records which contain several fields.
 type Record = (:*) Field

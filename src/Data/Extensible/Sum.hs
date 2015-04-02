@@ -76,3 +76,4 @@ picked f u@(UnionAt pos h) = case compareMembership (membership :: Membership xs
 
 embedAssoc :: Associate k a xs => h (k ':> a) -> h :| xs
 embedAssoc = UnionAt association
+{-# INLINE embedAssoc #-}

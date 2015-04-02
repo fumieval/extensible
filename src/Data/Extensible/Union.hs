@@ -25,7 +25,8 @@ newtype K1 a f = K1 { getK1 :: f a } deriving (Eq, Ord, Read, Typeable)
 newtype Union xs a = Union { getUnion :: K1 a :| xs }
 
 reunion :: Gondola m :* xs -> Union xs a -> m a
-reunion gs (Union (UnionAt pos (K1 f))) = views (sectorAt pos) runGondola gs f
+reunion gs = \(Union (UnionAt pos (K1 f))) -> views (sectorAt pos) runGondola gs f
+{-# INLINE reunion #-}
 
 -- | Transformation between effects
 newtype Gondola f g = Gondola { runGondola :: forall a. g a -> f a }
@@ -33,6 +34,8 @@ newtype Gondola f g = Gondola { runGondola :: forall a. g a -> f a }
 -- | Add a new transformation.
 rung :: (forall x. f x -> g x) -> Gondola g :* fs -> Gondola g :* (f ': fs)
 rung f = (<:) (Gondola f)
+{-# INLINE rung #-}
+
 infixr 0 `rung`
 
 runGondolas :: (x ∈ xs) => Gondola f :* xs -> x a -> f a
