@@ -11,7 +11,8 @@
 -- Pattern matching
 ------------------------------------------------------------------------
 module Data.Extensible.Match (
-  Match(..)
+  matchWith
+  , Match(..)
   , clause
   , match
   , mapMatch
@@ -21,6 +22,10 @@ import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
 import Data.Extensible.Product
 import Data.Extensible.Sum
+
+matchWith :: (forall x. f x -> g x -> r) -> f :* xs -> g :| xs -> r
+matchWith f p = \(UnionAt pos h) -> views (sectorAt pos) f p h
+{-# INLINE matchWith #-}
 
 -- | A lens for a specific clause.
 clause :: (x ∈ xs) => Lens' (Match h a :* xs) (h x -> a)
@@ -33,7 +38,7 @@ mapMatch f (Match g) = Match (f . g)
 
 -- | /O(log n)/ Perform pattern matching.
 match :: Match h a :* xs -> h :| xs -> a
-match p = \(UnionAt pos h) -> views (sectorAt pos) runMatch p h
+match = matchWith runMatch
 {-# INLINE match #-}
 
 -- | Flipped `match`
