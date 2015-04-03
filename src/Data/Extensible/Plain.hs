@@ -12,15 +12,13 @@
 ------------------------------------------------------------------------
 module Data.Extensible.Plain (
   K0(..)
+  , _K0
   , AllOf
   , OneOf
   , (<%)
   , pluck
   , bury
   , (<%|)
-  , record
-  , recordAt
-  , (<?%)
   , accessing
   , decFields
   , decFieldsDeriving
@@ -48,7 +46,7 @@ infixr 5 <%
 
 -- | Extract a plain value.
 pluck :: (x ∈ xs) => AllOf xs -> x
-pluck = views sector getK0
+pluck = views piece getK0
 {-# INLINE pluck #-}
 
 -- | Embed a plain value.
@@ -61,25 +59,9 @@ bury = embed . K0
 (<%|) = unsafeCoerce (<:|)
 infixr 1 <%|
 
--- | /O(log n)/ A lens for a plain value in a product.
-record :: (x ∈ xs, Functor f) => (x -> f x) -> (AllOf xs -> f (AllOf xs))
-record f = sector $ unsafeCoerce f `asTypeOf` (fmap K0 . f . getK0)
-{-# INLINE record #-}
-
--- | /O(log n)/ A lens for a plain value in a product.
-recordAt :: (Functor f) => Membership xs x -> (x -> f x) -> (AllOf xs -> f (AllOf xs))
-recordAt pos f = sectorAt pos $ unsafeCoerce f `asTypeOf` (fmap K0 . f . getK0)
-{-# INLINE recordAt #-}
-
--- | Prepend a clause for a plain value.
-(<?%) :: (x -> a) -> Match K0 a :* xs -> Match K0 a :* (x ': xs)
-(<?%) = unsafeCoerce (<:*)
-{-# INLINE (<?%) #-}
-infixr 1 <?%
-
 -- | An accessor for newtype constructors.
 accessing :: (Coercible b a, b ∈ xs) => (a -> b) -> Lens' (AllOf xs) a
-accessing c f = record (fmap c . f . coerce)
+accessing c f = piece (_K0 (fmap c . f . coerce))
 {-# INLINE accessing #-}
 
 -- | Generate newtype wrappers and lenses from type synonyms.

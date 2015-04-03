@@ -49,19 +49,19 @@ instance WrapForall Monoid h xs => Monoid (h :* xs) where
   {-# INLINE mappend #-}
 
 instance WrapForall Show h xs => Show (h :| xs) where
-  showsPrec d (UnionAt pos h) = showParen (d > 10) $ showString "embed "
-    . views (sectorAt pos) (\(Comp Dict) -> showsPrec 11 h) (library :: Comp Dict (Instance1 Show h) :* xs)
+  showsPrec d (EmbedAt pos h) = showParen (d > 10) $ showString "embed "
+    . views (pieceAt pos) (\(Comp Dict) -> showsPrec 11 h) (library :: Comp Dict (Instance1 Show h) :* xs)
 
 instance WrapForall Eq h xs => Eq (h :| xs) where
-  UnionAt p g == UnionAt q h = case compareMembership p q of
+  EmbedAt p g == EmbedAt q h = case compareMembership p q of
     Left _ -> False
-    Right Refl -> views (sectorAt p) (\(Comp Dict) -> g == h) (library :: Comp Dict (Instance1 Eq h) :* xs)
+    Right Refl -> views (pieceAt p) (\(Comp Dict) -> g == h) (library :: Comp Dict (Instance1 Eq h) :* xs)
   {-# INLINE (==) #-}
 
 instance (Eq (h :| xs), WrapForall Ord h xs) => Ord (h :| xs) where
-  UnionAt p g `compare` UnionAt q h = case compareMembership p q of
+  EmbedAt p g `compare` EmbedAt q h = case compareMembership p q of
     Left x -> x
-    Right Refl -> views (sectorAt p) (\(Comp Dict) -> compare g h) (library :: Comp Dict (Instance1 Ord h) :* xs)
+    Right Refl -> views (pieceAt p) (\(Comp Dict) -> compare g h) (library :: Comp Dict (Instance1 Ord h) :* xs)
   {-# INLINE compare #-}
 
 -- | Forall upon a wrapper

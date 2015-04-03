@@ -21,7 +21,6 @@ module Data.Extensible.Inclusion (
   , Expecting
   , Missing
   , Ambiguous
-  , ord
   , Assoc(..)
   , Associate(..)
   -- * Inclusion
@@ -60,22 +59,23 @@ type Include ys = Forall (Member ys)
 -- | Reify the inclusion of type level sets.
 inclusion :: forall xs ys. Include ys xs => Membership ys :* xs
 inclusion = htabulateFor (Proxy :: Proxy (Member ys)) (const membership)
+{-# INLINABLE inclusion #-}
 
 -- | /O(m log n)/ Select some elements.
 shrink :: (xs ⊆ ys) => h :* ys -> h :* xs
-shrink h = hmap (`hlookup` h) inclusion
+shrink h = hmap (hindex h) inclusion
 {-# INLINE shrink #-}
 
 -- | /O(log n)/ Embed to a larger union.
 spread :: (xs ⊆ ys) => h :| xs -> h :| ys
-spread (UnionAt pos h) = views (sectorAt pos) UnionAt inclusion h
+spread (EmbedAt pos h) = views (pieceAt pos) EmbedAt inclusion h
 {-# INLINE spread #-}
 
 -- | The inverse of 'inclusion'.
 coinclusion :: (Include ys xs, Generate ys) => Nullable (Membership xs) :* ys
 coinclusion = flip appEndo (htabulate (const Null))
   $ hfoldMap getConst'
-  $ hmapWithIndex (\src dst -> Const' $ Endo $ sectorAt dst `over` const (Eine src))
+  $ hmapWithIndex (\src dst -> Const' $ Endo $ pieceAt dst `over` const (Eine src))
   $ inclusion
 
 -- | Extend a product and fill missing fields by 'Null'.
@@ -85,7 +85,7 @@ wrench xs = mapNullable (flip hlookup xs) `hmap` coinclusion
 
 -- | Narrow the range of the sum, if possible.
 retrench :: (Generate ys, xs ⊆ ys) => h :| ys -> Nullable ((:|) h) xs
-retrench (UnionAt pos h) = views (sectorAt pos) (mapNullable (`UnionAt`h)) coinclusion
+retrench (EmbedAt pos h) = views (pieceAt pos) (mapNullable (`EmbedAt`h)) coinclusion
 {-# INLINE retrench #-}
 
 ------------------------------------------------------------------
@@ -95,6 +95,7 @@ class Associated xs t where
 
 instance Associate k v xs => Associated xs (k ':> v) where
   getAssociation = association
+  {-# INLINE getAssociation #-}
 
 -- | Similar to 'Include', but works nicely for key-value pairs.
 type IncludeAssoc ys xs = Forall (Associated ys) xs
@@ -102,13 +103,14 @@ type IncludeAssoc ys xs = Forall (Associated ys) xs
 -- | Reify the inclusion of type level sets.
 inclusionAssoc :: forall xs ys. IncludeAssoc ys xs => Membership ys :* xs
 inclusionAssoc = htabulateFor (Proxy :: Proxy (Associated ys)) (const getAssociation)
+{-# INLINABLE inclusionAssoc #-}
 
 -- | /O(m log n)/ Select some elements.
 shrinkAssoc :: (IncludeAssoc ys xs) => h :* ys -> h :* xs
-shrinkAssoc h = hmap (`hlookup` h) inclusionAssoc
+shrinkAssoc h = hmap (hindex h) inclusionAssoc
 {-# INLINE shrinkAssoc #-}
 
 -- | /O(log n)/ Embed to a larger union.
 spreadAssoc :: (IncludeAssoc ys xs) => h :| xs -> h :| ys
-spreadAssoc (UnionAt pos h) = views (sectorAt pos) UnionAt inclusionAssoc h
+spreadAssoc (EmbedAt pos h) = views (pieceAt pos) EmbedAt inclusionAssoc h
 {-# INLINE spreadAssoc #-}

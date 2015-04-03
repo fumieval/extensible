@@ -13,7 +13,7 @@
 module Data.Extensible.Match (
   matchWith
   , Match(..)
-  , clause
+  , _Match
   , match
   , mapMatch
   , caseOf) where
@@ -24,12 +24,8 @@ import Data.Extensible.Product
 import Data.Extensible.Sum
 
 matchWith :: (forall x. f x -> g x -> r) -> f :* xs -> g :| xs -> r
-matchWith f p = \(UnionAt pos h) -> views (sectorAt pos) f p h
+matchWith f p = \(EmbedAt pos h) -> views (pieceAt pos) f p h
 {-# INLINE matchWith #-}
-
--- | A lens for a specific clause.
-clause :: (x ∈ xs) => Lens' (Match h a :* xs) (h x -> a)
-clause f = sector (fmap Match . f . runMatch)
 
 -- | Applies a function to the result of 'Match'.
 mapMatch :: (a -> b) -> Match h a x -> Match h b x

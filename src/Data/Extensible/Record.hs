@@ -98,7 +98,7 @@ infix 1 <@=>
 
 type Assoc_ a b = a ':> b
 
--- | Generate a field.
+-- | Generate field names.
 -- @'mkField' "foo bar"@ defines:
 --
 -- @
@@ -106,17 +106,18 @@ type Assoc_ a b = a ':> b
 -- foo :: FieldLens "bar"
 -- @
 --
--- The yielding field is a <http://hackage.haskell.org/package/lens/docs/Control-Lens-Lens.html#t:Lens Lens>.
+-- The yielding fields are <http://hackage.haskell.org/package/lens/docs/Control-Lens-Lens.html#t:Lens Lens>es.
 mkField :: String -> DecsQ
 mkField str = fmap concat $ forM (words str) $ \s -> do
   f <- newName "f"
   let st = litT (strTyLit s)
   let vt = varT (mkName "v")
-  let fcon = sigE (conE 'Field) $ forallT [PlainTV $ mkName "v"] (return []) $ arrowT `appT` vt `appT` (conT ''Field `appT` (conT ''Assoc_ `appT` st `appT` vt))
+  let fcon = sigE (conE 'Field) $ forallT [PlainTV $ mkName "v"] (return [])
+        $ arrowT `appT` vt `appT` (conT ''Field `appT` (conT ''Assoc_ `appT` st `appT` vt))
   let lbl = conE 'Proxy `sigE` (conT ''Proxy `appT` st)
   let wf = varE '(.) `appE` (varE 'fmap `appE` fcon)
         `appE` (varE '(.) `appE` (varE 'unlabel `appE` lbl `appE` varE f) `appE` varE 'getField)
   sequence [sigD (mkName s) $ conT ''FieldLens `appT` st
-    , funD (mkName s) [clause [varP f] (normalB $ varE 'sectorAssoc `appE` wf) []]
+    , funD (mkName s) [clause [varP f] (normalB $ varE 'pieceAssoc `appE` wf) []]
     , return $ PragmaD $ InlineP (mkName s) Inline FunLike AllPhases
     ]

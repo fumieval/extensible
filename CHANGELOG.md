@@ -1,3 +1,12 @@
+0.3.3
+-----------------------------------------------------
+* Renamed `sectorAt`, `sector`, `sectorAssoc` to `pieceAt`, `piece`, `pieceAssoc`, respectively
+* Renamed `UnionAt` to `EmbedAt`
+* Removed `clause`; Use `piece . _Match`
+* Removed `record`; Use `piece . _K0`
+* Added `htraverseWithIndex`
+* No longer reexports `ord` from `Data.Extensible.Inclusion`
+
 0.3.2
 -----------------------------------------------------
 * Added `Associate` class and combinators around it

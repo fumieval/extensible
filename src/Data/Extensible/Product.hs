@@ -28,15 +28,18 @@ module Data.Extensible.Product (
   , hzipWith3
   , hfoldMap
   , htraverse
+  , htraverseWithIndex
   , hsequence
   , hcollect
   , hdistribute
   -- * Lookup
   , hlookup
   , hindex
-  , sector
-  , sectorAssoc
+  , piece
+  , pieceAssoc
+  , pieceAt
   , sectorAt
+  , sector
   -- * Generation
   , Generate(..)
   , htabulate
@@ -147,7 +150,7 @@ hdistribute = hcollect id
 
 -- | /O(log n)/ Pick up an elemtnt.
 hlookup :: Membership xs x -> h :* xs -> h x
-hlookup = view . sectorAt
+hlookup = view . pieceAt
 {-# INLINABLE hlookup #-}
 
 -- | Flipped 'hlookup'
@@ -155,7 +158,7 @@ hindex :: h :* xs -> Membership xs x -> h x
 hindex = flip hlookup
 {-# INLINE hindex #-}
 
--- | 'hmap' with its indices.
+-- | 'hmap' with 'Membership's.
 hmapWithIndex :: forall g h xs. (forall x. Membership xs x -> g x -> h x) -> g :* xs -> h :* xs
 hmapWithIndex f = go id where
   go :: (forall x. Membership t x -> Membership xs x) -> g :* t -> h :* t
@@ -163,26 +166,43 @@ hmapWithIndex f = go id where
   go _ Nil = Nil
 {-# INLINE hmapWithIndex #-}
 
--- | /O(log n)/ A lens for a specific element.
-sector :: (x ∈ xs) => Lens' (h :* xs) (h x)
-sector = sectorAt membership
-{-# INLINE sector #-}
+-- | 'htraverse' with 'Membership's.
+htraverseWithIndex :: forall f g h xs. Applicative f
+  => (forall x. Membership xs x -> g x -> f (h x)) -> g :* xs -> f (h :* xs)
+htraverseWithIndex f = go id where
+  go :: (forall x. Membership t x -> Membership xs x) -> g :* t -> f (h :* t)
+  go k (Tree g a b) = Tree <$> f (k here) g <*> go (k . navL) a <*> go (k . navR) b
+  go _ Nil = pure Nil
+{-# INLINE htraverseWithIndex #-}
 
 -- | /O(log n)/ A lens for a specific element.
-sectorAssoc :: (Associate k v xs) => Lens' (h :* xs) (h (k ':> v))
-sectorAssoc = sectorAt association
-{-# INLINE sectorAssoc #-}
+piece :: (x ∈ xs) => Lens' (h :* xs) (h x)
+piece = pieceAt membership
+{-# INLINE piece #-}
+
+-- | /O(log n)/ A lens for a specific element.
+pieceAssoc :: (Associate k v xs) => Lens' (h :* xs) (h (k ':> v))
+pieceAssoc = pieceAt association
+{-# INLINE pieceAssoc #-}
 
 -- | /O(log n)/ A lens for a value in a known position.
-sectorAt :: forall f h x xs. Functor f => Membership xs x -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)
-sectorAt pos f = flip go pos where
+pieceAt :: forall f h x xs. Functor f => Membership xs x -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)
+pieceAt pos f = flip go pos where
   go :: forall t. h :* t -> Membership t x -> f (h :* t)
   go (Tree h a b) = navigate
     (\Here -> fmap (\h' -> Tree h' a b) (f h))
     (fmap (\a' -> Tree h a' b) . go a)
     (fmap (\b' -> Tree h a b') . go b)
   go Nil = error "Impossible"
-{-# INLINE sectorAt #-}
+{-# INLINE pieceAt #-}
+
+{-# DEPRECATED sectorAt "Use pieceAt" #-}
+sectorAt :: Functor f => Membership xs x -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)
+sectorAt = pieceAt
+
+{-# DEPRECATED sector "Use piece" #-}
+sector :: (Functor f, x ∈ xs) => (h x -> f (h x)) -> h :* xs -> f (h :* xs)
+sector = piece
 
 -- | Given a function that maps types to values, we can "collect" entities all you want.
 class Generate (xs :: [k]) where

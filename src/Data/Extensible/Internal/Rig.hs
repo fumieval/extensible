@@ -37,6 +37,9 @@ views = unsafeCoerce
 -- | Just a value.
 newtype K0 a = K0 { getK0 :: a } deriving (Eq, Ord, Read, Typeable, Functor, Foldable, Traversable)
 
+_K0 :: Functor f => (a -> f b) -> K0 a -> f (K0 b)
+_K0 f (K0 a) = K0 <$> f a
+
 instance Applicative K0 where
   pure = K0
   K0 f <*> K0 a = K0 (f a)
@@ -58,6 +61,9 @@ newtype Const' a x = Const' { getConst' :: a } deriving Show
 
 -- | Turn a wrapper type into one clause that returns @a@.
 newtype Match h a x = Match { runMatch :: h x -> a } deriving Typeable
+
+_Match :: Functor f => ((g x -> a) -> f (h y -> b)) -> Match g a x -> f (Match h b y)
+_Match f (Match a) = Match <$> f a
 
 newtype Comp f g a = Comp { getComp :: f (g a) }
 
