@@ -89,7 +89,7 @@ newtype Remembrance xs x r = Remembrance (Member xs x => r)
 
 -- | Remember that @Member xs x@ from 'Membership'.
 remember :: forall xs x r. Membership xs x -> (Member xs x => r) -> r
-remember pos r = unsafeCoerce (Remembrance r :: Remembrance xs x r) pos
+remember i r = unsafeCoerce (Remembrance r :: Remembrance xs x r) i
 {-# INLINE remember #-}
 
 -- | Lookup types

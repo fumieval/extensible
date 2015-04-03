@@ -24,7 +24,7 @@ import Data.Extensible.Product
 import Data.Extensible.Sum
 
 matchWith :: (forall x. f x -> g x -> r) -> f :* xs -> g :| xs -> r
-matchWith f p = \(EmbedAt pos h) -> views (pieceAt pos) f p h
+matchWith f p = \(EmbedAt i h) -> views (pieceAt i) f p h
 {-# INLINE matchWith #-}
 
 -- | Applies a function to the result of 'Match'.

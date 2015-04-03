@@ -68,7 +68,7 @@ shrink h = hmap (hindex h) inclusion
 
 -- | /O(log n)/ Embed to a larger union.
 spread :: (xs ⊆ ys) => h :| xs -> h :| ys
-spread (EmbedAt pos h) = views (pieceAt pos) EmbedAt inclusion h
+spread (EmbedAt i h) = views (pieceAt i) EmbedAt inclusion h
 {-# INLINE spread #-}
 
 -- | The inverse of 'inclusion'.
@@ -83,9 +83,9 @@ wrench :: (Generate ys, xs ⊆ ys) => h :* xs -> Nullable h :* ys
 wrench xs = mapNullable (flip hlookup xs) `hmap` coinclusion
 {-# INLINE wrench #-}
 
--- | Narrow the range of the sum, if possible.
+-- | Narrow the range of the sum, if isible.
 retrench :: (Generate ys, xs ⊆ ys) => h :| ys -> Nullable ((:|) h) xs
-retrench (EmbedAt pos h) = views (pieceAt pos) (mapNullable (`EmbedAt`h)) coinclusion
+retrench (EmbedAt i h) = views (pieceAt i) (mapNullable (`EmbedAt`h)) coinclusion
 {-# INLINE retrench #-}
 
 ------------------------------------------------------------------
@@ -112,5 +112,5 @@ shrinkAssoc h = hmap (hindex h) inclusionAssoc
 
 -- | /O(log n)/ Embed to a larger union.
 spreadAssoc :: (IncludeAssoc ys xs) => h :| xs -> h :| ys
-spreadAssoc (EmbedAt pos h) = views (pieceAt pos) EmbedAt inclusionAssoc h
+spreadAssoc (EmbedAt i h) = views (pieceAt i) EmbedAt inclusionAssoc h
 {-# INLINE spreadAssoc #-}

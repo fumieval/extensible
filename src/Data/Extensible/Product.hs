@@ -140,7 +140,7 @@ hsequence = htraverse getComp
 
 -- | The dual of 'htraverse'
 hcollect :: (Functor f, Generate xs) => (a -> h :* xs) -> f a -> Comp f h :* xs
-hcollect f m = htabulate $ \pos -> Comp $ fmap (hlookup pos . f) m
+hcollect f m = htabulate $ \i -> Comp $ fmap (hlookup i . f) m
 {-# INLINABLE hcollect #-}
 
 -- | The dual of 'hsequence'
@@ -187,7 +187,7 @@ pieceAssoc = pieceAt association
 
 -- | /O(log n)/ A lens for a value in a known position.
 pieceAt :: forall f h x xs. Functor f => Membership xs x -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)
-pieceAt pos f = flip go pos where
+pieceAt i f = flip go i where
   go :: forall t. h :* t -> Membership t x -> f (h :* t)
   go (Tree h a b) = navigate
     (\Here -> fmap (\h' -> Tree h' a b) (f h))

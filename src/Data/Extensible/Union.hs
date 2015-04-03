@@ -25,7 +25,7 @@ newtype K1 a f = K1 { getK1 :: f a } deriving (Eq, Ord, Read, Typeable)
 newtype Union xs a = Union { getUnion :: K1 a :| xs }
 
 reunion :: Gondola m :* xs -> Union xs a -> m a
-reunion gs = \(Union (EmbedAt pos (K1 f))) -> views (pieceAt pos) runGondola gs f
+reunion gs = \(Union (EmbedAt i (K1 f))) -> views (pieceAt i) runGondola gs f
 {-# INLINE reunion #-}
 
 -- | Transformation between effects
