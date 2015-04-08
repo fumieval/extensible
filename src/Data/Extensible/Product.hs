@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables, InstanceSigs #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses, UndecidableInstances #-}
 -----------------------------------------------------------------------------
@@ -185,15 +185,19 @@ htraverseWithIndex f = go id where
 
 instance Functor f => Extensible f (->) (->) (:*) where
   -- | /O(log n)/ A lens for a value in a known position.
-  pieceAt :: forall (xs :: [k]) (x :: k) (h :: k -> *). Membership xs x -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)
-  pieceAt i f = flip go i where
-    go :: forall t. h :* t -> Membership t x -> f (h :* t)
-    go (Tree h a b) = navigate
-      (\Here -> fmap (\h' -> Tree h' a b) (f h))
-      (fmap (\a' -> Tree h a' b) . go a)
-      (fmap (\b' -> Tree h a b') . go b)
-    go Nil = error "Impossible"
+  pieceAt = pieceAt_
   {-# INLINE pieceAt #-}
+
+pieceAt_ :: forall (xs :: [k]) (x :: k) (h :: k -> *) (f :: * -> *). Functor f
+  => Membership xs x -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)
+pieceAt_ i f = flip go i where
+  go :: forall t. h :* t -> Membership t x -> f (h :* t)
+  go (Tree h a b) = navigate
+    (\Here -> fmap (\h' -> Tree h' a b) (f h))
+    (fmap (\a' -> Tree h a' b) . go a)
+    (fmap (\b' -> Tree h a b') . go b)
+  go Nil = error "Impossible"
+{-# INLINE pieceAt_ #-}
 
 {-# DEPRECATED sectorAt "Use pieceAt" #-}
 -- | The legacy name for 'pieceAt'
