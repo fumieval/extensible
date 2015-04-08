@@ -12,19 +12,8 @@
 --
 ------------------------------------------------------------------------
 module Data.Extensible.Inclusion (
-  -- * Membership
-    Membership
-  , runMembership
-  , (∈)()
-  , Member(..)
-  , remember
-  , Expecting
-  , Missing
-  , Ambiguous
-  , Assoc(..)
-  , Associate(..)
   -- * Inclusion
-  , (⊆)()
+   (⊆)()
   , Include
   , inclusion
   , shrink

@@ -19,14 +19,13 @@ module Data.Extensible.Internal (Membership
   , getMemberId
   , runMembership
   , compareMembership
-  , ord
+  , mkMembership
   , NavHere(..)
   , navigate
   , here
   , navNext
   , navL
   , navR
-  , (:*)(..)
   , Member(..)
   , remember
   , (∈)()
@@ -37,7 +36,6 @@ module Data.Extensible.Internal (Membership
   , Assoc(..)
   , AssocKeys
   , Associate(..)
-  , LookupTree(..)
   , Succ
   , MapSucc
   , Pred
@@ -72,8 +70,8 @@ import Data.Bits
 
 
 -- | Generates a 'Membership' that corresponds to the given ordinal (0-origin).
-ord :: Int -> Q Exp
-ord n = do
+mkMembership :: Int -> Q Exp
+mkMembership n = do
   let names = map mkName $ take (n + 1) $ concatMap (flip replicateM ['a'..'z']) [1..]
   let rest = mkName "any"
   let cons x xs = PromotedConsT `AppT` x `AppT` xs
@@ -124,36 +122,8 @@ class Associate k v xs | k xs -> v where
 instance (Check k (Lookup k (AssocKeys xs)) ~ Expecting one, ToInt one, (k ':> v) ~ ListIndex one xs) => Associate k v xs where
   association = Membership (theInt (Proxy :: Proxy one))
 
--- | The type of extensible products.
-data (h :: k -> *) :* (s :: [k]) where
-  Nil :: h :* '[]
-  Tree :: !(h x)
-    -> h :* Half xs
-    -> h :* Half (Tail xs)
-    -> h :* (x ': xs)
-
-deriving instance Typeable (:*)
-
-class LookupTree (n :: Nat) (xs :: [k]) x | n xs -> x where
-  lookupTree :: Functor f => proxy n
-    -> (h x -> f (h x))
-    -> h :* xs -> f (h :* xs)
-
-instance LookupTree 'Zero (x ': xs) x where
-  lookupTree _ f (Tree h a b) = fmap (\h' -> Tree h' a b) (f h)
-  {-# INLINE lookupTree #-}
-
-instance LookupTree n (Half xs) x => LookupTree ('SDNat n) (t ': xs) x where
-  lookupTree _ f (Tree h a b) = fmap (\a' -> Tree h a' b) (lookupTree (Proxy :: Proxy n) f a)
-  {-# INLINE lookupTree #-}
-
-instance LookupTree (Pred n) (Half (Tail xs)) x => LookupTree ('DNat n) (t ': xs) x where
-  lookupTree _ f (Tree h a b) = fmap (\b' -> Tree h a b')
-    (lookupTree (Proxy :: Proxy (Div2 (Pred ('DNat n)))) (unsafeCoerce f) b)
-  {-# INLINE lookupTree #-}
-
 instance Show (Membership xs x) where
-  show (Membership n) = "$(ord " ++ show n ++ ")"
+  show (Membership n) = "$(mkMembership " ++ show n ++ ")"
 
 instance Eq (Membership xs x) where
   _ == _ = True

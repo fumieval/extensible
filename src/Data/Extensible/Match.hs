@@ -18,7 +18,6 @@ module Data.Extensible.Match (
   , mapMatch
   , caseOf) where
 
-import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
 import Data.Extensible.Product
 import Data.Extensible.Sum

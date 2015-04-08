@@ -29,6 +29,7 @@ source-repository head
 library
   exposed-modules:
     Data.Extensible
+    Data.Extensible.Class
     Data.Extensible.Dictionary
     Data.Extensible.Inclusion
     Data.Extensible.Internal
@@ -50,7 +51,7 @@ library
     , FlexibleInstances
     , PolyKinds
     , CPP
-  build-depends:       base >= 4.7 && <5, template-haskell, constraints
+  build-depends:       base >= 4.7 && <5, template-haskell, constraints, profunctors, tagged
   hs-source-dirs:      src
   ghc-options: -Wall
   default-language:    Haskell2010

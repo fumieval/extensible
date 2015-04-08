@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ScopedTypeVariables, InstanceSigs #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses, UndecidableInstances #-}
 -----------------------------------------------------------------------------
@@ -35,9 +35,6 @@ module Data.Extensible.Product (
   -- * Lookup
   , hlookup
   , hindex
-  , piece
-  , pieceAssoc
-  , pieceAt
   , sectorAt
   , sector
   -- * Generation
@@ -53,6 +50,18 @@ import Unsafe.Coerce
 import Control.Applicative
 #endif
 import Data.Monoid
+import Data.Typeable
+import Data.Extensible.Class
+
+-- | The type of extensible products.
+data (h :: k -> *) :* (s :: [k]) where
+  Nil :: h :* '[]
+  Tree :: !(h x)
+    -> h :* Half xs
+    -> h :* Half (Tail xs)
+    -> h :* (x ': xs)
+
+deriving instance Typeable (:*)
 
 -- | /O(1)/ Extract the head element.
 hhead :: h :* (x ': xs) -> h x
@@ -175,26 +184,17 @@ htraverseWithIndex f = go id where
   go _ Nil = pure Nil
 {-# INLINE htraverseWithIndex #-}
 
--- | /O(log n)/ A lens for a specific element.
-piece :: (x ∈ xs) => Lens' (h :* xs) (h x)
-piece = pieceAt membership
-{-# INLINE piece #-}
-
--- | /O(log n)/ A lens for a specific element.
-pieceAssoc :: (Associate k v xs) => Lens' (h :* xs) (h (k ':> v))
-pieceAssoc = pieceAt association
-{-# INLINE pieceAssoc #-}
-
--- | /O(log n)/ A lens for a value in a known position.
-pieceAt :: forall f h x xs. Functor f => Membership xs x -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)
-pieceAt i f = flip go i where
-  go :: forall t. h :* t -> Membership t x -> f (h :* t)
-  go (Tree h a b) = navigate
-    (\Here -> fmap (\h' -> Tree h' a b) (f h))
-    (fmap (\a' -> Tree h a' b) . go a)
-    (fmap (\b' -> Tree h a b') . go b)
-  go Nil = error "Impossible"
-{-# INLINE pieceAt #-}
+instance Functor f => Extensible f (->) (->) (:*) where
+  -- | /O(log n)/ A lens for a value in a known position.
+  pieceAt :: forall h x xs. Membership xs x -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)
+  pieceAt i f = flip go i where
+    go :: forall t. h :* t -> Membership t x -> f (h :* t)
+    go (Tree h a b) = navigate
+      (\Here -> fmap (\h' -> Tree h' a b) (f h))
+      (fmap (\a' -> Tree h a' b) . go a)
+      (fmap (\b' -> Tree h a b') . go b)
+    go Nil = error "Impossible"
+  {-# INLINE pieceAt #-}
 
 {-# DEPRECATED sectorAt "Use pieceAt" #-}
 sectorAt :: Functor f => Membership xs x -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)

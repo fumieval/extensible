@@ -22,7 +22,7 @@ module Data.Extensible.Plain (
   , accessing
   , decFields
   , decFieldsDeriving
-  )where
+  ) where
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
 import Data.Extensible.Product

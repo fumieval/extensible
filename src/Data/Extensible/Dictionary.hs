@@ -49,7 +49,9 @@ instance WrapForall Monoid h xs => Monoid (h :* xs) where
   {-# INLINE mappend #-}
 
 instance WrapForall Show h xs => Show (h :| xs) where
-  showsPrec d (EmbedAt i h) = showParen (d > 10) $ showString "embed "
+  showsPrec d (EmbedAt i h) = showParen (d > 10) $ showString "EmbedAt "
+    . showsPrec 11 i
+    . showString " "
     . views (pieceAt i) (\(Comp Dict) -> showsPrec 11 h) (library :: Comp Dict (Instance1 Show h) :* xs)
 
 instance WrapForall Eq h xs => Eq (h :| xs) where

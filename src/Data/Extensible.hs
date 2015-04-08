@@ -23,7 +23,8 @@
 -----------------------------------------------------------------------------
 module Data.Extensible (
   -- * Reexport
-  module Data.Extensible.Dictionary
+  module Data.Extensible.Class
+  , module Data.Extensible.Dictionary
   , module Data.Extensible.Inclusion
   , module Data.Extensible.Match
   , module Data.Extensible.Plain
@@ -33,14 +34,13 @@ module Data.Extensible (
   , Comp(..)
   , comp
   ) where
+
+import Data.Extensible.Class
+import Data.Extensible.Dictionary
 import Data.Extensible.Inclusion
+import Data.Extensible.Internal.Rig
 import Data.Extensible.Match
 import Data.Extensible.Plain
 import Data.Extensible.Product
-import Data.Extensible.Sum
 import Data.Extensible.Record
-import Data.Extensible.Internal.Rig
-import Data.Extensible.Dictionary
-
--------------------------------------------------------------
-
+import Data.Extensible.Sum

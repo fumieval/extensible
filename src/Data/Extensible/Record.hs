@@ -13,22 +13,26 @@
 -- Example: <https://github.com/fumieval/extensible/blob/master/examples/records.hs>
 ------------------------------------------------------------------------
 module Data.Extensible.Record (
-   module Data.Extensible.Inclusion
-  , Record
-  , (<:)
-  , (<:*)
-  , (:*)(Nil)
+   module Data.Extensible.Class
+  , module Data.Extensible.Inclusion
   , (@=)
   , (<@=>)
   , mkField
   , Field(..)
   , getField
-  , FieldLens
+  , FieldOptic
   , FieldName
+  , fieldOptic
+  -- * Records and variants
+  , Record
+  , (<:)
+  , (:*)(Nil)
+  , Variant
   -- * Internal
-  , Labelable(..)
   , LabelPhantom
   ) where
+import Data.Extensible.Class
+import Data.Extensible.Sum
 import Data.Extensible.Product
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
@@ -37,6 +41,9 @@ import GHC.TypeLits hiding (Nat)
 import Data.Extensible.Inclusion
 import Data.Extensible.Dictionary ()
 import Control.Monad
+import Data.Tagged
+import Data.Profunctor
+import Data.Constraint
 
 -- | The type of fields.
 data Field kv where
@@ -50,39 +57,52 @@ getField (Field v) = v
 -- | The type of records which contain several fields.
 type Record = (:*) Field
 
+-- | The dual of 'Record'
+type Variant = (:|) Field
+
 -- | Shows in @field \@= value@ style instead of the derived one.
 instance (KnownSymbol k, Show v) => Show (Field (k ':> v)) where
   showsPrec d (Field a) = showParen (d >= 1) $ showString (symbolVal (Proxy :: Proxy k))
     . showString " @= "
     . showsPrec 1 a
 
--- | @FieldLens s@ is a type of lens that points a field named @s@.
+-- | @FieldOptic s@ is a type of optics that points a field/constructor named @s@.
+--
+-- The yielding fields can be
+-- <http://hackage.haskell.org/package/lens/docs/Control-Lens-Lens.html#t:Lens Lens>es
+-- for 'Record's and
+-- <http://hackage.haskell.org/package/lens/docs/Control-Lens-Lens.html#t:Prism Prism>s
+-- for 'Variant's.
 --
 -- @
--- 'FieldLens' "foo" = Associate "foo" a xs => Lens' ('Record' xs) a
+-- 'FieldOptic' "foo" = Associate "foo" a xs => Lens' ('Record' xs) a
+-- 'FieldOptic' "foo" = Associate "foo" a xs => Prism' ('Variant' xs) a
 -- @
 --
-type FieldLens k = forall f p xs v. (Functor f, Labelable k p, Associate k v xs)
-  => p v (f v) -> Record xs -> f (Record xs)
+type FieldOptic k = forall f p q t xs v. (Functor f
+  , Profunctor p
+  , Extensible f p q t
+  , Associate k v xs
+  , Labelling k p)
+  => p v (f v) -> q (t Field xs) (f (t Field xs))
 
 -- | When you see this type as an argument, it expects a 'FieldLens'.
 -- This type is used to resolve the name of the field internally.
 type FieldName k = forall v. LabelPhantom k v (Proxy v)
   -> Record '[k ':> v] -> Proxy (Record '[k ':> v])
 
+type family Labelling s p :: Constraint where
+  Labelling s (LabelPhantom t) = s ~ t
+  Labelling s p = ()
+
 -- | A ghostly type which spells the field name
 data LabelPhantom s a b
 
--- | An internal class to characterize 'FieldLens'
-class Labelable s p where
-  unlabel :: proxy s -> p a b -> a -> b
+instance Profunctor (LabelPhantom s) where
+  dimap _ _ _ = error "Impossible"
 
-instance Labelable s (->) where
-  unlabel _ = id
-  {-# INLINE unlabel #-}
-
-instance (s ~ t) => Labelable s (LabelPhantom t) where
-  unlabel _ = error "Impossible"
+instance Extensible f (LabelPhantom s) q t where
+  pieceAt _ _ = error "Impossible"
 
 -- | Annotate a value by the field name.
 (@=) :: FieldName k -> v -> Field (k ':> v)
@@ -96,28 +116,23 @@ infix 1 @=
 {-# INLINE (<@=>) #-}
 infix 1 <@=>
 
-type Assoc_ a b = a ':> b
+fieldOptic :: forall proxy k. proxy k -> FieldOptic k
+fieldOptic _ = pieceAssoc . dimap getField (fmap (Field :: v -> Field (k ':> v)))
+{-# INLINE fieldOptic #-}
 
--- | Generate field names.
+-- | Generate fields using 'fieldOptic'.
 -- @'mkField' "foo bar"@ defines:
 --
 -- @
--- foo :: FieldLens "foo"
--- foo :: FieldLens "bar"
+-- foo :: FieldOptic "foo"
+-- foo :: FieldOptic "bar"
 -- @
 --
--- The yielding fields are <http://hackage.haskell.org/package/lens/docs/Control-Lens-Lens.html#t:Lens Lens>es.
 mkField :: String -> DecsQ
 mkField str = fmap concat $ forM (words str) $ \s -> do
-  f <- newName "f"
   let st = litT (strTyLit s)
-  let vt = varT (mkName "v")
-  let fcon = sigE (conE 'Field) $ forallT [PlainTV $ mkName "v"] (return [])
-        $ arrowT `appT` vt `appT` (conT ''Field `appT` (conT ''Assoc_ `appT` st `appT` vt))
   let lbl = conE 'Proxy `sigE` (conT ''Proxy `appT` st)
-  let wf = varE '(.) `appE` (varE 'fmap `appE` fcon)
-        `appE` (varE '(.) `appE` (varE 'unlabel `appE` lbl `appE` varE f) `appE` varE 'getField)
-  sequence [sigD (mkName s) $ conT ''FieldLens `appT` st
-    , funD (mkName s) [clause [varP f] (normalB $ varE 'pieceAssoc `appE` wf) []]
+  sequence [sigD (mkName s) $ conT ''FieldOptic `appT` st
+    , valD (varP (mkName s)) (normalB $ varE 'fieldOptic `appE` lbl) []
     , return $ PragmaD $ InlineP (mkName s) Inline FunLike AllPhases
     ]

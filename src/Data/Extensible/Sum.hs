@@ -1,6 +1,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PatternSynonyms #-}
 -----------------------------------------------------------------------------
 -- |
@@ -31,6 +32,8 @@ import Data.Extensible.Internal
 import Control.Applicative
 #endif
 import Data.Typeable
+import Data.Extensible.Class
+import Data.Profunctor
 
 -- | The extensible sum type
 data (h :: k -> *) :| (s :: [k]) where
@@ -72,6 +75,11 @@ infixr 1 <:|
 exhaust :: h :| '[] -> r
 exhaust _ = error "Impossible"
 
+embedAssoc :: Associate k a xs => h (k ':> a) -> h :| xs
+embedAssoc = EmbedAt association
+{-# INLINE embedAssoc #-}
+
+{-# DEPRECATED picked "Use piece instead" #-}
 -- | A traversal that tries to point a specific element.
 picked :: forall f h x xs. (x ∈ xs, Applicative f) => (h x -> f (h x)) -> h :| xs -> f (h :| xs)
 picked f u@(EmbedAt i h) = case compareMembership (membership :: Membership xs x) i of
@@ -79,6 +87,7 @@ picked f u@(EmbedAt i h) = case compareMembership (membership :: Membership xs x
   _ -> pure u
 {-# INLINE picked #-}
 
-embedAssoc :: Associate k a xs => h (k ':> a) -> h :| xs
-embedAssoc = EmbedAt association
-{-# INLINE embedAssoc #-}
+instance (Applicative f, Choice p) => Extensible f p p (:|) where
+  pieceAt m p = dimap (\t@(EmbedAt i h) -> case compareMembership i m of
+    Right Refl -> Right h
+    Left _ -> Left t) (either pure (fmap (EmbedAt m))) (right' p)
