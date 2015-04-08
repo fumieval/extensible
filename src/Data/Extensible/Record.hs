@@ -9,7 +9,7 @@
 -- Stability   :  experimental
 -- Portability :  non-portable
 --
--- Flexible records with well-typed fields.
+-- Flexible records and variants
 -- Example: <https://github.com/fumieval/extensible/blob/master/examples/records.hs>
 ------------------------------------------------------------------------
 module Data.Extensible.Record (
@@ -30,6 +30,7 @@ module Data.Extensible.Record (
   , Variant
   -- * Internal
   , LabelPhantom
+  , Labelling
   ) where
 import Data.Extensible.Class
 import Data.Extensible.Sum
@@ -41,7 +42,6 @@ import GHC.TypeLits hiding (Nat)
 import Data.Extensible.Inclusion
 import Data.Extensible.Dictionary ()
 import Control.Monad
-import Data.Tagged
 import Data.Profunctor
 import Data.Constraint
 
@@ -116,6 +116,7 @@ infix 1 @=
 {-# INLINE (<@=>) #-}
 infix 1 <@=>
 
+-- | Generate a field optic from the given name.
 fieldOptic :: forall proxy k. proxy k -> FieldOptic k
 fieldOptic _ = pieceAssoc . dimap getField (fmap (Field :: v -> Field (k ':> v)))
 {-# INLINE fieldOptic #-}
@@ -125,7 +126,7 @@ fieldOptic _ = pieceAssoc . dimap getField (fmap (Field :: v -> Field (k ':> v))
 --
 -- @
 -- foo :: FieldOptic "foo"
--- foo :: FieldOptic "bar"
+-- bar :: FieldOptic "bar"
 -- @
 --
 mkField :: String -> DecsQ

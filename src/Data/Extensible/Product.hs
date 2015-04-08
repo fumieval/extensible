@@ -69,7 +69,6 @@ hhead (Tree a _ _) = a
 {-# INLINE hhead #-}
 
 -- | /O(n)/ Extract the tail of the product.
--- FIXME: unsafeCoerce
 htail :: h :* (x ': xs) -> h :* xs
 htail (Tree _ a@(Tree h _ _) b) = unsafeCoerce (Tree h) b (htail a)
 htail (Tree _ Nil _) = unsafeCoerce Nil
@@ -197,16 +196,18 @@ instance Functor f => Extensible f (->) (->) (:*) where
   {-# INLINE pieceAt #-}
 
 {-# DEPRECATED sectorAt "Use pieceAt" #-}
+-- | The legacy name for 'pieceAt'
 sectorAt :: Functor f => Membership xs x -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)
 sectorAt = pieceAt
 
 {-# DEPRECATED sector "Use piece" #-}
+-- | The legacy name for 'piece'
 sector :: (Functor f, x ∈ xs) => (h x -> f (h x)) -> h :* xs -> f (h :* xs)
 sector = piece
 
 -- | Given a function that maps types to values, we can "collect" entities all you want.
 class Generate (xs :: [k]) where
-  -- | /O(n)/ htabulates a product with the given function.
+  -- | /O(n)/ Generate a product with the given function.
   hgenerate :: Applicative f => (forall x. Membership xs x -> f (h x)) -> f (h :* xs)
 
 instance Generate '[] where
@@ -230,7 +231,7 @@ htabulate f = getK0 (hgenerate (K0 . f))
 
 -- | Guarantees the all elements satisfies the predicate.
 class Forall c (xs :: [k]) where
-  -- | /O(n)/ Analogous to 'htabulate', but it also supplies a context @c x@ for every elements in @xs@.
+  -- | /O(n)/ Analogous to 'hgenerate', but it also supplies a context @c x@ for every elements in @xs@.
   hgenerateFor :: Applicative f => proxy c -> (forall x. c x => Membership xs x -> f (h x)) -> f (h :* xs)
 
 instance Forall c '[] where

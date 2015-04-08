@@ -18,7 +18,7 @@ module Data.Extensible.Inclusion (
   , inclusion
   , shrink
   , spread
-  -- * Dictionary-like
+  -- * Key-value
   , IncludeAssoc
   , Associated
   , inclusionAssoc
@@ -33,6 +33,7 @@ module Data.Extensible.Inclusion (
   , mapNullable
   ) where
 
+import Data.Extensible.Class
 import Data.Extensible.Product
 import Data.Extensible.Sum
 import Data.Extensible.Internal
@@ -86,7 +87,7 @@ instance Associate k v xs => Associated xs (k ':> v) where
   getAssociation = association
   {-# INLINE getAssociation #-}
 
--- | Similar to 'Include', but works nicely for key-value pairs.
+-- | Similar to 'Include', but this focuses on keys.
 type IncludeAssoc ys xs = Forall (Associated ys) xs
 
 -- | Reify the inclusion of type level sets.

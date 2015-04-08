@@ -53,10 +53,12 @@ embed :: (x ∈ xs) => h x -> h :| xs
 embed = EmbedAt membership
 {-# INLINE embed #-}
 
+-- | Try to extract something you want.
 strike :: forall h x xs. (x ∈ xs) => h :| xs -> Maybe (h x)
 strike = strikeAt membership
 {-# INLINE strike #-}
 
+-- | Try to extract something you want.
 strikeAt :: forall h x xs. Membership xs x -> h :| xs -> Maybe (h x)
 strikeAt q (EmbedAt p h) = case compareMembership p q of
   Right Refl -> Just h
@@ -75,6 +77,7 @@ infixr 1 <:|
 exhaust :: h :| '[] -> r
 exhaust _ = error "Impossible"
 
+-- | Embed a value, but focuses on its key.
 embedAssoc :: Associate k a xs => h (k ':> a) -> h :| xs
 embedAssoc = EmbedAt association
 {-# INLINE embedAssoc #-}

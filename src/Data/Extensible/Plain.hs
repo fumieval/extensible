@@ -25,6 +25,7 @@ module Data.Extensible.Plain (
   ) where
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
+import Data.Extensible.Class
 import Data.Extensible.Product
 import Data.Extensible.Sum
 import Unsafe.Coerce

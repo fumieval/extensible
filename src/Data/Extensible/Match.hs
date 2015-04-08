@@ -19,9 +19,11 @@ module Data.Extensible.Match (
   , caseOf) where
 
 import Data.Extensible.Internal.Rig
+import Data.Extensible.Class
 import Data.Extensible.Product
 import Data.Extensible.Sum
 
+-- | Retrieve the contents so that they matches and pass both to the given function.
 matchWith :: (forall x. f x -> g x -> r) -> f :* xs -> g :| xs -> r
 matchWith f p = \(EmbedAt i h) -> views (pieceAt i) f p h
 {-# INLINE matchWith #-}

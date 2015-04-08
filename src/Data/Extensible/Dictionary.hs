@@ -10,16 +10,18 @@
 -- Stability   :  experimental
 -- Portability :  non-portable
 --
--- Reifying some classes to make instances for (':*') and (':|')
+-- Reifying classes to make instances for (':*') and (':|')
 -----------------------------------------------------------------------
 module Data.Extensible.Dictionary where
 import Data.Monoid
+import Data.Extensible.Class
 import Data.Extensible.Product
 import Data.Extensible.Sum
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
 import Data.Constraint
 
+-- | Reify a collection of dictionaries, as you wish.
 library :: forall c xs. Forall c xs => Comp Dict c :* xs
 library = htabulateFor (Proxy :: Proxy c) $ const (Comp Dict)
 {-# INLINE library #-}
