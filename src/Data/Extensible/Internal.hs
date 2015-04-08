@@ -33,9 +33,7 @@ module Data.Extensible.Internal (
   , FindAssoc
   -- * Sugar
   , Elaborate
-  , Expecting
-  , Missing
-  , Duplicate
+  , Elaborated(..)
   -- * Tree navigation
   , NavHere(..)
   , navigate
@@ -95,7 +93,7 @@ remember i r = unsafeCoerce (Remembrance r :: Remembrance xs x r) i
 class Member xs x where
   membership :: Membership xs x
 
-instance (Elaborate x (FindType x xs) ~ Expecting pos, KnownPosition pos) => Member xs x where
+instance (Elaborate x (FindType x xs) ~ 'Expecting pos, KnownPosition pos) => Member xs x where
   membership = Membership (theInt (Proxy :: Proxy pos))
   {-# INLINE membership #-}
 
@@ -108,17 +106,15 @@ infix 0 :>
 class Associate k v xs | k xs -> v where
   association :: Membership xs (k ':> v)
 
-instance (Elaborate k (FindAssoc k xs) ~ Expecting (n ':> v), KnownPosition n) => Associate k v xs where
+instance (Elaborate k (FindAssoc k xs) ~ 'Expecting (n ':> v), KnownPosition n) => Associate k v xs where
   association = Membership (theInt (Proxy :: Proxy n))
 
-data Expecting a
-data Missing a
-data Duplicate a
+data Elaborated k v = Expecting v | Missing k | Duplicate k
 
-type family Elaborate k xs where
-  Elaborate k '[] = Missing k
-  Elaborate k '[x] = Expecting x
-  Elaborate k xs = Duplicate k
+type family Elaborate (key :: k) (xs :: [v]) :: Elaborated k v where
+  Elaborate k '[] = 'Missing k
+  Elaborate k '[x] = 'Expecting x
+  Elaborate k xs = 'Duplicate k
 
 type family FindAssoc (key :: k) (xs :: [Assoc k v]) where
   FindAssoc k ((k ':> v) ': xs) = ('Zero ':> v) ': MapSuccKey (FindAssoc k xs)

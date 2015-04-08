@@ -73,7 +73,7 @@ wrench :: (Generate ys, xs ⊆ ys) => h :* xs -> Nullable h :* ys
 wrench xs = mapNullable (flip hlookup xs) `hmap` coinclusion
 {-# INLINE wrench #-}
 
--- | Narrow the range of the sum, if isible.
+-- | Narrow the range of the sum, if possible.
 retrench :: (Generate ys, xs ⊆ ys) => h :| ys -> Nullable ((:|) h) xs
 retrench (EmbedAt i h) = views (pieceAt i) (mapNullable (`EmbedAt`h)) coinclusion
 {-# INLINE retrench #-}

@@ -18,9 +18,7 @@ module Data.Extensible.Class (
   , FindAssoc
   -- * Sugar
   , Elaborate
-  , Expecting
-  , Missing
-  , Duplicate
+  , Elaborated(..)
   ) where
 import Data.Extensible.Internal
 
