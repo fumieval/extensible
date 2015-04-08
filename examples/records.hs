@@ -5,7 +5,8 @@ import Control.Lens
 
 mkField "name weight price description featured quantity"
 
-type Stock c = Record '["name" :> String
+type Stock c = Record '[
+    "name" :> String
   , "weight" :> Float
   , "price" :> c
   , "featured" :> Bool

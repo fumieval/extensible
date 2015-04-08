@@ -1,19 +1,26 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Data.Extensible.Class (
-    Membership
-  , mkMembership
-  , runMembership
-  , (∈)()
-  , Member(..)
-  , remember
-  , Expecting
-  , Missing
-  , Ambiguous
-  , Assoc(..)
-  , Associate(..)
-  , Extensible(..)
+  -- * Class
+   Extensible(..)
   , piece
   , pieceAssoc
+  -- * Membership
+  , Membership
+  , mkMembership
+  -- * Member
+  , Member(..)
+  , remember
+  , (∈)()
+  , FindType
+  -- * Association
+  , Assoc(..)
+  , Associate(..)
+  , FindAssoc
+  -- * Sugar
+  , Elaborate
+  , Expecting
+  , Missing
+  , Duplicate
   ) where
 import Data.Extensible.Internal
 

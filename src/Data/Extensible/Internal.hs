@@ -15,31 +15,38 @@
 --
 -- A bunch of combinators that contains magic
 ------------------------------------------------------------------------
-module Data.Extensible.Internal (Membership
+module Data.Extensible.Internal (
+  -- * Membership
+  Membership
   , getMemberId
+  , mkMembership
   , runMembership
   , compareMembership
-  , mkMembership
+  -- * Member class
+  , Member(..)
+  , remember
+  , (∈)()
+  , FindType
+  -- * Association
+  , Assoc(..)
+  , Associate(..)
+  , FindAssoc
+  -- * Sugar
+  , Elaborate
+  , Expecting
+  , Missing
+  , Duplicate
+  -- * Tree navigation
   , NavHere(..)
   , navigate
   , here
   , navNext
   , navL
   , navR
-  , Member(..)
-  , remember
-  , (∈)()
+  -- * Miscellaneous
   , Nat(..)
-  , ToInt(..)
-  , Lookup
-  , ListIndex
-  , Assoc(..)
-  , AssocKeys
-  , Associate(..)
+  , KnownPosition(..)
   , Succ
-  , MapSucc
-  , Pred
-  , Div2
   , Half
   , Head
   , Tail
@@ -49,10 +56,6 @@ module Data.Extensible.Internal (Membership
   , Map
   , Merge
   , Concat
-  , Check
-  , Expecting
-  , Missing
-  , Ambiguous
   , module Data.Type.Equality
   , module Data.Proxy
   ) where
@@ -67,7 +70,6 @@ import Unsafe.Coerce
 import Data.Typeable
 import Language.Haskell.TH hiding (Pred)
 import Data.Bits
-
 
 -- | Generates a 'Membership' that corresponds to the given ordinal (0-origin).
 mkMembership :: Int -> Q Exp
@@ -90,37 +92,42 @@ remember :: forall xs x r. Membership xs x -> (Member xs x => r) -> r
 remember i r = unsafeCoerce (Remembrance r :: Remembrance xs x r) i
 {-# INLINE remember #-}
 
--- | Lookup types
-type family ListIndex (n :: Nat) (xs :: [k]) :: k where
-  ListIndex 'Zero (x ': xs) = x
-  ListIndex ('SDNat n) (y ': xs) = ListIndex n (Half xs)
-  ListIndex ('DNat n) xs = ListIndex n (Half xs)
+class Member xs x where
+  membership :: Membership xs x
 
-type family Pred (n :: Nat) :: Nat where
-  Pred ('SDNat 'Zero) = 'Zero
-  Pred ('SDNat n) = 'DNat n
-  Pred ('DNat n) = 'SDNat (Pred n)
-  Pred 'Zero = 'Zero
-
-type family Div2 (n :: Nat) :: Nat where
-  Div2 ('SDNat n) = n
-  Div2 ('DNat n) = n
-  Div2 'Zero = 'Zero
+instance (Elaborate x (FindType x xs) ~ Expecting pos, KnownPosition pos) => Member xs x where
+  membership = Membership (theInt (Proxy :: Proxy pos))
+  {-# INLINE membership #-}
 
 -- | The kind of key-value pairs
 data Assoc k v = k :> v
-
-type family AssocKeys (xs :: [Assoc k v]) :: [k] where
-  AssocKeys ((k ':> v) ': xs) = k ': AssocKeys xs
-  AssocKeys '[] = '[]
+infix 0 :>
 
 -- | @'Associate' k v xs@ is essentially identical to @(k :> v) ∈ xs@
 -- , but the type @v@ is inferred from @k@ and @xs@.
 class Associate k v xs | k xs -> v where
   association :: Membership xs (k ':> v)
 
-instance (Check k (Lookup k (AssocKeys xs)) ~ Expecting one, ToInt one, (k ':> v) ~ ListIndex one xs) => Associate k v xs where
-  association = Membership (theInt (Proxy :: Proxy one))
+instance (Elaborate k (FindAssoc k xs) ~ Expecting (n ':> v), KnownPosition n) => Associate k v xs where
+  association = Membership (theInt (Proxy :: Proxy n))
+
+data Expecting a
+data Missing a
+data Duplicate a
+
+type family Elaborate k xs where
+  Elaborate k '[] = Missing k
+  Elaborate k '[x] = Expecting x
+  Elaborate k xs = Duplicate k
+
+type family FindAssoc (key :: k) (xs :: [Assoc k v]) where
+  FindAssoc k ((k ':> v) ': xs) = ('Zero ':> v) ': MapSuccKey (FindAssoc k xs)
+  FindAssoc k ((k' ':> v) ': xs) = MapSuccKey (FindAssoc k xs)
+  FindAssoc k '[] = '[]
+
+type family MapSuccKey (xs :: [Assoc Nat v]) :: [Assoc Nat v] where
+  MapSuccKey '[] = '[]
+  MapSuccKey ((k ':> x) ': xs) = (Succ k ':> x) ': MapSuccKey xs
 
 instance Show (Membership xs x) where
   show (Membership n) = "$(mkMembership " ++ show n ++ ")"
@@ -187,33 +194,11 @@ type x ∈ xs = Member xs x
 type family Head (xs :: [k]) :: k where
   Head (x ': xs) = x
 
-class Member xs x where
-  membership :: Membership xs x
-
--- | A type sugar to make type error more readable.
-data Expecting a
-
--- | A type sugar to make type error more readable.
-data Missing a
-
--- | A type sugar to make type error more readable.
-data Ambiguous a
-
--- | Elaborate the result of 'Lookup'
-type family Check x xs where
-  Check x '[n] = Expecting n
-  Check x '[] = Missing x
-  Check x xs = Ambiguous x
-
-instance (Check x (Lookup x xs) ~ Expecting one, ToInt one) => Member xs x where
-  membership = Membership (theInt (Proxy :: Proxy one))
-  {-# INLINE membership #-}
-
--- | Lookup types
-type family Lookup (x :: k) (xs :: [k]) :: [Nat] where
-  Lookup x (x ': xs) = 'Zero ': Lookup x xs
-  Lookup x (y ': ys) = MapSucc (Lookup x ys)
-  Lookup x '[] = '[]
+-- | FindType types
+type family FindType (x :: k) (xs :: [k]) :: [Nat] where
+  FindType x (x ': xs) = 'Zero ': FindType x xs
+  FindType x (y ': ys) = MapSucc (FindType x ys)
+  FindType x '[] = '[]
 
 -- | Interleaved list
 type family Half (xs :: [k]) :: [k] where
@@ -230,18 +215,18 @@ type family Tail (xs :: [k]) :: [k] where
 data Nat = Zero | DNat Nat | SDNat Nat
 
 -- | Converts type naturals into 'Word'.
-class ToInt n where
+class KnownPosition n where
   theInt :: proxy n -> Word
 
-instance ToInt 'Zero where
+instance KnownPosition 'Zero where
   theInt _ = 0
   {-# INLINE theInt #-}
 
-instance ToInt n => ToInt ('DNat n) where
+instance KnownPosition n => KnownPosition ('DNat n) where
   theInt _ = theInt (Proxy :: Proxy n) `unsafeShiftL` 1
   {-# INLINE theInt #-}
 
-instance ToInt n => ToInt ('SDNat n) where
+instance KnownPosition n => KnownPosition ('SDNat n) where
   theInt _ = (theInt (Proxy :: Proxy n) `unsafeShiftL` 1) + 1
   {-# INLINE theInt #-}
 
