@@ -185,7 +185,7 @@ htraverseWithIndex f = go id where
 
 instance Functor f => Extensible f (->) (->) (:*) where
   -- | /O(log n)/ A lens for a value in a known position.
-  pieceAt :: forall h x xs. Membership xs x -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)
+  pieceAt :: forall (xs :: [k]) (x :: k) (h :: k -> *). Membership xs x -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)
   pieceAt i f = flip go i where
     go :: forall t. h :* t -> Membership t x -> f (h :* t)
     go (Tree h a b) = navigate
