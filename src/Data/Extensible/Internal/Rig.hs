@@ -23,7 +23,7 @@ import Data.Traversable (Traversable)
 import Data.Profunctor
 
 -- | A type synonym for lenses
-type Lens' s a = forall f. Functor f => (a -> f a) -> s -> f s
+-- type Lens' s a = forall f. Functor f => (a -> f a) -> s -> f s
 
 -- | @'view' :: Lens' s a -> (a -> a) -> (s -> s)@
 view :: ((a -> Const a a) -> s -> Const a s) -> s -> a

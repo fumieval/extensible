@@ -91,6 +91,7 @@ picked f u@(EmbedAt i h) = case compareMembership (membership :: Membership xs x
 {-# INLINE picked #-}
 
 instance (Applicative f, Choice p) => Extensible f p p (:|) where
-  pieceAt m p = dimap (\t@(EmbedAt i h) -> case compareMembership i m of
+  pieceAt m = dimap (\t@(EmbedAt i h) -> case compareMembership i m of
     Right Refl -> Right h
-    Left _ -> Left t) (either pure (fmap (EmbedAt m))) (right' p)
+    Left _ -> Left t) (either pure (fmap (EmbedAt m))) . right'
+  {-# INLINABLE pieceAt #-}

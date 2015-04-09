@@ -79,11 +79,7 @@ instance (KnownSymbol k, Show v) => Show (Field (k ':> v)) where
 -- 'FieldOptic' "foo" = Associate "foo" a xs => Prism' ('Variant' xs) a
 -- @
 --
-type FieldOptic k = forall f p q t xs v. (Functor f
-  , Profunctor p
-  , Extensible f p q t
-  , Associate k v xs
-  , Labelling k p)
+type FieldOptic k = forall f p q t xs v. (Extensible f p q t, Associate k v xs, Labelling k p)
   => p v (f v) -> q (t Field xs) (f (t Field xs))
 
 -- | When you see this type as an argument, it expects a 'FieldLens'.
@@ -101,7 +97,7 @@ data LabelPhantom s a b
 instance Profunctor (LabelPhantom s) where
   dimap _ _ _ = error "Impossible"
 
-instance Extensible f (LabelPhantom s) q t where
+instance Functor f => Extensible f (LabelPhantom s) q t where
   pieceAt _ _ = error "Impossible"
 
 -- | Annotate a value by the field name.

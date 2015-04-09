@@ -32,6 +32,7 @@ import Unsafe.Coerce
 import Language.Haskell.TH hiding (Match(..))
 import Data.Char
 import Data.Coerce
+import Data.Profunctor
 
 -- | Alias for plain products
 type AllOf xs = K0 :* xs
@@ -61,8 +62,8 @@ bury = embed . K0
 infixr 1 <%|
 
 -- | An accessor for newtype constructors.
-accessing :: (Coercible b a, b ∈ xs) => (a -> b) -> Lens' (AllOf xs) a
-accessing c f = piece (_K0 (fmap c . f . coerce))
+accessing :: (Coercible b a, b ∈ xs, Extensible f p q t) => (a -> b) -> p a (f a) -> q (t K0 xs) (f (t K0 xs))
+accessing c = piece . _K0 . dimap coerce (fmap c)
 {-# INLINE accessing #-}
 
 -- | Generate newtype wrappers and lenses from type synonyms.
@@ -88,15 +89,27 @@ decFieldsDeriving drv' ds = ds >>= fmap concat . mapM mkBody
   where
     mkBody (NewtypeD cx name_ tvs (NormalC nc [(st, ty)]) drv) = do
       let name = let (x:xs) = nameBase name_ in mkName (toLower x : xs)
-      xs <- newName "xs"
+          xs_ = mkName "xs"
+          f_ = mkName "f"
+          p_ = mkName "p"
+          q_ = mkName "q"
+          t_ = mkName "t"
+          ext = varT t_ `appT` conT ''K0 `appT` varT xs_
+          tvs' = PlainTV xs_ : PlainTV f_ : PlainTV p_ : PlainTV q_ : PlainTV t_ : tvs
       sequence [return $ NewtypeD cx name_ tvs (NormalC nc [(st, ty)]) (drv' ++ drv)
+
         ,sigD name
 #if MIN_VERSION_template_haskell(2,10,0)
-          $ forallT (PlainTV xs : tvs) (sequence [conT ''Member `appT` varT xs `appT` conT name_])
+          $ forallT tvs' (sequence [conT ''Member `appT` varT xs_ `appT` conT name_
+            , conT ''Extensible `appT` varT f_ `appT` varT p_ `appT` varT q_ `appT` varT t_])
 #else
-          $ forallT (PlainTV xs : tvs) (sequence [classP ''Member [varT xs, conT name_]])
+          $ forallT tvs' (sequence [classP ''Member [varT xs_, conT name_]
+            , classP ''Extensible [varT f_, varT p_, varT q_, varT t_]])
 #endif
-          $ conT ''Lens' `appT` (conT ''AllOf `appT` varT xs) `appT` return ty
+          $ arrowT
+            `appT` (varT p_ `appT` pure ty `appT` (varT f_ `appT` pure ty))
+            `appT` (varT q_ `appT` ext `appT` (varT f_ `appT` ext))
+
         , valD (varP name) (normalB $ varE 'accessing `appE` conE nc) []
         , return $ PragmaD $ InlineP name Inline FunLike AllPhases
         ]

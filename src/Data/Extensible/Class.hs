@@ -21,9 +21,10 @@ module Data.Extensible.Class (
   , Elaborated(..)
   ) where
 import Data.Extensible.Internal
+import Data.Profunctor
 
 -- | This class allows us to use 'pieceAt' for both sums and products.
-class Extensible f p q (t :: (k -> *) -> [k] -> *) where
+class (Functor f, Profunctor p) => Extensible f p q (t :: (k -> *) -> [k] -> *) where
   pieceAt :: Membership xs x -> p (h x) (f (h x)) -> q (t h xs) (f (t h xs))
 
 -- | Accessor for an element.
