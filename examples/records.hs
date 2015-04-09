@@ -22,7 +22,7 @@ s0 = Field "DA-192H"
   <: Field 20
   <: Nil
 
--- Use shrink to permute elements
+-- Use shrinkAssoc to permute elements
 s1 :: Num c => Stock c
 s1 = shrinkAssoc
    $ name @= "HHP-150"
