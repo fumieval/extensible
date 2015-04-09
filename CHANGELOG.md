@@ -1,11 +1,15 @@
 0.3.3
 -----------------------------------------------------
 * Renamed `sectorAt`, `sector`, `sectorAssoc` to `pieceAt`, `piece`, `pieceAssoc`, respectively
+* `picked` is now subsumed by `piece`
+    * `mkField` yields more generalized optics
 * Renamed `UnionAt` to `EmbedAt`
 * Removed `clause`; Use `piece . _Match`
 * Removed `record`; Use `piece . _K0`
 * Added `htraverseWithIndex`
-* No longer reexports `ord` from `Data.Extensible.Inclusion`
+* Renamed `ord` to `mkMembership`
+* Fixed the `Show` instance of `:|`
+* Added `Variant`
 
 0.3.2
 -----------------------------------------------------

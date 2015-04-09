@@ -88,7 +88,7 @@ instance Associate k v xs => Associated xs (k ':> v) where
   {-# INLINE getAssociation #-}
 
 -- | Similar to 'Include', but this focuses on keys.
-type IncludeAssoc ys xs = Forall (Associated ys) xs
+type IncludeAssoc ys = Forall (Associated ys)
 
 -- | Reify the inclusion of type level sets.
 inclusionAssoc :: forall xs ys. IncludeAssoc ys xs => Membership ys :* xs
