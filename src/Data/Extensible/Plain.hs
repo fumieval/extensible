@@ -107,7 +107,7 @@ decFieldsDeriving drv' ds = ds >>= fmap concat . mapM mkBody
             , classP ''Extensible [varT f_, varT p_, varT q_, varT t_]])
 #endif
           $ arrowT
-            `appT` (varT p_ `appT` pure ty `appT` (varT f_ `appT` pure ty))
+            `appT` (varT p_ `appT` return ty `appT` (varT f_ `appT` return ty))
             `appT` (varT q_ `appT` ext `appT` (varT f_ `appT` ext))
 
         , valD (varP name) (normalB $ varE 'accessing `appE` conE nc) []
