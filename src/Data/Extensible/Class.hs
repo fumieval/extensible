@@ -24,32 +24,34 @@ module Data.Extensible.Class (
   , Elaborated(..)
   ) where
 import Data.Extensible.Internal
+import Data.Extensible.Internal.Rig (Optic')
 import Data.Extensible.Wrapper
 import Data.Profunctor
 
 -- | This class allows us to use 'pieceAt' for both sums and products.
 class (Functor f, Profunctor p) => Extensible f p (t :: (k -> *) -> [k] -> *) where
-  pieceAt :: Membership xs x -> p (h x) (f (h x)) -> p (t h xs) (f (t h xs))
+  pieceAt :: Membership xs x -> Optic' p f (t h xs) (h x)
 
 -- | Accessor for an element.
-piece :: (x ∈ xs, Extensible f p t) => p (h x) (f (h x)) -> p (t h xs) (f (t h xs))
+piece :: (x ∈ xs, Extensible f p t) => Optic' p f (t h xs) (h x)
 piece = pieceAt membership
 {-# INLINE piece #-}
 
 -- | Like 'piece', but reckon membership from its key.
-pieceAssoc :: (Associate k v xs, Extensible f p t) => p (h (k ':> v)) (f (h (k ':> v))) -> p (t h xs) (f (t h xs))
+pieceAssoc :: (Associate k v xs, Extensible f p t) => Optic' p f (t h xs) (h (k ':> v))
 pieceAssoc = pieceAt association
 {-# INLINE pieceAssoc #-}
 
-itemAt :: (Wrapper h, Extensible f p t) => Membership xs x -> p (Repr h x) (f (Repr h x)) -> p (t h xs) (f (t h xs))
+itemAt :: (Wrapper h, Extensible f p t) => Membership xs x -> Optic' p f (t h xs) (Repr h x)
 itemAt m = pieceAt m . _Wrapper
 {-# INLINE itemAt #-}
 
-item :: (Wrapper h, Extensible f p t, x ∈ xs) => proxy x -> p (Repr h x) (f (Repr h x)) -> p (t h xs) (f (t h xs))
+item :: (Wrapper h, Extensible f p t, x ∈ xs) => proxy x -> Optic' p f (t h xs) (Repr h x)
 item p = piece . _WrapperAs p
 {-# INLINE item #-}
 
-itemAssoc :: (Wrapper h, Extensible f p t, Associate k v xs) => proxy k -> p (Repr h (k ':> v)) (f (Repr h (k ':> v))) -> p (t h xs) (f (t h xs))
+itemAssoc :: (Wrapper h, Extensible f p t, Associate k v xs)
+  => proxy k -> Optic' p f (t h xs) (Repr h (k ':> v))
 itemAssoc p = pieceAssoc . _WrapperAs (proxyKey p)
 {-# INLINE itemAssoc #-}
 

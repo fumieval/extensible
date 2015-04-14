@@ -31,7 +31,7 @@ class Wrapper (h :: k -> *) where
   --
   -- @_Wrapper :: Iso' (h v) (Repr h v)@
   --
-  _Wrapper :: (Functor f, Profunctor p) => p (Repr h v) (f (Repr h v)) -> p (h v) (f (h v))
+  _Wrapper :: (Functor f, Profunctor p) => Optic' p f (h v) (Repr h v)
 
 instance Wrapper Identity where
   type Repr Identity a = a

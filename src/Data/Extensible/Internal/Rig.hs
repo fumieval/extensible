@@ -18,21 +18,20 @@ import Data.Functor.Identity
 import Data.Tagged
 import Data.Coerce
 
--- | A type synonym for lenses
--- type Lens' s a = forall f. Functor f => (a -> f a) -> s -> f s
+type Optic' p f s a = p a (f a) -> p s (f s)
 
 -- | @'view' :: Lens' s a -> (a -> a) -> (s -> s)@
-view :: ((a -> Const a a) -> s -> Const a s) -> s -> a
+view :: Optic' (->) (Const a) s a -> s -> a
 view l = views l id
 {-# INLINE view #-}
 
 -- | @'views' :: Lens' s a -> (a -> r) -> (s -> r)@
-views :: ((a -> Const r a) -> s -> Const r s) -> (a -> r) -> s -> r
+views :: Optic' (->) (Const r) s a -> (a -> r) -> s -> r
 views = unsafeCoerce
 {-# INLINE views #-}
 
 -- | @'over' :: Lens' s a -> (a -> a) -> (s -> s)@
-over :: ((a -> Identity b) -> s -> Identity t) -> (a -> b) -> s -> t
+over :: Optic' (->) Identity s a -> (a -> a) -> s -> s
 over = unsafeCoerce
 {-# INLINE over #-}
 
@@ -50,11 +49,11 @@ instance Profunctor (Exchange a b) where
   dimap f g (Exchange sa bt) = Exchange (sa . f) (g . bt)
   {-# INLINE dimap #-}
 
-withIso :: (Exchange a b a (Identity b) -> Exchange a b s (Identity t)) -> ((s -> a) -> (b -> t) -> r) -> r
+withIso :: Optic' (Exchange a a) Identity s a -> ((s -> a) -> (a -> s) -> r) -> r
 withIso l r = case l (Exchange id Identity) of
   Exchange f g -> r f (unsafeCoerce g)
 {-# INLINE withIso #-}
 
-review :: (Tagged a (Identity a) -> Tagged s (Identity s)) -> a -> s
+review :: Optic' Tagged Identity s a -> a -> s
 review = unsafeCoerce
 {-# INLINE review #-}
