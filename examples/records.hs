@@ -1,5 +1,4 @@
 {-# LANGUAGE TemplateHaskell, DataKinds, TypeOperators, TypeFamilies, FlexibleContexts #-}
-import Data.Extensible.Record
 import Data.Extensible
 import Control.Lens
 
@@ -14,12 +13,12 @@ type Stock c = Record '[
   , "quantity" :> Int]
 
 s0 :: Num c => Stock c
-s0 = Field "DA-192H"
-  <: Field 260
-  <: Field 120
-  <: Field True
-  <: Field "High-quality (24bit 192kHz), lightweight portable DAC"
-  <: Field 20
+s0 = name @= "DA-192H"
+  <: weight @= 260
+  <: price @= 120
+  <: featured @= True
+  <: description @= "High-quality (24bit 192kHz), lightweight portable DAC"
+  <: quantity @= 20
   <: Nil
 
 -- Use shrinkAssoc to permute elements

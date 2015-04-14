@@ -68,6 +68,7 @@ import Unsafe.Coerce
 import Data.Typeable
 import Language.Haskell.TH hiding (Pred)
 import Data.Bits
+import Data.Extensible.Wrapper
 
 -- | Generates a 'Membership' that corresponds to the given ordinal (0-origin).
 mkMembership :: Int -> Q Exp
@@ -96,10 +97,6 @@ class Member xs x where
 instance (Elaborate x (FindType x xs) ~ 'Expecting pos, KnownPosition pos) => Member xs x where
   membership = Membership (theInt (Proxy :: Proxy pos))
   {-# INLINE membership #-}
-
--- | The kind of key-value pairs
-data Assoc k v = k :> v
-infix 0 :>
 
 -- | @'Associate' k v xs@ is essentially identical to @(k :> v) ∈ xs@
 -- , but the type @v@ is inferred from @k@ and @xs@.

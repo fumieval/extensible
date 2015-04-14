@@ -24,13 +24,6 @@ module Data.Extensible.Inclusion (
   , inclusionAssoc
   , shrinkAssoc
   , spreadAssoc
-  -- * Inverse
-  , coinclusion
-  , wrench
-  , retrench
-  , Nullable(..)
-  , nullable
-  , mapNullable
   ) where
 
 import Data.Extensible.Class
@@ -60,23 +53,6 @@ shrink h = hmap (hindex h) inclusion
 spread :: (xs ⊆ ys) => h :| xs -> h :| ys
 spread (EmbedAt i h) = views (pieceAt i) EmbedAt inclusion h
 {-# INLINE spread #-}
-
--- | The inverse of 'inclusion'.
-coinclusion :: (Include ys xs, Generate ys) => Nullable (Membership xs) :* ys
-coinclusion = flip appEndo (htabulate (const Null))
-  $ hfoldMap getConst'
-  $ hmapWithIndex (\src dst -> Const' $ Endo $ pieceAt dst `over` const (Eine src))
-  $ inclusion
-
--- | Extend a product and fill missing fields by 'Null'.
-wrench :: (Generate ys, xs ⊆ ys) => h :* xs -> Nullable h :* ys
-wrench xs = mapNullable (flip hlookup xs) `hmap` coinclusion
-{-# INLINE wrench #-}
-
--- | Narrow the range of the sum, if possible.
-retrench :: (Generate ys, xs ⊆ ys) => h :| ys -> Nullable ((:|) h) xs
-retrench (EmbedAt i h) = views (pieceAt i) (mapNullable (`EmbedAt`h)) coinclusion
-{-# INLINE retrench #-}
 
 ------------------------------------------------------------------
 

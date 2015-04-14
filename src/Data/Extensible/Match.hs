@@ -13,7 +13,6 @@
 module Data.Extensible.Match (
   matchWith
   , Match(..)
-  , _Match
   , match
   , mapMatch
   , caseOf) where
@@ -24,6 +23,7 @@ import Data.Extensible.Product
 import Data.Extensible.Sum
 import Data.Profunctor
 import Data.Typeable
+import Data.Extensible.Wrapper
 
 -- | Retrieve the contents so that they matches and pass both to the given function.
 matchWith :: (forall x. f x -> g x -> r) -> f :* xs -> g :| xs -> r
@@ -45,9 +45,3 @@ caseOf :: h :| xs -> Match h a :* xs -> a
 caseOf = flip match
 {-# INLINE caseOf #-}
 infix 0 `caseOf`
-
--- | Turn a wrapper type into one clause that returns @a@.
-newtype Match h a x = Match { runMatch :: h x -> a } deriving Typeable
-
-_Match :: (Profunctor p, Functor f) => p (g x -> a) (f (h y -> b)) -> p (Match g a x) (f (Match h b y))
-_Match = dimap runMatch (fmap Match)

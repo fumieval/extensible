@@ -35,11 +35,13 @@ library
     Data.Extensible.Internal
     Data.Extensible.Internal.Rig
     Data.Extensible.Match
+    Data.Extensible.Nullable
     Data.Extensible.Plain
     Data.Extensible.Product
     Data.Extensible.Record
     Data.Extensible.Sum
     Data.Extensible.Union
+    Data.Extensible.Wrapper
   default-extensions: TypeOperators
     , DeriveDataTypeable
     , KindSignatures
@@ -51,7 +53,7 @@ library
     , FlexibleInstances
     , PolyKinds
     , CPP
-  build-depends:       base >= 4.7 && <5, template-haskell, constraints, profunctors
+  build-depends:       base >= 4.7 && <5, template-haskell, constraints, profunctors, tagged
   hs-source-dirs:      src
   ghc-options: -Wall
   default-language:    Haskell2010

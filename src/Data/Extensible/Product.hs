@@ -52,6 +52,8 @@ import Control.Applicative
 import Data.Monoid
 import Data.Typeable
 import Data.Extensible.Class
+import Data.Functor.Identity
+import Data.Extensible.Wrapper
 
 -- | The type of extensible products.
 data (h :: k -> *) :* (s :: [k]) where
@@ -230,7 +232,7 @@ instance (Generate (Half xs), Generate (Half (Tail xs))) => Generate (x ': xs) w
 -- 'hindex' ('htabulate' k) ≡ k
 -- @
 htabulate :: Generate xs => (forall x. Membership xs x -> h x) -> h :* xs
-htabulate f = getK0 (hgenerate (K0 . f))
+htabulate f = runIdentity (hgenerate (Identity . f))
 {-# INLINE htabulate #-}
 
 -- | Guarantees the all elements satisfies the predicate.
@@ -251,5 +253,5 @@ instance (c x, Forall c (Half xs), Forall c (Half (Tail xs))) => Forall c (x ': 
 
 -- | Pure version of 'hgenerateFor'.
 htabulateFor :: Forall c xs => proxy c -> (forall x. c x => Membership xs x -> h x) -> h :* xs
-htabulateFor p f = getK0 (hgenerateFor p (K0 . f))
+htabulateFor p f = runIdentity (hgenerateFor p (Identity . f))
 {-# INLINE htabulateFor #-}

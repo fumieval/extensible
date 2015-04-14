@@ -11,9 +11,7 @@
 --
 ------------------------------------------------------------------------
 module Data.Extensible.Plain (
-  K0(..)
-  , _K0
-  , AllOf
+    AllOf
   , OneOf
   , (<%)
   , pluck
@@ -31,14 +29,14 @@ import Data.Extensible.Sum
 import Unsafe.Coerce
 import Language.Haskell.TH hiding (Match(..))
 import Data.Char
-import Data.Coerce
-import Data.Profunctor
+import Data.Functor.Identity
+import Data.Extensible.Wrapper
 
 -- | Alias for plain products
-type AllOf xs = K0 :* xs
+type AllOf xs = Identity :* xs
 
 -- | Alias for plain sums
-type OneOf xs = K0 :| xs
+type OneOf xs = Identity :| xs
 
 -- | /O(log n)/ Add a plain value to a product.
 (<%) :: x -> AllOf xs -> AllOf (x ': xs)
@@ -48,12 +46,12 @@ infixr 5 <%
 
 -- | Extract a plain value.
 pluck :: (x ∈ xs) => AllOf xs -> x
-pluck = views piece getK0
+pluck = views piece runIdentity
 {-# INLINE pluck #-}
 
 -- | Embed a plain value.
 bury :: (x ∈ xs) => x -> OneOf xs
-bury = embed . K0
+bury = embed . Identity
 {-# INLINE bury #-}
 
 -- | Naive pattern matching for a plain value.
@@ -62,8 +60,8 @@ bury = embed . K0
 infixr 1 <%|
 
 -- | An accessor for newtype constructors.
-accessing :: (Coercible b a, b ∈ xs, Extensible f p q t) => (a -> b) -> p a (f a) -> q (t K0 xs) (f (t K0 xs))
-accessing c = piece . _K0 . dimap coerce (fmap c)
+accessing :: (Wrapper Identity x a, x ∈ xs, Extensible f p q t) => (a -> x) -> p a (f a) -> q (t Identity xs) (f (t Identity xs))
+accessing c = piece . _WrapperOn (Identity . c)
 {-# INLINE accessing #-}
 
 -- | Generate newtype wrappers and lenses from type synonyms.
@@ -94,7 +92,7 @@ decFieldsDeriving drv' ds = ds >>= fmap concat . mapM mkBody
           p_ = mkName "p"
           q_ = mkName "q"
           t_ = mkName "t"
-          ext = varT t_ `appT` conT ''K0 `appT` varT xs_
+          ext = varT t_ `appT` conT ''Identity `appT` varT xs_
           tvs' = PlainTV xs_ : PlainTV f_ : PlainTV p_ : PlainTV q_ : PlainTV t_ : tvs
       sequence [return $ NewtypeD cx name_ tvs (NormalC nc [(st, ty)]) (drv' ++ drv)
 

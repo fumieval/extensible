@@ -20,11 +20,23 @@ import Data.Extensible.Sum
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
 import Data.Constraint
+import Data.Extensible.Wrapper
 
 -- | Reify a collection of dictionaries, as you wish.
 library :: forall c xs. Forall c xs => Comp Dict c :* xs
 library = htabulateFor (Proxy :: Proxy c) $ const (Comp Dict)
 {-# INLINE library #-}
+
+newtype MergeList a = MergeList { getMerged :: [a] }
+
+instance Monoid (MergeList a) where
+  mempty = MergeList []
+  {-# INLINE mempty #-}
+  mappend (MergeList a) (MergeList b) = MergeList $ merge a b where
+    merge (x:xs) (y:ys) = x : y : merge xs ys
+    merge xs [] = xs
+    merge [] ys = ys
+  {-# INLINE mappend #-}
 
 instance WrapForall Show h xs => Show (h :* xs) where
   showsPrec d = showParen (d > 0)

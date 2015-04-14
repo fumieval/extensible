@@ -27,20 +27,21 @@ module Data.Extensible (
   , module Data.Extensible.Dictionary
   , module Data.Extensible.Inclusion
   , module Data.Extensible.Match
+  , module Data.Extensible.Nullable
   , module Data.Extensible.Plain
   , module Data.Extensible.Record
   , module Data.Extensible.Product
   , module Data.Extensible.Sum
-  , Comp(..)
-  , comp
+  , module Data.Extensible.Wrapper
   ) where
 
 import Data.Extensible.Class
 import Data.Extensible.Dictionary
 import Data.Extensible.Inclusion
-import Data.Extensible.Internal.Rig
 import Data.Extensible.Match
+import Data.Extensible.Nullable
 import Data.Extensible.Plain
 import Data.Extensible.Product
 import Data.Extensible.Record
 import Data.Extensible.Sum
+import Data.Extensible.Wrapper

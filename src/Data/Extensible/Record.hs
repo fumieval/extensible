@@ -18,15 +18,13 @@ module Data.Extensible.Record (
   , (@=)
   , (<@=>)
   , mkField
-  , Field(..)
-  , getField
   , FieldOptic
   , FieldName
   , fieldOptic
   -- * Records and variants
+  , RecordOf
   , Record
-  , (<:)
-  , (:*)(Nil)
+  , VariantOf
   , Variant
   -- * Internal
   , LabelPhantom
@@ -38,33 +36,23 @@ import Data.Extensible.Product
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
 import Language.Haskell.TH
-import GHC.TypeLits hiding (Nat)
 import Data.Extensible.Inclusion
 import Data.Extensible.Dictionary ()
 import Control.Monad
 import Data.Profunctor
 import Data.Constraint
-
--- | The type of fields.
-data Field kv where
-  Field :: v -> Field (k ':> v)
-
--- | Get a value of a field.
-getField :: Field (k ':> v) -> v
-getField (Field v) = v
-{-# INLINE getField #-}
+import Data.Extensible.Wrapper
+import Data.Functor.Identity
 
 -- | The type of records which contain several fields.
-type Record = (:*) Field
+type Record = RecordOf Identity
 
 -- | The dual of 'Record'
-type Variant = (:|) Field
+type Variant = VariantOf Identity
 
--- | Shows in @field \@= value@ style instead of the derived one.
-instance (KnownSymbol k, Show v) => Show (Field (k ':> v)) where
-  showsPrec d (Field a) = showParen (d >= 1) $ showString (symbolVal (Proxy :: Proxy k))
-    . showString " @= "
-    . showsPrec 1 a
+type RecordOf h = (:*) (Field h)
+
+type VariantOf h = (:|) (Field h)
 
 -- | @FieldOptic s@ is a type of optics that points a field/constructor named @s@.
 --
@@ -79,13 +67,17 @@ instance (KnownSymbol k, Show v) => Show (Field (k ':> v)) where
 -- 'FieldOptic' "foo" = Associate "foo" a xs => Prism' ('Variant' xs) a
 -- @
 --
-type FieldOptic k = forall f p q t xs v. (Extensible f p q t, Associate k v xs, Labelling k p)
-  => p v (f v) -> q (t Field xs) (f (t Field xs))
+
+type FieldOptic k = forall f p q t xs (h :: kind -> *) (v :: kind) a. (Extensible f p q t
+  , Associate k v xs
+  , Labelling k p
+  , Wrapper h v a)
+  => p a (f a) -> q (t (Field h) xs) (f (t (Field h) xs))
 
 -- | When you see this type as an argument, it expects a 'FieldLens'.
 -- This type is used to resolve the name of the field internally.
-type FieldName k = forall v. LabelPhantom k v (Proxy v)
-  -> Record '[k ':> v] -> Proxy (Record '[k ':> v])
+type FieldName k = forall v. LabelPhantom k () (Proxy ())
+  -> RecordOf Proxy '[k ':> v] -> Proxy (RecordOf Proxy '[k ':> v])
 
 type family Labelling s p :: Constraint where
   Labelling s (LabelPhantom t) = s ~ t
@@ -101,21 +93,24 @@ instance Functor f => Extensible f (LabelPhantom s) q t where
   pieceAt _ _ = error "Impossible"
 
 -- | Annotate a value by the field name.
-(@=) :: FieldName k -> v -> Field (k ':> v)
-(@=) _ = Field
+(@=) :: Wrapper h v a => FieldName k -> a -> Field h (k ':> v)
+(@=) _ = Field . review _Wrapper
 {-# INLINE (@=) #-}
 infix 1 @=
 
 -- | Lifted ('@=')
-(<@=>) :: Functor f => FieldName k -> f v -> Comp f Field (k ':> v)
-(<@=>) _ = comp Field
+(<@=>) :: (Functor f, Wrapper h v a) => FieldName k -> f a -> Comp f (Field h) (k ':> v)
+(<@=>) k = Comp . fmap (k @=)
 {-# INLINE (<@=>) #-}
 infix 1 <@=>
 
 -- | Generate a field optic from the given name.
 fieldOptic :: forall proxy k. proxy k -> FieldOptic k
-fieldOptic _ = pieceAssoc . dimap getField (fmap (Field :: v -> Field (k ':> v)))
+fieldOptic k = pieceAssoc . withIso _Wrapper (\f g -> dimap (\(Field v) -> f v) (fmap (fieldNamed k . g)))
 {-# INLINE fieldOptic #-}
+
+fieldNamed :: proxy k -> h v -> Field h (k ':> v)
+fieldNamed _ = Field
 
 -- | Generate fields using 'fieldOptic'.
 -- @'mkField' "foo bar"@ defines:

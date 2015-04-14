@@ -19,9 +19,7 @@ import Data.Extensible.Class
 import Data.Extensible.Sum
 import Data.Extensible.Product
 import Data.Typeable
-
--- | Wrap a type that has a kind @* -> *@.
-newtype K1 a f = K1 { getK1 :: f a } deriving (Eq, Ord, Read, Typeable)
+import Data.Extensible.Wrapper
 
 newtype Union xs a = Union { getUnion :: K1 a :| xs }
 
