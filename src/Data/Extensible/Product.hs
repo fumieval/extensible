@@ -232,7 +232,7 @@ instance (Generate (Half xs), Generate (Half (Tail xs))) => Generate (x ': xs) w
 -- 'hindex' ('htabulate' k) ≡ k
 -- @
 htabulate :: Generate xs => (forall x. Membership xs x -> h x) -> h :* xs
-htabulate f = runIdentity (hgenerate (Identity . f))
+htabulate f = runIdentity (hgenerate (Identity #. f))
 {-# INLINE htabulate #-}
 
 -- | Guarantees the all elements satisfies the predicate.
@@ -253,5 +253,5 @@ instance (c x, Forall c (Half xs), Forall c (Half (Tail xs))) => Forall c (x ': 
 
 -- | Pure version of 'hgenerateFor'.
 htabulateFor :: Forall c xs => proxy c -> (forall x. c x => Membership xs x -> h x) -> h :* xs
-htabulateFor p f = runIdentity (hgenerateFor p (Identity . f))
+htabulateFor p f = runIdentity (hgenerateFor p (Identity #. f))
 {-# INLINE htabulateFor #-}

@@ -16,6 +16,7 @@ import Control.Applicative
 import Data.Profunctor
 import Data.Functor.Identity
 import Data.Tagged
+import Data.Coerce
 
 -- | A type synonym for lenses
 -- type Lens' s a = forall f. Functor f => (a -> f a) -> s -> f s
@@ -35,6 +36,14 @@ over :: ((a -> Identity b) -> s -> Identity t) -> (a -> b) -> s -> t
 over = unsafeCoerce
 {-# INLINE over #-}
 
+(.#) :: Coercible a b => (b -> c) -> (a -> b) -> (a -> c)
+f .# _ = coerce f
+{-# INLINE (.#) #-}
+
+(#.) :: Coercible b c => (b -> c) -> (a -> b) -> (a -> c)
+_ #. g = coerce g
+{-# INLINE (#.) #-}
+
 data Exchange a b s t = Exchange (s -> a) (b -> t)
 
 instance Profunctor (Exchange a b) where
@@ -43,7 +52,7 @@ instance Profunctor (Exchange a b) where
 
 withIso :: (Exchange a b a (Identity b) -> Exchange a b s (Identity t)) -> ((s -> a) -> (b -> t) -> r) -> r
 withIso l r = case l (Exchange id Identity) of
-  Exchange f g -> r f (runIdentity . g)
+  Exchange f g -> r f (unsafeCoerce g)
 {-# INLINE withIso #-}
 
 review :: (Tagged a (Identity a) -> Tagged s (Identity s)) -> a -> s

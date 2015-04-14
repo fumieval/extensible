@@ -26,11 +26,12 @@ import Data.Extensible.Internal.Rig
 import Data.Extensible.Class
 import Data.Extensible.Product
 import Data.Extensible.Sum
-import Unsafe.Coerce
 import Language.Haskell.TH hiding (Match(..))
 import Data.Char
 import Data.Functor.Identity
 import Data.Extensible.Wrapper
+import Data.Coerce
+import Data.Profunctor
 
 -- | Alias for plain products
 type AllOf xs = Identity :* xs
@@ -40,7 +41,7 @@ type OneOf xs = Identity :| xs
 
 -- | /O(log n)/ Add a plain value to a product.
 (<%) :: x -> AllOf xs -> AllOf (x ': xs)
-(<%) = unsafeCoerce (<:*)
+(<%) = (<:) .# Identity
 {-# INLINE (<%) #-}
 infixr 5 <%
 
@@ -51,17 +52,17 @@ pluck = views piece runIdentity
 
 -- | Embed a plain value.
 bury :: (x ∈ xs) => x -> OneOf xs
-bury = embed . Identity
+bury = embed .# Identity
 {-# INLINE bury #-}
 
 -- | Naive pattern matching for a plain value.
 (<%|) :: (x -> r) -> (OneOf xs -> r) -> OneOf (x ': xs) -> r
-(<%|) = unsafeCoerce (<:|)
+(<%|) = (<:|) . (.# runIdentity)
 infixr 1 <%|
 
 -- | An accessor for newtype constructors.
-accessing :: (Wrapper Identity x a, x ∈ xs, Extensible f p q t) => (a -> x) -> p a (f a) -> q (t Identity xs) (f (t Identity xs))
-accessing c = piece . _WrapperOn (Identity . c)
+accessing :: (Coercible x a, x ∈ xs, Extensible f p q t) => (a -> x) -> p a (f a) -> q (t Identity xs) (f (t Identity xs))
+accessing c = piece . _Wrapper . dimap coerce (fmap c)
 {-# INLINE accessing #-}
 
 -- | Generate newtype wrappers and lenses from type synonyms.

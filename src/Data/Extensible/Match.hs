@@ -21,8 +21,6 @@ import Data.Extensible.Internal.Rig
 import Data.Extensible.Class
 import Data.Extensible.Product
 import Data.Extensible.Sum
-import Data.Profunctor
-import Data.Typeable
 import Data.Extensible.Wrapper
 
 -- | Retrieve the contents so that they matches and pass both to the given function.

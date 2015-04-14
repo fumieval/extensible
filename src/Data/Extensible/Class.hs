@@ -4,6 +4,9 @@ module Data.Extensible.Class (
    Extensible(..)
   , piece
   , pieceAssoc
+  , itemAt
+  , item
+  , itemAssoc
   -- * Membership
   , Membership
   , mkMembership
@@ -21,6 +24,7 @@ module Data.Extensible.Class (
   , Elaborated(..)
   ) where
 import Data.Extensible.Internal
+import Data.Extensible.Wrapper
 import Data.Profunctor
 
 -- | This class allows us to use 'pieceAt' for both sums and products.
@@ -36,3 +40,19 @@ piece = pieceAt membership
 pieceAssoc :: (Associate k v xs, Extensible f p q t) => p (h (k ':> v)) (f (h (k ':> v))) -> q (t h xs) (f (t h xs))
 pieceAssoc = pieceAt association
 {-# INLINE pieceAssoc #-}
+
+itemAt :: (Wrapper h x a, Extensible f p q t) => Membership xs x -> p a (f a) -> q (t h xs) (f (t h xs))
+itemAt m = pieceAt m . _Wrapper
+{-# INLINE itemAt #-}
+
+item :: (Wrapper h x a, Extensible f p q t, x ∈ xs) => proxy x -> p a (f a) -> q (t h xs) (f (t h xs))
+item p = piece . _WrapperAs p
+{-# INLINE item #-}
+
+itemAssoc :: (Wrapper h (k ':> v) a, Extensible f p q t, Associate k v xs) => proxy k -> p a (f a) -> q (t h xs) (f (t h xs))
+itemAssoc p = pieceAssoc . _WrapperAs (proxyKey p)
+{-# INLINE itemAssoc #-}
+
+proxyKey :: proxy k -> Proxy (k ':> v)
+proxyKey _ = Proxy
+{-# INLINE proxyKey #-}

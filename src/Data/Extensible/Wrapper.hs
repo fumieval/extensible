@@ -15,14 +15,16 @@ import Data.Functor.Identity
 import Data.Extensible.Internal.Rig
 import GHC.TypeLits hiding (Nat)
 
-_WrapperOn :: (Functor f, Profunctor p, Wrapper h v a) => (a -> h v) -> p a (f a) -> p (h v) (f (h v))
-_WrapperOn _ = _Wrapper
+_WrapperAs :: (Functor f, Profunctor p, Wrapper h v a) => proxy v -> p a (f a) -> p (h v) (f (h v))
+_WrapperAs _ = _Wrapper
 
+-- | @'Wrapper' h v a@ indicates that @h v@ is isomorphic to @a@
 class Wrapper (h :: k -> *) (v :: k) (a :: *) | h v -> a where
   _Wrapper :: (Functor f, Profunctor p) => p a (f a) -> p (h v) (f (h v))
 
 instance Wrapper Identity a a where
   _Wrapper = dimap runIdentity (fmap Identity)
+  {-# INLINE _Wrapper #-}
 
 --------------------------------------------------------------------------
 
@@ -31,6 +33,7 @@ newtype K1 a f = K1 { getK1 :: f a } deriving (Eq, Ord, Read, Typeable)
 
 instance Wrapper (K1 a) f (f a) where
   _Wrapper = dimap getK1 (fmap K1)
+  {-# INLINE _Wrapper #-}
 
 -- | The kind of key-value pairs
 data Assoc k v = k :> v
@@ -41,6 +44,7 @@ data Field h kv where
 
 instance Wrapper h v a => Wrapper (Field h) (k ':> v) a where
   _Wrapper = dimap (\(Field v) -> v) (fmap Field) . _Wrapper
+  {-# INLINE _Wrapper #-}
 
 -- | Shows in @field \@= value@ style instead of the derived one.
 instance (KnownSymbol k, Wrapper h v a, Show a) => Show (Field h (k ':> v)) where
@@ -52,22 +56,27 @@ instance (KnownSymbol k, Wrapper h v a, Show a) => Show (Field h (k ':> v)) wher
 newtype Match h r x = Match { runMatch :: h x -> r } deriving Typeable
 
 instance Wrapper h v a => Wrapper (Match h r) v (a -> r) where
-  _Wrapper = withIso _Wrapper $ \f g -> dimap ((. g) . runMatch) (fmap (Match . (. f)))
+  _Wrapper = withIso _Wrapper $ \f g -> dimap ((. g) .# runMatch) (fmap (Match #. (. f)))
+  {-# INLINABLE _Wrapper #-}
 
-newtype Comp f g a = Comp { getComp :: f (g a) }
+-- | Poly-kinded composition
+newtype Comp (f :: j -> *) (g :: i -> j) (a :: i) = Comp { getComp :: f (g a) }
 
 comp :: Functor f => (a -> g b) -> f a -> Comp f g b
 comp f = Comp . fmap f
 {-# INLINE comp #-}
 
 instance (Functor f, Wrapper g v a) => Wrapper (Comp f g) v (f a) where
-  _Wrapper = withIso _Wrapper $ \f g -> dimap (fmap f . getComp) (fmap (Comp . fmap g))
+  _Wrapper = withIso _Wrapper $ \f g -> dimap (fmap f .# getComp) (fmap (Comp #. fmap g))
+  {-# INLINE _Wrapper #-}
 
 -- | Poly-kinded Const
 newtype Const' a x = Const' { getConst' :: a } deriving Show
 
 instance Wrapper (Const' a) x a where
   _Wrapper = dimap getConst' (fmap Const')
+  {-# INLINE _Wrapper #-}
 
 instance Wrapper Proxy x () where
   _Wrapper = dimap (const ()) (fmap (const Proxy))
+  {-# INLINE _Wrapper #-}

@@ -20,7 +20,6 @@ module Data.Extensible.Record (
   , mkField
   , FieldOptic
   , FieldName
-  , fieldOptic
   -- * Records and variants
   , RecordOf
   , Record
@@ -100,24 +99,18 @@ infix 1 @=
 
 -- | Lifted ('@=')
 (<@=>) :: (Functor f, Wrapper h v a) => FieldName k -> f a -> Comp f (Field h) (k ':> v)
-(<@=>) k = Comp . fmap (k @=)
+(<@=>) k = Comp #. fmap (k @=)
 {-# INLINE (<@=>) #-}
 infix 1 <@=>
 
--- | Generate a field optic from the given name.
-fieldOptic :: forall proxy k. proxy k -> FieldOptic k
-fieldOptic k = pieceAssoc . withIso _Wrapper (\f g -> dimap (\(Field v) -> f v) (fmap (fieldNamed k . g)))
-{-# INLINE fieldOptic #-}
-
-fieldNamed :: proxy k -> h v -> Field h (k ':> v)
-fieldNamed _ = Field
-
--- | Generate fields using 'fieldOptic'.
+-- | Generate fields using 'itemAssoc'.
 -- @'mkField' "foo bar"@ defines:
 --
 -- @
 -- foo :: FieldOptic "foo"
+-- foo = itemAssoc (Proxy :: Proxy "foo")
 -- bar :: FieldOptic "bar"
+-- bar = itemAssoc (Proxy :: Proxy "bar")
 -- @
 --
 mkField :: String -> DecsQ
@@ -125,6 +118,6 @@ mkField str = fmap concat $ forM (words str) $ \s -> do
   let st = litT (strTyLit s)
   let lbl = conE 'Proxy `sigE` (conT ''Proxy `appT` st)
   sequence [sigD (mkName s) $ conT ''FieldOptic `appT` st
-    , valD (varP (mkName s)) (normalB $ varE 'fieldOptic `appE` lbl) []
+    , valD (varP (mkName s)) (normalB $ varE 'itemAssoc `appE` lbl) []
     , return $ PragmaD $ InlineP (mkName s) Inline FunLike AllPhases
     ]

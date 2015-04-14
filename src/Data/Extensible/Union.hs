@@ -18,7 +18,6 @@ import Data.Extensible.Internal.Rig
 import Data.Extensible.Class
 import Data.Extensible.Sum
 import Data.Extensible.Product
-import Data.Typeable
 import Data.Extensible.Wrapper
 
 newtype Union xs a = Union { getUnion :: K1 a :| xs }
