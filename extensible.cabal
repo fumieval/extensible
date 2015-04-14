@@ -31,6 +31,7 @@ library
     Data.Extensible
     Data.Extensible.Class
     Data.Extensible.Dictionary
+    Data.Extensible.Field
     Data.Extensible.Inclusion
     Data.Extensible.Internal
     Data.Extensible.Internal.Rig
@@ -38,7 +39,6 @@ library
     Data.Extensible.Nullable
     Data.Extensible.Plain
     Data.Extensible.Product
-    Data.Extensible.Record
     Data.Extensible.Sum
     Data.Extensible.Union
     Data.Extensible.Wrapper
