@@ -11,7 +11,6 @@
 -- Miscellaneous utilities
 ------------------------------------------------------------------------
 module Data.Extensible.Internal.Rig where
-import Unsafe.Coerce
 import Control.Applicative
 import Data.Profunctor
 import Data.Functor.Identity
@@ -28,12 +27,12 @@ view l = views l id
 
 -- | @'views' :: Lens' s a -> (a -> r) -> (s -> r)@
 views :: Optic' (->) (Const r) s a -> (a -> r) -> s -> r
-views = unsafeCoerce
+views = coerce
 {-# INLINE views #-}
 
 -- | @'over' :: Lens' s a -> (a -> a) -> (s -> s)@
 over :: Optic (->) Identity s t a b -> (a -> b) -> s -> t
-over = unsafeCoerce
+over = coerce
 {-# INLINE over #-}
 
 (.#) :: Coercible a b => (b -> c) -> (a -> b) -> (a -> c)
@@ -56,5 +55,5 @@ withIso l r = case l (Exchange id Identity) of
 {-# INLINE withIso #-}
 
 review :: Optic' Tagged Identity s a -> a -> s
-review = unsafeCoerce
+review = coerce
 {-# INLINE review #-}
