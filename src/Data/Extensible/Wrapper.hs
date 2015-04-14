@@ -38,24 +38,6 @@ instance Wrapper Identity where
   _Wrapper = dimap runIdentity (fmap Identity)
   {-# INLINE _Wrapper #-}
 
---------------------------------------------------------------------------
-
--- | Wrap a type that has a kind @* -> *@.
-newtype K1 a f = K1 { getK1 :: f a } deriving (Eq, Ord, Read, Typeable)
-
-instance Wrapper (K1 a) where
-  type Repr (K1 a) f = f a
-  _Wrapper = dimap getK1 (fmap K1)
-  {-# INLINE _Wrapper #-}
-
--- | Turn a wrapper type into a clause for it.
-newtype Match h r x = Match { runMatch :: h x -> r } deriving Typeable
-
-instance Wrapper h => Wrapper (Match h r) where
-  type Repr (Match h r) x = Repr h x -> r
-  _Wrapper = withIso _Wrapper $ \f g -> dimap ((. g) .# runMatch) (fmap (Match #. (. f)))
-  {-# INLINE _Wrapper #-}
-
 -- | Poly-kinded composition
 newtype Comp (f :: j -> *) (g :: i -> j) (a :: i) = Comp { getComp :: f (g a) }
 

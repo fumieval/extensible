@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE TypeFamilies #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Union
@@ -19,6 +19,16 @@ import Data.Extensible.Class
 import Data.Extensible.Sum
 import Data.Extensible.Product
 import Data.Extensible.Wrapper
+import Data.Profunctor
+import Data.Typeable (Typeable)
+
+-- | Wrap a type that has a kind @* -> *@.
+newtype K1 a f = K1 { getK1 :: f a } deriving (Eq, Ord, Read, Typeable)
+
+instance Wrapper (K1 a) where
+  type Repr (K1 a) f = f a
+  _Wrapper = dimap getK1 (fmap K1)
+  {-# INLINE _Wrapper #-}
 
 newtype Union xs a = Union { getUnion :: K1 a :| xs }
 
