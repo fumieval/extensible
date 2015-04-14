@@ -14,13 +14,23 @@ import Data.Traversable (Traversable)
 import Data.Profunctor
 import Data.Functor.Identity
 import Data.Extensible.Internal.Rig
-import GHC.TypeLits hiding (Nat)
 
+-- | Restricted version of '_Wrapper'.
+-- It is useful for eliminating ambiguousness.
 _WrapperAs :: (Functor f, Profunctor p, Wrapper h) => proxy v -> p (Repr h v) (f (Repr h v)) -> p (h v) (f (h v))
 _WrapperAs _ = _Wrapper
+{-# INLINE _WrapperAs #-}
 
+-- | The extensible data types should take @k -> *@ as a parameter.
+-- This class allows us to take a shortcut for direct representation.
 class Wrapper (h :: k -> *) where
+  -- | @'Repr' h v@ is the actual representation of @h v@.
   type Repr h (v :: k) :: *
+
+  -- | This is an isomorphism between @h v@ and @'Repr' h v@.
+  --
+  -- @_Wrapper :: Iso' (h v) (Repr h v)@
+  --
   _Wrapper :: (Functor f, Profunctor p) => p (Repr h v) (f (Repr h v)) -> p (h v) (f (h v))
 
 instance Wrapper Identity where
@@ -38,39 +48,19 @@ instance Wrapper (K1 a) where
   _Wrapper = dimap getK1 (fmap K1)
   {-# INLINE _Wrapper #-}
 
--- | The kind of key-value pairs
-data Assoc k v = k :> v
-infix 0 :>
-
-type family AssocValue (kv :: Assoc k v) :: v where
-  AssocValue (k ':> v) = v
-
-newtype Field (h :: v -> *) (kv :: Assoc k v) = Field (h (AssocValue kv))
-
-instance Wrapper h => Wrapper (Field h) where
-  type Repr (Field h) kv = Repr h (AssocValue kv)
-  _Wrapper = dimap (\(Field v) -> v) (fmap Field) . _Wrapper
-  {-# INLINE _Wrapper #-}
-
--- | Shows in @field \@= value@ style instead of the derived one.
-instance (KnownSymbol k, Wrapper h, Show (Repr h v)) => Show (Field h (k ':> v)) where
-  showsPrec d (Field a) = showParen (d >= 1) $ showString (symbolVal (Proxy :: Proxy k))
-    . showString " @= "
-    . showsPrec 1 (view _Wrapper a)
-
--- | Turn a wrapper type into one clause that returns @a@.
+-- | Turn a wrapper type into a clause for it.
 newtype Match h r x = Match { runMatch :: h x -> r } deriving Typeable
 
 instance Wrapper h => Wrapper (Match h r) where
   type Repr (Match h r) x = Repr h x -> r
   _Wrapper = withIso _Wrapper $ \f g -> dimap ((. g) .# runMatch) (fmap (Match #. (. f)))
-  {-# INLINABLE _Wrapper #-}
+  {-# INLINE _Wrapper #-}
 
 -- | Poly-kinded composition
 newtype Comp (f :: j -> *) (g :: i -> j) (a :: i) = Comp { getComp :: f (g a) }
 
 comp :: Functor f => (a -> g b) -> f a -> Comp f g b
-comp f = Comp . fmap f
+comp f = Comp #. fmap f
 {-# INLINE comp #-}
 
 instance (Functor f, Wrapper g) => Wrapper (Comp f g) where

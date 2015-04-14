@@ -56,6 +56,9 @@ import Data.Functor.Identity
 import Data.Extensible.Wrapper
 
 -- | The type of extensible products.
+--
+-- @(:*) :: (k -> *) -> [k] -> *@
+--
 data (h :: k -> *) :* (s :: [k]) where
   Nil :: h :* '[]
   Tree :: !(h x)
@@ -185,7 +188,7 @@ htraverseWithIndex f = go id where
   go _ Nil = pure Nil
 {-# INLINE htraverseWithIndex #-}
 
-instance Functor f => Extensible f (->) (->) (:*) where
+instance Functor f => Extensible f (->) (:*) where
   -- | /O(log n)/ A lens for a value in a known position.
   pieceAt = pieceAt_
   {-# INLINE pieceAt #-}

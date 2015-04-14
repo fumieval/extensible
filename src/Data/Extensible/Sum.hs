@@ -36,6 +36,9 @@ import Data.Extensible.Class
 import Data.Profunctor
 
 -- | The extensible sum type
+--
+-- @(:|) :: (k -> *) -> [k] -> *@
+--
 data (h :: k -> *) :| (s :: [k]) where
   EmbedAt :: !(Membership xs x) -> h x -> h :| xs
 deriving instance Typeable (:|)
@@ -90,7 +93,7 @@ picked f u@(EmbedAt i h) = case compareMembership (membership :: Membership xs x
   _ -> pure u
 {-# INLINE picked #-}
 
-instance (Applicative f, Choice p) => Extensible f p p (:|) where
+instance (Applicative f, Choice p) => Extensible f p (:|) where
   pieceAt m = dimap (\t@(EmbedAt i h) -> case compareMembership i m of
     Right Refl -> Right h
     Left _ -> Left t) (either pure (fmap (EmbedAt m))) . right'

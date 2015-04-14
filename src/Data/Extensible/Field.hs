@@ -13,7 +13,8 @@
 -- Example: <https://github.com/fumieval/extensible/blob/master/examples/records.hs>
 ------------------------------------------------------------------------
 module Data.Extensible.Field (
-  (@=)
+  Field(..)
+  , (@=)
   , (<@=>)
   , mkField
   , FieldOptic
@@ -41,17 +42,44 @@ import Data.Profunctor
 import Data.Constraint
 import Data.Extensible.Wrapper
 import Data.Functor.Identity
+import GHC.TypeLits hiding (Nat)
+
+-- | A @'Field' h (k ':> v)@ is @h v@, but is along with the index @k@.
+--
+-- @'Field' :: (v -> *) -> Assoc k v -> *@
+--
+newtype Field (h :: v -> *) (kv :: Assoc k v) = Field (h (AssocValue kv))
+
+instance Wrapper h => Wrapper (Field h) where
+  type Repr (Field h) kv = Repr h (AssocValue kv)
+  _Wrapper = dimap (\(Field v) -> v) (fmap Field) . _Wrapper
+  {-# INLINE _Wrapper #-}
+
+-- | Shows in @field \@= value@ style instead of the derived one.
+instance (KnownSymbol k, Wrapper h, Show (Repr h v)) => Show (Field h (k ':> v)) where
+  showsPrec d (Field a) = showParen (d >= 1) $ showString (symbolVal (Proxy :: Proxy k))
+    . showString " @= "
+    . showsPrec 1 (view _Wrapper a)
 
 -- | The type of records which contain several fields.
+--
+-- @RecordOf :: (v -> *) -> [Assoc k v] -> *@
+--
 type RecordOf h = (:*) (Field h)
 
 -- | The dual of 'RecordOf'
+--
+-- @VariantOf :: (v -> *) -> [Assoc k v] -> *@
+--
 type VariantOf h = (:|) (Field h)
 
+-- | Simple record
 type Record = RecordOf Identity
 
+-- | Simple variant
 type Variant = VariantOf Identity
 
+-- | An empty 'Record'.
 emptyRecord :: Record '[]
 emptyRecord = Nil
 {-# INLINE emptyRecord #-}
@@ -69,23 +97,22 @@ emptyRecord = Nil
 -- 'FieldOptic' "foo" = Associate "foo" a xs => Prism' ('Variant' xs) a
 -- @
 --
-
-type FieldOptic k = forall f p q t xs (h :: kind -> *) (v :: kind). (Extensible f p q t
+type FieldOptic k = forall f p t xs (h :: kind -> *) (v :: kind). (Extensible f p t
   , Associate k v xs
   , Labelling k p
   , Wrapper h)
-  => p (Repr h v) (f (Repr h v)) -> q (t (Field h) xs) (f (t (Field h) xs))
+  => p (Repr h v) (f (Repr h v)) -> p (t (Field h) xs) (f (t (Field h) xs))
 
 -- | The trivial inextensible data type
 data Inextensible (h :: k -> *) (xs :: [k])
 
-instance Functor f => Extensible f (->) (->) Inextensible where
+instance Functor f => Extensible f (->) Inextensible where
   pieceAt _ _ _ = error "Impossible"
 
 -- | When you see this type as an argument, it expects a 'FieldLens'.
 -- This type is used to resolve the name of the field internally.
 type FieldName k = forall v. LabelPhantom k () (Proxy ())
-  -> Inextensible Proxy '[k ':> v] -> Proxy (Inextensible Proxy '[k ':> v])
+  -> LabelPhantom k (Inextensible (Field Proxy) '[k ':> v]) (Proxy (Inextensible (Field Proxy) '[k ':> v]))
 
 type family Labelling s p :: Constraint where
   Labelling s (LabelPhantom t) = s ~ t
@@ -97,7 +124,7 @@ data LabelPhantom s a b
 instance Profunctor (LabelPhantom s) where
   dimap _ _ _ = error "Impossible"
 
-instance Functor f => Extensible f (LabelPhantom s) q t where
+instance Functor f => Extensible f (LabelPhantom s) t where
   pieceAt _ _ = error "Impossible"
 
 -- | Annotate a value by the field name.
