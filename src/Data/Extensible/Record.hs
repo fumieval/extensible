@@ -23,11 +23,13 @@ module Data.Extensible.Record (
   -- * Records and variants
   , RecordOf
   , Record
+  , emptyRecord
   , VariantOf
   , Variant
   -- * Internal
   , LabelPhantom
   , Labelling
+  , Inextensible
   ) where
 import Data.Extensible.Class
 import Data.Extensible.Sum
@@ -35,7 +37,6 @@ import Data.Extensible.Product
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
 import Language.Haskell.TH
-import Data.Extensible.Inclusion
 import Data.Extensible.Dictionary ()
 import Control.Monad
 import Data.Profunctor
@@ -44,14 +45,18 @@ import Data.Extensible.Wrapper
 import Data.Functor.Identity
 
 -- | The type of records which contain several fields.
-type Record = RecordOf Identity
-
--- | The dual of 'Record'
-type Variant = VariantOf Identity
-
 type RecordOf h = (:*) (Field h)
 
+-- | The dual of 'RecordOf'
 type VariantOf h = (:|) (Field h)
+
+type Record = RecordOf Identity
+
+type Variant = VariantOf Identity
+
+emptyRecord :: Record '[]
+emptyRecord = Nil
+{-# INLINE emptyRecord #-}
 
 -- | @FieldOptic s@ is a type of optics that points a field/constructor named @s@.
 --
@@ -67,16 +72,22 @@ type VariantOf h = (:|) (Field h)
 -- @
 --
 
-type FieldOptic k = forall f p q t xs (h :: kind -> *) (v :: kind) a. (Extensible f p q t
+type FieldOptic k = forall f p q t xs (h :: kind -> *) (v :: kind). (Extensible f p q t
   , Associate k v xs
   , Labelling k p
-  , Wrapper h v a)
-  => p a (f a) -> q (t (Field h) xs) (f (t (Field h) xs))
+  , Wrapper h)
+  => p (Repr h v) (f (Repr h v)) -> q (t (Field h) xs) (f (t (Field h) xs))
+
+-- | The trivial inextensible data type
+data Inextensible (h :: k -> *) (xs :: [k])
+
+instance Functor f => Extensible f (->) (->) Inextensible where
+  pieceAt _ _ _ = error "Impossible"
 
 -- | When you see this type as an argument, it expects a 'FieldLens'.
 -- This type is used to resolve the name of the field internally.
 type FieldName k = forall v. LabelPhantom k () (Proxy ())
-  -> RecordOf Proxy '[k ':> v] -> Proxy (RecordOf Proxy '[k ':> v])
+  -> Inextensible Proxy '[k ':> v] -> Proxy (Inextensible Proxy '[k ':> v])
 
 type family Labelling s p :: Constraint where
   Labelling s (LabelPhantom t) = s ~ t
@@ -92,13 +103,13 @@ instance Functor f => Extensible f (LabelPhantom s) q t where
   pieceAt _ _ = error "Impossible"
 
 -- | Annotate a value by the field name.
-(@=) :: Wrapper h v a => FieldName k -> a -> Field h (k ':> v)
-(@=) _ = Field . review _Wrapper
+(@=) :: Wrapper h => FieldName k -> Repr h v -> Field h (k ':> v)
+(@=) _ = Field #. review _Wrapper
 {-# INLINE (@=) #-}
 infix 1 @=
 
 -- | Lifted ('@=')
-(<@=>) :: (Functor f, Wrapper h v a) => FieldName k -> f a -> Comp f (Field h) (k ':> v)
+(<@=>) :: (Functor f, Wrapper h) => FieldName k -> f (Repr h v) -> Comp f (Field h) (k ':> v)
 (<@=>) k = Comp #. fmap (k @=)
 {-# INLINE (<@=>) #-}
 infix 1 <@=>

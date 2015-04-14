@@ -41,15 +41,15 @@ pieceAssoc :: (Associate k v xs, Extensible f p q t) => p (h (k ':> v)) (f (h (k
 pieceAssoc = pieceAt association
 {-# INLINE pieceAssoc #-}
 
-itemAt :: (Wrapper h x a, Extensible f p q t) => Membership xs x -> p a (f a) -> q (t h xs) (f (t h xs))
+itemAt :: (Wrapper h, Extensible f p q t) => Membership xs x -> p (Repr h x) (f (Repr h x)) -> q (t h xs) (f (t h xs))
 itemAt m = pieceAt m . _Wrapper
 {-# INLINE itemAt #-}
 
-item :: (Wrapper h x a, Extensible f p q t, x ∈ xs) => proxy x -> p a (f a) -> q (t h xs) (f (t h xs))
+item :: (Wrapper h, Extensible f p q t, x ∈ xs) => proxy x -> p (Repr h x) (f (Repr h x)) -> q (t h xs) (f (t h xs))
 item p = piece . _WrapperAs p
 {-# INLINE item #-}
 
-itemAssoc :: (Wrapper h (k ':> v) a, Extensible f p q t, Associate k v xs) => proxy k -> p a (f a) -> q (t h xs) (f (t h xs))
+itemAssoc :: (Wrapper h, Extensible f p q t, Associate k v xs) => proxy k -> p (Repr h (k ':> v)) (f (Repr h (k ':> v))) -> q (t h xs) (f (t h xs))
 itemAssoc p = pieceAssoc . _WrapperAs (proxyKey p)
 {-# INLINE itemAssoc #-}
 

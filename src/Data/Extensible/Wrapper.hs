@@ -1,7 +1,8 @@
 {-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, UndecidableInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE TypeFamilies #-}
 module Data.Extensible.Wrapper where
 
 import Data.Typeable
@@ -15,14 +16,15 @@ import Data.Functor.Identity
 import Data.Extensible.Internal.Rig
 import GHC.TypeLits hiding (Nat)
 
-_WrapperAs :: (Functor f, Profunctor p, Wrapper h v a) => proxy v -> p a (f a) -> p (h v) (f (h v))
+_WrapperAs :: (Functor f, Profunctor p, Wrapper h) => proxy v -> p (Repr h v) (f (Repr h v)) -> p (h v) (f (h v))
 _WrapperAs _ = _Wrapper
 
--- | @'Wrapper' h v a@ indicates that @h v@ is isomorphic to @a@
-class Wrapper (h :: k -> *) (v :: k) (a :: *) | h v -> a where
-  _Wrapper :: (Functor f, Profunctor p) => p a (f a) -> p (h v) (f (h v))
+class Wrapper (h :: k -> *) where
+  type Repr h (v :: k) :: *
+  _Wrapper :: (Functor f, Profunctor p) => p (Repr h v) (f (Repr h v)) -> p (h v) (f (h v))
 
-instance Wrapper Identity a a where
+instance Wrapper Identity where
+  type Repr Identity a = a
   _Wrapper = dimap runIdentity (fmap Identity)
   {-# INLINE _Wrapper #-}
 
@@ -31,7 +33,8 @@ instance Wrapper Identity a a where
 -- | Wrap a type that has a kind @* -> *@.
 newtype K1 a f = K1 { getK1 :: f a } deriving (Eq, Ord, Read, Typeable)
 
-instance Wrapper (K1 a) f (f a) where
+instance Wrapper (K1 a) where
+  type Repr (K1 a) f = f a
   _Wrapper = dimap getK1 (fmap K1)
   {-# INLINE _Wrapper #-}
 
@@ -39,15 +42,18 @@ instance Wrapper (K1 a) f (f a) where
 data Assoc k v = k :> v
 infix 0 :>
 
-data Field h kv where
-  Field :: h v -> Field h (k ':> v)
+type family AssocValue (kv :: Assoc k v) :: v where
+  AssocValue (k ':> v) = v
 
-instance Wrapper h v a => Wrapper (Field h) (k ':> v) a where
+newtype Field (h :: v -> *) (kv :: Assoc k v) = Field (h (AssocValue kv))
+
+instance Wrapper h => Wrapper (Field h) where
+  type Repr (Field h) kv = Repr h (AssocValue kv)
   _Wrapper = dimap (\(Field v) -> v) (fmap Field) . _Wrapper
   {-# INLINE _Wrapper #-}
 
 -- | Shows in @field \@= value@ style instead of the derived one.
-instance (KnownSymbol k, Wrapper h v a, Show a) => Show (Field h (k ':> v)) where
+instance (KnownSymbol k, Wrapper h, Show (Repr h v)) => Show (Field h (k ':> v)) where
   showsPrec d (Field a) = showParen (d >= 1) $ showString (symbolVal (Proxy :: Proxy k))
     . showString " @= "
     . showsPrec 1 (view _Wrapper a)
@@ -55,7 +61,8 @@ instance (KnownSymbol k, Wrapper h v a, Show a) => Show (Field h (k ':> v)) wher
 -- | Turn a wrapper type into one clause that returns @a@.
 newtype Match h r x = Match { runMatch :: h x -> r } deriving Typeable
 
-instance Wrapper h v a => Wrapper (Match h r) v (a -> r) where
+instance Wrapper h => Wrapper (Match h r) where
+  type Repr (Match h r) x = Repr h x -> r
   _Wrapper = withIso _Wrapper $ \f g -> dimap ((. g) .# runMatch) (fmap (Match #. (. f)))
   {-# INLINABLE _Wrapper #-}
 
@@ -66,17 +73,20 @@ comp :: Functor f => (a -> g b) -> f a -> Comp f g b
 comp f = Comp . fmap f
 {-# INLINE comp #-}
 
-instance (Functor f, Wrapper g v a) => Wrapper (Comp f g) v (f a) where
+instance (Functor f, Wrapper g) => Wrapper (Comp f g) where
+  type Repr (Comp f g) x = f (Repr g x)
   _Wrapper = withIso _Wrapper $ \f g -> dimap (fmap f .# getComp) (fmap (Comp #. fmap g))
   {-# INLINE _Wrapper #-}
 
 -- | Poly-kinded Const
 newtype Const' a x = Const' { getConst' :: a } deriving Show
 
-instance Wrapper (Const' a) x a where
+instance Wrapper (Const' a) where
+  type Repr (Const' a) b = a
   _Wrapper = dimap getConst' (fmap Const')
   {-# INLINE _Wrapper #-}
 
-instance Wrapper Proxy x () where
+instance Wrapper Proxy where
+  type Repr Proxy x = ()
   _Wrapper = dimap (const ()) (fmap (const Proxy))
   {-# INLINE _Wrapper #-}
