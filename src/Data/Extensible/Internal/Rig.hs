@@ -18,6 +18,7 @@ import Data.Functor.Identity
 import Data.Tagged
 import Data.Coerce
 
+type Optic p f s t a b = p a (f b) -> p s (f t)
 type Optic' p f s a = p a (f a) -> p s (f s)
 
 -- | @'view' :: Lens' s a -> (a -> a) -> (s -> s)@
@@ -31,7 +32,7 @@ views = unsafeCoerce
 {-# INLINE views #-}
 
 -- | @'over' :: Lens' s a -> (a -> a) -> (s -> s)@
-over :: Optic' (->) Identity s a -> (a -> a) -> s -> s
+over :: Optic (->) Identity s t a b -> (a -> b) -> s -> t
 over = unsafeCoerce
 {-# INLINE over #-}
 
@@ -49,9 +50,9 @@ instance Profunctor (Exchange a b) where
   dimap f g (Exchange sa bt) = Exchange (sa . f) (g . bt)
   {-# INLINE dimap #-}
 
-withIso :: Optic' (Exchange a a) Identity s a -> ((s -> a) -> (a -> s) -> r) -> r
+withIso :: Optic (Exchange a b) Identity s t a b -> ((s -> a) -> (b -> t) -> r) -> r
 withIso l r = case l (Exchange id Identity) of
-  Exchange f g -> r f (unsafeCoerce g)
+  Exchange f g -> r f (coerce g)
 {-# INLINE withIso #-}
 
 review :: Optic' Tagged Identity s a -> a -> s
