@@ -106,8 +106,8 @@ type FieldOptic k = forall f p t xs (h :: kind -> *) (v :: kind). (Extensible f 
 -- | The trivial inextensible data type
 data Inextensible (h :: k -> *) (xs :: [k])
 
-instance Functor f => Extensible f (->) Inextensible where
-  pieceAt _ _ _ = error "Impossible"
+instance Functor f => Extensible f (LabelPhantom s) Inextensible where
+  pieceAt _ _ = error "Impossible"
 
 -- | When you see this type as an argument, it expects a 'FieldLens'.
 -- This type is used to resolve the name of the field internally.
@@ -123,9 +123,6 @@ data LabelPhantom s a b
 
 instance Profunctor (LabelPhantom s) where
   dimap _ _ _ = error "Impossible"
-
-instance Functor f => Extensible f (LabelPhantom s) t where
-  pieceAt _ _ = error "Impossible"
 
 -- | Annotate a value by the field name.
 (@=) :: Wrapper h => FieldName k -> Repr h v -> Field h (k ':> v)
