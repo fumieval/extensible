@@ -35,11 +35,11 @@ over :: Optic (->) Identity s t a b -> (a -> b) -> s -> t
 over = coerce
 {-# INLINE over #-}
 
-(.#) :: Coercible a b => (b -> c) -> (a -> b) -> (a -> c)
+(.#) :: Coercible b a => (b -> c) -> (a -> b) -> (a -> c)
 f .# _ = coerce f
 {-# INLINE (.#) #-}
 
-(#.) :: Coercible b c => (b -> c) -> (a -> b) -> (a -> c)
+(#.) :: Coercible c b => (b -> c) -> (a -> b) -> (a -> c)
 _ #. g = coerce g
 {-# INLINE (#.) #-}
 
