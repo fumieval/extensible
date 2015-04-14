@@ -16,6 +16,7 @@ import Data.Profunctor
 import Data.Functor.Identity
 import Data.Tagged
 import Data.Coerce
+import Unsafe.Coerce
 
 type Optic p f s t a b = p a (f b) -> p s (f t)
 type Optic' p f s a = p a (f a) -> p s (f s)
@@ -35,12 +36,12 @@ over :: Optic (->) Identity s t a b -> (a -> b) -> s -> t
 over = coerce
 {-# INLINE over #-}
 
-(.#) :: Coercible b a => (b -> c) -> (a -> b) -> (a -> c)
-f .# _ = coerce f
+(.#) :: Coercible a b => (b -> c) -> (a -> b) -> (a -> c)
+f .# _ = unsafeCoerce f
 {-# INLINE (.#) #-}
 
-(#.) :: Coercible c b => (b -> c) -> (a -> b) -> (a -> c)
-_ #. g = coerce g
+(#.) :: Coercible b c => (b -> c) -> (a -> b) -> (a -> c)
+_ #. g = unsafeCoerce g
 {-# INLINE (#.) #-}
 
 data Exchange a b s t = Exchange (s -> a) (b -> t)
