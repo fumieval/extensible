@@ -36,14 +36,6 @@ over :: Optic (->) Identity s t a b -> (a -> b) -> s -> t
 over = coerce
 {-# INLINE over #-}
 
-(.#) :: Coercible a b => (b -> c) -> (a -> b) -> (a -> c)
-f .# _ = unsafeCoerce f
-{-# INLINE (.#) #-}
-
-(#.) :: Coercible b c => (b -> c) -> (a -> b) -> (a -> c)
-_ #. g = unsafeCoerce g
-{-# INLINE (#.) #-}
-
 data Exchange a b s t = Exchange (s -> a) (b -> t)
 
 instance Profunctor (Exchange a b) where

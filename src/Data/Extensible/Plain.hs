@@ -31,7 +31,7 @@ import Data.Char
 import Data.Functor.Identity
 import Data.Extensible.Wrapper
 import Data.Coerce
-import Data.Profunctor
+import Data.Profunctor.Unsafe
 
 -- | Alias for plain products
 type AllOf xs = Identity :* xs

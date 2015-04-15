@@ -54,6 +54,7 @@ import Data.Typeable
 import Data.Extensible.Class
 import Data.Functor.Identity
 import Data.Extensible.Wrapper
+import Data.Profunctor.Unsafe
 
 -- | The type of extensible products.
 --

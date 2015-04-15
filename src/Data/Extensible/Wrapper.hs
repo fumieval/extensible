@@ -11,7 +11,7 @@ import Data.Monoid
 import Data.Foldable (Foldable)
 import Data.Traversable (Traversable)
 #endif
-import Data.Profunctor
+import Data.Profunctor.Unsafe
 import Data.Functor.Identity
 import Data.Extensible.Internal.Rig
 

@@ -38,7 +38,7 @@ import Data.Extensible.Internal.Rig
 import Language.Haskell.TH
 import Data.Extensible.Dictionary ()
 import Control.Monad
-import Data.Profunctor
+import Data.Profunctor.Unsafe
 import Data.Constraint
 import Data.Extensible.Wrapper
 import Data.Functor.Identity

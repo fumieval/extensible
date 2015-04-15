@@ -24,7 +24,7 @@ import Data.Extensible.Product
 import Data.Extensible.Sum
 import Data.Extensible.Wrapper
 import Data.Typeable (Typeable)
-import Data.Profunctor
+import Data.Profunctor.Unsafe
 
 -- | Retrieve the contents so that they matches and pass both to the given function.
 matchWith :: (forall x. f x -> g x -> r) -> f :* xs -> g :| xs -> r
