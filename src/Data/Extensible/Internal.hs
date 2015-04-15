@@ -30,7 +30,6 @@ module Data.Extensible.Internal (
   , FindType
   -- * Association
   , Assoc(..)
-  , AssocValue
   , Associate(..)
   , FindAssoc
   -- * Sugar
@@ -100,9 +99,6 @@ instance (Elaborate x (FindType x xs) ~ 'Expecting pos, KnownPosition pos) => Me
 -- | The kind of key-value pairs
 data Assoc k v = k :> v
 infix 0 :>
-
-type family AssocValue (kv :: Assoc k v) :: v where
-  AssocValue (k ':> v) = v
 
 -- | @'Associate' k v xs@ is essentially identical to @(k :> v) ∈ xs@
 -- , but the type @v@ is inferred from @k@ and @xs@.

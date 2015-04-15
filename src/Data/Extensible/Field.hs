@@ -1,4 +1,8 @@
+#if MIN_VERSION_base(4,8,0)
 {-# LANGUAGE Safe #-}
+#else
+{-# LANGUAGE Trustworthy #-}
+#endif
 {-# LANGUAGE MultiParamTypeClasses, UndecidableInstances #-}
 {-# LANGUAGE ScopedTypeVariables, TypeFamilies #-}
 -----------------------------------------------------------------------------
@@ -26,6 +30,10 @@ module Data.Extensible.Field (
   , emptyRecord
   , VariantOf
   , Variant
+  -- * Constraint
+  , AssocKey
+  , AssocValue
+  , KeyValue
   -- * Internal
   , LabelPhantom
   , Labelling
@@ -41,6 +49,16 @@ import Data.Constraint
 import Data.Extensible.Wrapper
 import Data.Functor.Identity
 import GHC.TypeLits hiding (Nat)
+
+type family AssocKey (kv :: Assoc k v) :: k where
+  AssocKey (k ':> v) = k
+
+type family AssocValue (kv :: Assoc k v) :: v where
+  AssocValue (k ':> v) = v
+
+class (pk (AssocKey kv), pv (AssocValue kv)) => KeyValue pk pv kv where
+
+instance (pk k, pv v) => KeyValue pk pv (k ':> v)
 
 -- | A @'Field' h (k ':> v)@ is @h v@, but is along with the index @k@.
 --
