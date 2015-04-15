@@ -1,3 +1,4 @@
+{-# LANGUAGE Safe #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible
@@ -33,6 +34,7 @@ module Data.Extensible (
   , module Data.Extensible.Product
   , module Data.Extensible.Sum
   , module Data.Extensible.Wrapper
+  , module Data.Extensible.TH
   ) where
 
 import Data.Extensible.Class
@@ -45,3 +47,4 @@ import Data.Extensible.Plain
 import Data.Extensible.Product
 import Data.Extensible.Sum
 import Data.Extensible.Wrapper
+import Data.Extensible.TH

@@ -1,5 +1,4 @@
-{-# LANGUAGE Trustworthy #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE Safe #-}
 {-# LANGUAGE MultiParamTypeClasses, UndecidableInstances #-}
 {-# LANGUAGE ScopedTypeVariables, TypeFamilies #-}
 -----------------------------------------------------------------------------
@@ -19,7 +18,6 @@ module Data.Extensible.Field (
   Field(..)
   , (@=)
   , (<@=>)
-  , mkField
   , FieldOptic
   , FieldName
   -- * Records and variants
@@ -38,9 +36,6 @@ import Data.Extensible.Sum
 import Data.Extensible.Product
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
-import Language.Haskell.TH
-import Data.Extensible.Dictionary ()
-import Control.Monad
 import Data.Profunctor.Unsafe
 import Data.Constraint
 import Data.Extensible.Wrapper
@@ -100,6 +95,8 @@ emptyRecord = Nil
 -- 'FieldOptic' "foo" = Associate "foo" a xs => Prism' ('Variant' xs) a
 -- @
 --
+-- 'FieldOptic's can be generated using 'mkField' defined in the "Data.Extensible.TH" module.
+--
 type FieldOptic k = forall f p t xs (h :: kind -> *) (v :: kind). (Extensible f p t
   , Associate k v xs
   , Labelling k p
@@ -138,22 +135,3 @@ infix 1 @=
 (<@=>) k = Comp #. fmap (k @=)
 {-# INLINE (<@=>) #-}
 infix 1 <@=>
-
--- | Generate fields using 'itemAssoc'.
--- @'mkField' "foo bar"@ defines:
---
--- @
--- foo :: FieldOptic "foo"
--- foo = itemAssoc (Proxy :: Proxy "foo")
--- bar :: FieldOptic "bar"
--- bar = itemAssoc (Proxy :: Proxy "bar")
--- @
---
-mkField :: String -> DecsQ
-mkField str = fmap concat $ forM (words str) $ \s -> do
-  let st = litT (strTyLit s)
-  let lbl = conE 'Proxy `sigE` (conT ''Proxy `appT` st)
-  sequence [sigD (mkName s) $ conT ''FieldOptic `appT` st
-    , valD (varP (mkName s)) (normalB $ varE 'itemAssoc `appE` lbl) []
-    , return $ PragmaD $ InlineP (mkName s) Inline FunLike AllPhases
-    ]

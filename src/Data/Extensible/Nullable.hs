@@ -1,3 +1,4 @@
+{-# LANGUAGE Safe #-}
 module Data.Extensible.Nullable (
   coinclusion
   , wrench
