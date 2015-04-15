@@ -1,3 +1,4 @@
+{-# LANGUAGE Trustworthy #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses, UndecidableInstances, FunctionalDependencies #-}
@@ -49,8 +50,6 @@ module Data.Extensible.Internal (
   , Half
   , Head
   , Tail
-  , lemmaHalfTail
-  , lemmaMerging
   , (++)()
   , Map
   , Merge
@@ -240,15 +239,6 @@ type family Succ (x :: Nat) :: Nat where
 type family MapSucc (xs :: [Nat]) :: [Nat] where
   MapSucc '[] = '[]
   MapSucc (x ': xs) = Succ x ': MapSucc xs
-
--- | GHC can't prove this
-lemmaHalfTail :: proxy xs -> p (x ': Half (Tail xs)) -> p (Half (x ': xs))
-lemmaHalfTail _ = unsafeCoerce
-{-# INLINE lemmaHalfTail #-}
-
--- | GHC can't prove this
-lemmaMerging :: p (Merge (Half xs) (Half (Tail xs))) -> p xs
-lemmaMerging = unsafeCoerce
 
 -- | Type level map
 type family Map (f :: k -> k) (xs :: [k]) :: [k] where

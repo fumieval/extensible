@@ -1,4 +1,7 @@
-{-# LANGUAGE TemplateHaskell, ScopedTypeVariables, TypeFamilies, FunctionalDependencies, MultiParamTypeClasses, UndecidableInstances #-}
+{-# LANGUAGE Trustworthy #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE MultiParamTypeClasses, UndecidableInstances #-}
+{-# LANGUAGE ScopedTypeVariables, TypeFamilies #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Record

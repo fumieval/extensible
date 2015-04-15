@@ -1,3 +1,4 @@
+{-# LANGUAGE Trustworthy #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Rig
@@ -10,28 +11,37 @@
 --
 -- Miscellaneous utilities
 ------------------------------------------------------------------------
-module Data.Extensible.Internal.Rig where
+module Data.Extensible.Internal.Rig (
+  Optic
+  , Optic'
+  , view
+  , views
+  , over
+  , withIso
+  , Exchange(..)
+  , review
+  )
+where
 import Control.Applicative
 import Data.Profunctor
 import Data.Functor.Identity
 import Data.Tagged
 import Data.Coerce
-import Unsafe.Coerce
 
 type Optic p f s t a b = p a (f b) -> p s (f t)
 type Optic' p f s a = p a (f a) -> p s (f s)
 
--- | @'view' :: Lens' s a -> (a -> a) -> (s -> s)@
+-- | @'view' :: Getter s a -> s -> a@
 view :: Optic' (->) (Const a) s a -> s -> a
 view l = views l id
 {-# INLINE view #-}
 
--- | @'views' :: Lens' s a -> (a -> r) -> (s -> r)@
+-- | @'views' :: Getter s a -> (a -> r) -> (s -> r)@
 views :: Optic' (->) (Const r) s a -> (a -> r) -> s -> r
 views = coerce
 {-# INLINE views #-}
 
--- | @'over' :: Lens' s a -> (a -> a) -> (s -> s)@
+-- | @'over' :: Setter s t a b -> (a -> b) -> (s -> t)@
 over :: Optic (->) Identity s t a b -> (a -> b) -> s -> t
 over = coerce
 {-# INLINE over #-}

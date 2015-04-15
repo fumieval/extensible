@@ -1,3 +1,4 @@
+{-# LANGUAGE Trustworthy #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses, UndecidableInstances #-}
@@ -50,7 +51,7 @@ import Unsafe.Coerce
 import Control.Applicative
 #endif
 import Data.Monoid
-import Data.Typeable
+import Data.Typeable (Typeable)
 import Data.Extensible.Class
 import Data.Functor.Identity
 import Data.Extensible.Wrapper
@@ -259,3 +260,8 @@ instance (c x, Forall c (Half xs), Forall c (Half (Tail xs))) => Forall c (x ': 
 htabulateFor :: Forall c xs => proxy c -> (forall x. c x => Membership xs x -> h x) -> h :* xs
 htabulateFor p f = runIdentity (hgenerateFor p (Identity #. f))
 {-# INLINE htabulateFor #-}
+
+-- | GHC can't prove this
+lemmaHalfTail :: proxy xs -> p (x ': Half (Tail xs)) -> p (Half (x ': xs))
+lemmaHalfTail _ = unsafeCoerce
+{-# INLINE lemmaHalfTail #-}

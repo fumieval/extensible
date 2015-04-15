@@ -11,7 +11,7 @@ import Data.Extensible.Product
 import Data.Extensible.Sum
 import Data.Extensible.Inclusion
 import Data.Extensible.Internal.Rig
-import Data.Typeable
+import Data.Typeable (Typeable)
 import Data.Monoid
 import Data.Extensible.Wrapper
 

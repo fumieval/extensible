@@ -21,6 +21,7 @@ import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
 import Data.Constraint
 import Data.Extensible.Wrapper
+import Data.Profunctor.Unsafe
 
 -- | Reify a collection of dictionaries, as you wish.
 library :: forall c xs. Forall c xs => Comp Dict c :* xs
@@ -47,7 +48,7 @@ instance WrapForall Show h xs => Show (h :* xs) where
     . hzipWith (\(Comp Dict) h -> Const' $ MergeList [showsPrec 0 h . showString " <: "]) (library :: Comp Dict (Instance1 Show h) :* xs)
 
 instance WrapForall Eq h xs => Eq (h :* xs) where
-  xs == ys = getAll $ hfoldMap (All . getConst')
+  xs == ys = getAll $ hfoldMap (All #. getConst')
     $ hzipWith3 (\(Comp Dict) x y -> Const' $ x == y) (library :: Comp Dict (Instance1 Eq h) :* xs) xs ys
   {-# INLINE (==) #-}
 
