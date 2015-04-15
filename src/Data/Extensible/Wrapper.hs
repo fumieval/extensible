@@ -1,6 +1,17 @@
 {-# LANGUAGE Safe #-}
 {-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
 {-# LANGUAGE TypeFamilies #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Extensible.Wrapper
+-- Copyright   :  (c) Fumiaki Kinoshita 2015
+-- License     :  BSD3
+--
+-- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
+-- Stability   :  experimental
+-- Portability :  non-portable
+--
+-----------------------------------------------------------------------------
 module Data.Extensible.Wrapper (
   Wrapper(..)
   , _WrapperAs

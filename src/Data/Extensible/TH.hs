@@ -1,5 +1,16 @@
 {-# LANGUAGE Trustworthy, TemplateHaskell #-}
-module Data.Extensible.TH where
+------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Extensible.TH
+-- Copyright   :  (c) Fumiaki Kinoshita 2015
+-- License     :  BSD3
+--
+-- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
+-- Stability   :  experimental
+-- Portability :  non-portable
+--
+------------------------------------------------------------------------
+module Data.Extensible.TH (mkField, decFields, decFieldsDeriving) where
 
 import Data.Proxy
 import Data.Extensible.Class (Member, Extensible, itemAssoc)

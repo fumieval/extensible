@@ -12,9 +12,10 @@
 -- Stability   :  experimental
 -- Portability :  non-portable
 --
--- Reifying classes to make instances for (':*') and (':|')
+-- Reification of constraints using extensible data types.
+-- Also includes orphan instances.
 -----------------------------------------------------------------------
-module Data.Extensible.Dictionary where
+module Data.Extensible.Dictionary (library, WrapForall, Instance1) where
 import Data.Monoid
 import Data.Extensible.Class
 import Data.Extensible.Product

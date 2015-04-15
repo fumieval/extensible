@@ -7,9 +7,9 @@
 --
 -- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
 -- Stability   :  experimental
--- Portability :  non-portable
+-- Portability :  portable
 --
--- Miscellaneous utilities
+-- Re-implementation of lens combinators
 ------------------------------------------------------------------------
 module Data.Extensible.Internal.Rig (
   Optic

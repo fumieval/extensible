@@ -12,7 +12,7 @@
 --
 -- Polymorphic open unions
 ------------------------------------------------------------------------
-module Data.Extensible.Union where
+module Data.Extensible.Union (K1(..), Union(..), Gondola(..), reunion, rung, runGondolas) where
 
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig

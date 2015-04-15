@@ -9,21 +9,9 @@
 -- Stability   :  experimental
 -- Portability :  non-portable
 --
--- This package defines an extensible type-indexed product type and a union type.
--- Extensible ADTs provided by this module are determined from a type-level list @[k]@
--- and a wrapper @k -> *@.
--- We can define ADTs not only for plain values, but also parameterized ones.
---
--- >>> let t = K0 (42 :: Int) <:* K0 "foo" <:* K0 (Just "bar") <:* Nil
--- >>> t
--- K0 42 <:* K0 "foo" <:* K0 (Just "bar") <:* Nil
--- >>> :t t
--- t :: K0 :* '[Int, [Char], Maybe [Char]]
--- >>> pluck t :: Int
--- 42
+-- This module just reexports everything.
 -----------------------------------------------------------------------------
 module Data.Extensible (
-  -- * Reexport
   module Data.Extensible.Class
   , module Data.Extensible.Dictionary
   , module Data.Extensible.Field
@@ -33,8 +21,9 @@ module Data.Extensible (
   , module Data.Extensible.Plain
   , module Data.Extensible.Product
   , module Data.Extensible.Sum
-  , module Data.Extensible.Wrapper
   , module Data.Extensible.TH
+  , module Data.Extensible.Union
+  , module Data.Extensible.Wrapper
   ) where
 
 import Data.Extensible.Class
@@ -46,5 +35,7 @@ import Data.Extensible.Nullable
 import Data.Extensible.Plain
 import Data.Extensible.Product
 import Data.Extensible.Sum
-import Data.Extensible.Wrapper
 import Data.Extensible.TH
+import Data.Extensible.Union
+import Data.Extensible.Wrapper
+

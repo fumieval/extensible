@@ -1,7 +1,7 @@
 {-# LANGUAGE Safe #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
------------------------------------------------------------------------------
+------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Inclusion
 -- Copyright   :  (c) Fumiaki Kinoshita 2015
