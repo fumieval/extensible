@@ -75,7 +75,7 @@ hhead :: h :* (x ': xs) -> h x
 hhead (Tree a _ _) = a
 {-# INLINE hhead #-}
 
--- | /O(n)/ Extract the tail of the product.
+-- | /O(log n)/ Extract the tail of the product.
 htail :: h :* (x ': xs) -> h :* xs
 htail (Tree _ a@(Tree h _ _) b) = unsafeCoerce (Tree h) b (htail a)
 htail (Tree _ Nil _) = unsafeCoerce Nil
@@ -262,6 +262,6 @@ htabulateFor p f = runIdentity (hgenerateFor p (Identity #. f))
 {-# INLINE htabulateFor #-}
 
 -- | GHC can't prove this
-lemmaHalfTail :: proxy xs -> p (x ': Half (Tail xs)) -> p (Half (x ': xs))
+lemmaHalfTail :: proxy xs -> h :* (x ': Half (Tail xs)) -> h :* (Half (x ': xs))
 lemmaHalfTail _ = unsafeCoerce
 {-# INLINE lemmaHalfTail #-}
