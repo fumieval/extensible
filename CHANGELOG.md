@@ -1,3 +1,10 @@
+0.3.4
+-----------------------------------------------------
+* Added `Data.Extensible.Wrapper`
+* Added `itemAt`, `item`, `itemAssoc`
+* Safe Haskell
+* Generalized `Field`
+
 0.3.3
 -----------------------------------------------------
 * Renamed `sectorAt`, `sector`, `sectorAssoc` to `pieceAt`, `piece`, `pieceAssoc`, respectively
