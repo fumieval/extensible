@@ -13,6 +13,7 @@
 module Data.Extensible.TH (mkField, decFields, decFieldsDeriving) where
 
 import Data.Proxy
+import Data.Extensible.Internal.Rig (Optic')
 import Data.Extensible.Class (Member, Extensible, itemAssoc)
 import Data.Extensible.Field (FieldOptic)
 import Data.Extensible.Plain (accessing)
@@ -66,23 +67,20 @@ decFieldsDeriving drv' ds = ds >>= fmap concat . mapM mkBody
           xs_ = mkName "xs"
           f_ = mkName "f"
           p_ = mkName "p"
-          q_ = mkName "q"
           t_ = mkName "t"
           ext = varT t_ `appT` conT ''Identity `appT` varT xs_
-          tvs' = PlainTV xs_ : PlainTV f_ : PlainTV p_ : PlainTV q_ : PlainTV t_ : tvs
+          tvs' = PlainTV xs_ : PlainTV f_ : PlainTV p_ : PlainTV t_ : tvs
       sequence [return $ NewtypeD cx name_ tvs (NormalC nc [(st, ty)]) (drv' ++ drv)
 
         ,sigD name
 #if MIN_VERSION_template_haskell(2,10,0)
           $ forallT tvs' (sequence [conT ''Member `appT` varT xs_ `appT` conT name_
-            , conT ''Extensible `appT` varT f_ `appT` varT p_ `appT` varT q_ `appT` varT t_])
+            , conT ''Extensible `appT` varT f_ `appT` varT p_ `appT` varT t_])
 #else
           $ forallT tvs' (sequence [classP ''Member [varT xs_, conT name_]
-            , classP ''Extensible [varT f_, varT p_, varT q_, varT t_]])
+            , classP ''Extensible [varT f_, varT p_, varT t_]])
 #endif
-          $ arrowT
-            `appT` (varT p_ `appT` return ty `appT` (varT f_ `appT` return ty))
-            `appT` (varT q_ `appT` ext `appT` (varT f_ `appT` ext))
+          $ conT ''Optic' `appT` varT p_ `appT` varT f_ `appT` ext `appT` return ty
 
         , valD (varP name) (normalB $ varE 'accessing `appE` conE nc) []
         , return $ PragmaD $ InlineP name Inline FunLike AllPhases

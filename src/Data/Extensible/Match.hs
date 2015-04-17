@@ -34,7 +34,7 @@ matchWith f p = \(EmbedAt i h) -> views (pieceAt i) f p h
 
 -- | Applies a function to the result of 'Match'.
 mapMatch :: (a -> b) -> Match h a x -> Match h b x
-mapMatch f (Match g) = Match (f . g)
+mapMatch f = Match #. (f.) .# runMatch
 {-# INLINE mapMatch #-}
 
 -- | /O(log n)/ Perform pattern matching.

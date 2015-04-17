@@ -119,7 +119,7 @@ type FieldOptic k = forall f p t xs (h :: kind -> *) (v :: kind). (Extensible f 
   , Associate k v xs
   , Labelling k p
   , Wrapper h)
-  => p (Repr h v) (f (Repr h v)) -> p (t (Field h) xs) (f (t (Field h) xs))
+  => Optic' p f (t (Field h) xs) (Repr h v)
 
 -- | The trivial inextensible data type
 data Inextensible (h :: k -> *) (xs :: [k])
@@ -129,8 +129,7 @@ instance Functor f => Extensible f (LabelPhantom s) Inextensible where
 
 -- | When you see this type as an argument, it expects a 'FieldLens'.
 -- This type is used to resolve the name of the field internally.
-type FieldName k = forall v. LabelPhantom k () (Proxy ())
-  -> LabelPhantom k (Inextensible (Field Proxy) '[k ':> v]) (Proxy (Inextensible (Field Proxy) '[k ':> v]))
+type FieldName k = forall v. Optic' (LabelPhantom k) Proxy (Inextensible (Field Proxy) '[k ':> v]) ()
 
 type family Labelling s p :: Constraint where
   Labelling s (LabelPhantom t) = s ~ t
