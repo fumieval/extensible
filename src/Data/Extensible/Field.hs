@@ -64,11 +64,11 @@ instance (pk k, pv v) => KeyValue pk pv (k ':> v)
 --
 -- @'Field' :: (v -> *) -> Assoc k v -> *@
 --
-newtype Field (h :: v -> *) (kv :: Assoc k v) = Field (h (AssocValue kv))
+newtype Field (h :: v -> *) (kv :: Assoc k v) = Field { getField :: h (AssocValue kv) }
 
 instance Wrapper h => Wrapper (Field h) where
   type Repr (Field h) kv = Repr h (AssocValue kv)
-  _Wrapper = dimap (\(Field v) -> v) (fmap Field) . _Wrapper
+  _Wrapper = dimap getField (fmap Field) . _Wrapper
   {-# INLINE _Wrapper #-}
 
 -- | Shows in @field \@= value@ style instead of the derived one.
@@ -124,12 +124,12 @@ type FieldOptic k = forall f p t xs (h :: kind -> *) (v :: kind). (Extensible f 
 -- | The trivial inextensible data type
 data Inextensible (h :: k -> *) (xs :: [k])
 
-instance Functor f => Extensible f (LabelPhantom s) Inextensible where
+instance (Functor f, Profunctor p) => Extensible f p Inextensible where
   pieceAt _ _ = error "Impossible"
 
 -- | When you see this type as an argument, it expects a 'FieldLens'.
 -- This type is used to resolve the name of the field internally.
-type FieldName k = forall v. Optic' (LabelPhantom k) Proxy (Inextensible (Field Proxy) '[k ':> v]) ()
+type FieldName k = Optic' (LabelPhantom k) Proxy (Inextensible (Field Proxy) '[k ':> ()]) ()
 
 type family Labelling s p :: Constraint where
   Labelling s (LabelPhantom t) = s ~ t

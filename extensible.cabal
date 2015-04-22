@@ -32,6 +32,7 @@ library
     Data.Extensible.Class
     Data.Extensible.Dictionary
     Data.Extensible.Field
+    Data.Extensible.Effect
     Data.Extensible.Inclusion
     Data.Extensible.Internal
     Data.Extensible.Internal.Rig
@@ -54,7 +55,7 @@ library
     , FlexibleInstances
     , PolyKinds
     , CPP
-  build-depends:       base >= 4.7 && <5, template-haskell, constraints, profunctors, tagged, transformers
+  build-depends:       base >= 4.7 && <5, template-haskell, constraints, profunctors, tagged, transformers, mtl, monad-skeleton
   hs-source-dirs:      src
   ghc-options: -Wall
   default-language:    Haskell2010
