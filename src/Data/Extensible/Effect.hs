@@ -1,10 +1,15 @@
 {-# LANGUAGE Safe #-}
-{-# LANGUAGE MultiParamTypeClasses, FlexibleContexts, FlexibleInstances, UndecidableInstances, ScopedTypeVariables #-}
-module Data.Extensible.Effect (Action(..)
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleContexts, FlexibleInstances, UndecidableInstances #-}
+module Data.Extensible.Effect (Instruction(..)
   , Eff
   , liftEff
   , hoistEff
-  , handleWith) where
+  , handleWith
+  , Action(..)
+  , Function
+  , toHandler) where
 
 import Control.Monad.Reader
 import Control.Monad.Skeleton
@@ -21,27 +26,42 @@ import Data.Profunctor.Unsafe -- Trustworthy since 7.8
 import Data.Foldable (foldMap)
 #endif
 
+-- | Unnamed action
+data Action (args :: [*]) a r where
+  AResult :: (a -> r) -> Action '[] a r
+  AArgument :: x -> Action xs a r -> Action (x ': xs) a r
+
+type family Function (xs :: [*]) (r :: *) where
+  Function '[] r = r
+  Function (x ': xs) r = x -> Function xs r
+
+toHandler :: Functor f => Function xs (f a) -> Handler f (Action xs a)
+toHandler f0 = Handler (go f0) where
+  go :: Functor f => Function xs (f a) -> Action xs a r -> f r
+  go f (AResult k) = fmap k f
+  go f (AArgument x a) = go (f x) a
+
 -- | A unit of effects
-data Action (xs :: [Assoc k (* -> *)]) a where
-  Action :: !(Membership xs kv) -> AssocValue kv a -> Action xs a
+data Instruction (xs :: [Assoc k (* -> *)]) a where
+  Instruction :: !(Membership xs kv) -> AssocValue kv a -> Instruction xs a
 
 -- | The extensible operational monad
-type Eff xs = Skeleton (Action xs)
+type Eff xs = Skeleton (Instruction xs)
 
 -- | Lift some effect to 'Eff'
 liftEff :: forall proxy s t xs a. Associate s t xs => proxy s -> t a -> Eff xs a
-liftEff _ x = bone (Action (association :: Membership xs (s ':> t)) x)
+liftEff _ x = bone (Instruction (association :: Membership xs (s ':> t)) x)
 {-# INLINE liftEff #-}
 
 hoistEff :: forall proxy s t xs a. Associate s t xs => proxy s -> (forall x. t x -> t x) -> Eff xs a -> Eff xs a
-hoistEff _ f = hoistSkeleton $ \(Action i t) -> case compareMembership (association :: Membership xs (s ':> t)) i of
-  Right Refl -> Action i (f t)
-  _ -> Action i t
+hoistEff _ f = hoistSkeleton $ \(Instruction i t) -> case compareMembership (association :: Membership xs (s ':> t)) i of
+  Right Refl -> Instruction i (f t)
+  _ -> Instruction i t
 {-# INLINABLE hoistEff #-}
 
 handleWith :: RecordOf (Handler m) xs -> Eff xs a -> MonadView m (Eff xs) a
 handleWith hs m = case unbone m of
-  Action i t :>>= k -> views (pieceAt i) (runHandler .# getField) hs t :>>= k
+  Instruction i t :>>= k -> views (pieceAt i) (runHandler .# getField) hs t :>>= k
   Return a -> Return a
 {-# INLINABLE handleWith #-}
 
@@ -67,8 +87,8 @@ instance (Monoid w, Associate "Writer" (Writer w) xs) => MonadWriter w (Eff xs) 
   listen = go mempty where
     go w m = case unbone m of
       Return a -> return (a, w)
-      Action i t :>>= k -> case compareMembership (association :: Membership xs ("Writer" ':> Writer w)) i of
-        Right Refl -> bone (Action i t) >>= go (w <> execWriter t) . k
-        Left _ -> bone (Action i t) >>= go w . k
+      Instruction i t :>>= k -> case compareMembership (association :: Membership xs ("Writer" ':> Writer w)) i of
+        Right Refl -> bone (Instruction i t) >>= go (w <> execWriter t) . k
+        Left _ -> bone (Instruction i t) >>= go w . k
   pass m = listen m >>= \((a, f), w) -> writer (a, f w)
   {-# INLINABLE pass #-}

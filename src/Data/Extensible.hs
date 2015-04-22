@@ -1,5 +1,5 @@
 {-# LANGUAGE Safe #-}
------------------------------------------------------------------------------
+----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible
 -- Copyright   :  (c) Fumiaki Kinoshita 2015
@@ -40,4 +40,3 @@ import Data.Extensible.Sum
 import Data.Extensible.TH
 import Data.Extensible.Union
 import Data.Extensible.Wrapper
-

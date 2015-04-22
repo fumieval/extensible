@@ -10,7 +10,7 @@
 -- Portability :  non-portable
 --
 ------------------------------------------------------------------------
-module Data.Extensible.TH (mkField, decFields, decFieldsDeriving, mkEffects) where
+module Data.Extensible.TH (mkField, decFields, decFieldsDeriving, decEffects) where
 
 import Data.Proxy
 import Data.Extensible.Internal.Rig (Optic')
@@ -20,27 +20,28 @@ import Data.Extensible.Plain (accessing)
 import Data.Extensible.Effect
 import Language.Haskell.TH
 import Control.Monad (forM)
-import Data.Char (toLower)
+import Data.Char
 import Data.Functor.Identity
 import Control.Monad (replicateM)
 
 -- | Generate fields using 'itemAssoc'.
--- @'mkField' "foo bar"@ defines:
+-- @'mkField' "foo Bar"@ defines:
 --
 -- @
 -- foo :: FieldOptic "foo"
 -- foo = itemAssoc (Proxy :: Proxy "foo")
--- bar :: FieldOptic "bar"
--- bar = itemAssoc (Proxy :: Proxy "bar")
+-- _Bar :: FieldOptic "Bar"
+-- _Bar = itemAssoc (Proxy :: Proxy "Bar")
 -- @
 --
 mkField :: String -> DecsQ
-mkField str = fmap concat $ forM (words str) $ \s -> do
+mkField str = fmap concat $ forM (words str) $ \s@(x:xs) -> do
   let st = litT (strTyLit s)
+  let name = mkName $ if isLower x then x : xs else '_' : x : xs
   let lbl = conE 'Proxy `sigE` (conT ''Proxy `appT` st)
-  sequence [sigD (mkName s) $ conT ''FieldOptic `appT` st
-    , valD (varP (mkName s)) (normalB $ varE 'itemAssoc `appE` lbl) []
-    , return $ PragmaD $ InlineP (mkName s) Inline FunLike AllPhases
+  sequence [sigD name $ conT ''FieldOptic `appT` st
+    , valD (varP name) (normalB $ varE 'itemAssoc `appE` lbl) []
+    , return $ PragmaD $ InlineP name Inline FunLike AllPhases
     ]
 
 -- | Generate newtype wrappers and lenses from type synonyms.
@@ -65,7 +66,7 @@ decFieldsDeriving :: [Name] -> DecsQ -> DecsQ
 decFieldsDeriving drv' ds = ds >>= fmap concat . mapM mkBody
   where
     mkBody (NewtypeD cx name_ tvs (NormalC nc [(st, ty)]) drv) = do
-      let name = let (x:xs) = nameBase name_ in mkName (toLower x : xs)
+      let name = let (x:xs) = nameBase name_ in mkName $ toLower x : xs
           xs_ = mkName "xs"
           f_ = mkName "f"
           p_ = mkName "p"
@@ -91,9 +92,9 @@ decFieldsDeriving drv' ds = ds >>= fmap concat . mapM mkBody
     mkBody _ = fail "Unsupported declaration: genField handles newtype declarations or type synonyms"
 
 -- | Generate named effects from a GADT declaration.
-mkEffects :: Name -> DecsQ
-mkEffects name = reify name >>= \case
-  TyConI (DataD _ _ (fmap getTV -> tyvars) cs _)
+decEffects :: DecsQ -> DecsQ
+decEffects decs = decs >>= \ds -> fmap concat $ forM ds $ \case
+  DataD _ _ (fmap getTV -> tyvars) cs _
     | not (null tyvars) -> fmap concat $ forM cs $ \case
       NormalC con st -> mk tyvars [] con st
       ForallC _ eqs (NormalC con st) -> mk tyvars eqs con st
@@ -139,14 +140,16 @@ mkEffects name = reify name >>= \case
       -- a -> B -> C -> Eff xs R
       let fun = foldr (\x y -> ArrowT `AppT` x `AppT` y) rt argTypes'
 
-      -- Foo a B
-      let eff = foldl AppT (ConT name) bts
+      -- Action [a, B, C] R
+      let eff = ConT ''Action
+            `AppT` foldr (\x y -> PromotedConsT `AppT` x `AppT` y) PromotedNilT argTypes'
+            `AppT` result
 
       -- "Foo"
-      let nameT = LitT $ StrTyLit $ nameBase name
+      let nameT = LitT $ StrTyLit $ nameBase con
 
+      -- Associate "Foo" (Foo a B C) xs
 #if MIN_VERSION_template_haskell(2,10,0)
-      -- Associate "Foo" (Foo a B) xs
       let cx = ConT ''Associate
             `AppT` nameT
             `AppT` eff
@@ -162,7 +165,10 @@ mkEffects name = reify name >>= \case
 
       let argNames = map (mkName . ("a" ++) . show) [0..length argTypes-1]
 
-      let ex = lifter `AppE` foldl AppE (ConE con) (map VarE argNames)
+      let ex = lifter
+            `AppE` foldr (\x y -> ConE 'AArgument `AppE` x `AppE` y)
+                         (ConE 'AResult `AppE` VarE 'id)
+                         (map VarE argNames)
 
       let fName = let (ch : rest) = nameBase con in mkName $ toLower ch : rest
       return [SigD fName typ
