@@ -23,10 +23,6 @@ import Data.Extensible.Class
 import Data.Extensible.Wrapper (Handler(..))
 import Data.Profunctor.Unsafe -- Trustworthy since 7.8
 
-#if !MIN_VERSION_base(4,8,0)
-import Data.Foldable (foldMap)
-#endif
-
 -- | Unnamed action
 data Action (args :: [*]) a r where
   AResult :: Action '[] a a
