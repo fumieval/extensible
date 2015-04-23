@@ -27,12 +27,6 @@ import Data.Profunctor.Unsafe (Profunctor(..))
 import Data.Functor.Identity (Identity(..))
 import Data.Extensible.Internal.Rig (Optic', withIso)
 
-#if !MIN_VERSION_base(4,8,0)
-import Data.Monoid
-import Data.Foldable (Foldable)
-import Data.Traversable (Traversable)
-#endif
-
 -- | The extensible data types should take @k -> *@ as a parameter.
 -- This class allows us to take a shortcut for direct representation.
 class Wrapper (h :: k -> *) where

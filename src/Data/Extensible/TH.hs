@@ -24,6 +24,10 @@ import Data.Char
 import Data.Functor.Identity
 import Control.Monad
 
+#if !MIN_VERSION_base(4,8,0)
+import Data.Foldable (foldMap)
+#endif
+
 -- | Generate fields using 'itemAssoc'.
 -- @'mkField' "foo Bar"@ defines:
 --
