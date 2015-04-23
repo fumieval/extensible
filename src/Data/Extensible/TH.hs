@@ -13,16 +13,16 @@
 module Data.Extensible.TH (mkField, decFields, decFieldsDeriving, decEffects) where
 
 import Data.Proxy
+import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig (Optic')
-import Data.Extensible.Class (Member, Associate, Extensible, itemAssoc)
-import Data.Extensible.Field (FieldOptic)
-import Data.Extensible.Plain (accessing)
+import Data.Extensible.Class (Extensible, itemAssoc)
 import Data.Extensible.Effect
+import Data.Extensible.Field
+import Data.Extensible.Plain (accessing)
 import Language.Haskell.TH
-import Control.Monad (forM)
 import Data.Char
 import Data.Functor.Identity
-import Control.Monad (replicateM)
+import Control.Monad
 
 -- | Generate fields using 'itemAssoc'.
 -- @'mkField' "foo Bar"@ defines:
@@ -119,7 +119,7 @@ decEffects decs = decs >>= \ds -> fmap concat $ forM ds $ \case
               Just (VarT p) -> return (t, p)
               _ -> return (t, v)
 
-      let (bts, fts) = foldMap (\(p, t) -> maybe ([VarT t], [t]) (\case
+      let (_, fts) = foldMap (\(p, t) -> maybe ([VarT t], [t]) (\case
               VarT _ -> ([VarT t], [t])
               x -> ([x], [])) (lookup p dic)) (init params')
 
@@ -167,7 +167,7 @@ decEffects decs = decs >>= \ds -> fmap concat $ forM ds $ \case
 
       let ex = lifter
             `AppE` foldr (\x y -> ConE 'AArgument `AppE` x `AppE` y)
-                         (ConE 'AResult `AppE` VarE 'id)
+                         (ConE 'AResult)
                          (map VarE argNames)
 
       let fName = let (ch : rest) = nameBase con in mkName $ toLower ch : rest

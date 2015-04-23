@@ -7,9 +7,10 @@ module Data.Extensible.Effect (Instruction(..)
   , liftEff
   , hoistEff
   , handleWith
+  -- * Unnamed actions
   , Action(..)
   , Function
-  , toHandler) where
+  , receive) where
 
 import Control.Monad.Reader
 import Control.Monad.Skeleton
@@ -28,18 +29,20 @@ import Data.Foldable (foldMap)
 
 -- | Unnamed action
 data Action (args :: [*]) a r where
-  AResult :: (a -> r) -> Action '[] a r
+  AResult :: Action '[] a a
   AArgument :: x -> Action xs a r -> Action (x ': xs) a r
 
-type family Function (xs :: [*]) (r :: *) where
+type family Function args r :: * where
   Function '[] r = r
   Function (x ': xs) r = x -> Function xs r
 
-toHandler :: Functor f => Function xs (f a) -> Handler f (Action xs a)
-toHandler f0 = Handler (go f0) where
+receive :: Functor f => Function xs (f a) -> Handler f (Action xs a)
+receive f0 = Handler (go f0) where
   go :: Functor f => Function xs (f a) -> Action xs a r -> f r
-  go f (AResult k) = fmap k f
+  go r AResult = r
   go f (AArgument x a) = go (f x) a
+
+----------------------------------------------
 
 -- | A unit of effects
 data Instruction (xs :: [Assoc k (* -> *)]) a where
