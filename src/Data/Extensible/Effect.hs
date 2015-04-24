@@ -20,7 +20,6 @@ import Data.Extensible.Field
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
 import Data.Extensible.Class
-import Data.Extensible.Wrapper (Handler(..))
 import Data.Profunctor.Unsafe -- Trustworthy since 7.8
 
 -- | Unnamed action
@@ -31,6 +30,9 @@ data Action (args :: [*]) a r where
 type family Function args r :: * where
   Function '[] r = r
   Function (x ': xs) r = x -> Function xs r
+
+-- | Transformation between effects
+newtype Handler f g = Handler { runHandler :: forall a. g a -> f a }
 
 receive :: Functor f => Function xs (f a) -> Handler f (Action xs a)
 receive f0 = Handler (go f0) where

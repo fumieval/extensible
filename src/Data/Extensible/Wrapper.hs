@@ -18,7 +18,6 @@ module Data.Extensible.Wrapper (
   , Const'(..)
   , Comp(..)
   , comp
-  , Handler(..)
   ) where
 
 import Data.Typeable (Typeable)
@@ -74,6 +73,3 @@ instance Wrapper Proxy where
   type Repr Proxy x = ()
   _Wrapper = dimap (const ()) (fmap (const Proxy))
   {-# INLINE _Wrapper #-}
-
--- | Transformation between effects
-newtype Handler f g = Handler { runHandler :: forall a. g a -> f a }
