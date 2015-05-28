@@ -6,6 +6,7 @@ module Data.Extensible.Effect (Instruction(..)
   , liftEff
   , hoistEff
   , handleWith
+  , Handler(..)
   -- * Unnamed actions
   , Action(..)
   , Function
