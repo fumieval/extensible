@@ -1,5 +1,5 @@
 name:                extensible
-version:             0.3.4
+version:             0.3.5
 synopsis:            Extensible, efficient, lens-friendly data types
 homepage:            https://github.com/fumieval/extensible
 bug-reports:         http://github.com/fumieval/extensible/issues
