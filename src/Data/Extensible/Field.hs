@@ -25,6 +25,9 @@ module Data.Extensible.Field (
   , emptyRecord
   , VariantOf
   , Variant
+  -- * Matching
+  , matchWithField
+  , matchField
   -- * Constraint
   , AssocKey
   , AssocValue
@@ -36,6 +39,7 @@ module Data.Extensible.Field (
   ) where
 import Data.Extensible.Class
 import Data.Extensible.Sum
+import Data.Extensible.Match
 import Data.Extensible.Product
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
@@ -94,6 +98,14 @@ type Variant = VariantOf Identity
 emptyRecord :: Record '[]
 emptyRecord = Nil
 {-# INLINE emptyRecord #-}
+
+matchWithField :: (forall x. f x -> g x -> r) -> RecordOf f xs -> VariantOf g xs -> r
+matchWithField h = matchWith (\(Field x) (Field y) -> h x y)
+{-# INLINE matchWithField #-}
+
+matchField :: RecordOf (Match h r) xs -> VariantOf h xs -> r
+matchField = matchWithField runMatch
+{-# INLINE matchField #-}
 
 -- | @FieldOptic s@ is a type of optics that points a field/constructor named @s@.
 --
