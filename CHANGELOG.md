@@ -1,3 +1,8 @@
+0.3.5
+-----------------------------------------------------
+* Added `Data.Extensible.Effect`
+* Added `decEffects`
+
 0.3.4
 -----------------------------------------------------
 * Added `Data.Extensible.Wrapper`

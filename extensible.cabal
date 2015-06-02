@@ -55,7 +55,7 @@ library
     , FlexibleInstances
     , PolyKinds
     , CPP
-  build-depends:       base >= 4.7 && <5, template-haskell, constraints, profunctors, tagged, transformers, mtl, monad-skeleton
+  build-depends:       base >= 4.7 && <5, template-haskell, constraints, profunctors, tagged, transformers, monad-skeleton
   hs-source-dirs:      src
   ghc-options: -Wall
   default-language:    Haskell2010
