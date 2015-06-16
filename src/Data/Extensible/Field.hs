@@ -17,6 +17,7 @@ module Data.Extensible.Field (
   Field(..)
   , (@=)
   , (<@=>)
+  , (@:>)
   , FieldOptic
   , FieldName
   -- * Records and variants
@@ -159,3 +160,7 @@ infix 1 @=
 (<@=>) k = Comp #. fmap (k @=)
 {-# INLINE (<@=>) #-}
 infix 1 <@=>
+
+(@:>) :: FieldName k -> h v -> Field h (k ':> v)
+(@:>) _ = Field
+infix 1 @:>
