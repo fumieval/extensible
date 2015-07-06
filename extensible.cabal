@@ -1,5 +1,5 @@
 name:                extensible
-version:             0.3.5
+version:             0.3.6
 synopsis:            Extensible, efficient, lens-friendly data types
 homepage:            https://github.com/fumieval/extensible
 bug-reports:         http://github.com/fumieval/extensible/issues
@@ -55,7 +55,13 @@ library
     , FlexibleInstances
     , PolyKinds
     , CPP
-  build-depends:       base >= 4.7 && <5, template-haskell, constraints, profunctors, tagged, transformers, monad-skeleton
+  build-depends:       base >= 4.7 && <5
+    , template-haskell
+    , constraints
+    , profunctors
+    , tagged
+    , transformers
+    , monad-skeleton >= 0.1.2
   hs-source-dirs:      src
   ghc-options: -Wall
   default-language:    Haskell2010
