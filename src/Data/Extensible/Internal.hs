@@ -23,6 +23,7 @@ module Data.Extensible.Internal (
   , mkMembership
   , runMembership
   , compareMembership
+  , impossibleMembership
   -- * Member class
   , Member(..)
   , remember
@@ -145,6 +146,9 @@ compareMembership (Membership m) (Membership n) = case compare m n of
   EQ -> Right (unsafeCoerce Refl)
   x -> Left x
 {-# INLINE compareMembership #-}
+
+impossibleMembership :: Membership '[] x -> r
+impossibleMembership _ = error "Impossible"
 
 -- | PRIVILEGED: Navigate a tree.
 navigate :: (NavHere xs x -> r)

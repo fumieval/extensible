@@ -10,7 +10,11 @@ module Data.Extensible.Effect (Instruction(..)
   -- * Unnamed actions
   , Action(..)
   , Function
-  , receive) where
+  , receive
+  -- * Successive handling
+  , (!-!!)
+  , squash
+  , nihility) where
 
 import Control.Monad.Skeleton
 import Data.Extensible.Field
@@ -62,3 +66,30 @@ handleWith hs m = case unbone m of
   Instruction i t :>>= k -> views (pieceAt i) (runHandler .# getField) hs t :>>= k
   Return a -> Return a
 {-# INLINABLE handleWith #-}
+
+(!-!!) :: Monad m => (forall x. t x -> m x)
+  -> (forall x. Eff xs x -> m x)
+  -> Eff ((s ':> t) ': xs) a -> m a
+f !-!! g = go where
+  go m = case unbone m of
+    Return a -> return a
+    Instruction i t :>>= k -> runMembership i
+      (\Refl -> f t >>= go . k)
+      (\j -> g (bone (Instruction j t)) >>= go . k)
+{-# INLINE (!-!!) #-}
+infixr 0 !-!!
+
+nihility :: Monad m => Eff '[] a -> m a
+nihility m = case unbone m of
+  Return a -> return a
+  Instruction i _ :>>= _ -> impossibleMembership i
+
+-- | @'squash' = ('!-!!' 'id')@
+squash :: (forall x. t x -> Eff xs x) -> Eff ((s ':> t) ': xs) a -> Eff xs a
+squash f = go where
+  go m = case unbone m of
+    Return a -> return a
+    Instruction i t :>>= k -> runMembership i
+      (\Refl -> f t >>= go . k)
+      (\j -> boned $ Instruction j t :>>= go . k)
+{-# INLINE squash #-}
