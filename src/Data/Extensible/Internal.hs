@@ -21,6 +21,7 @@ module Data.Extensible.Internal (
   Membership
   , getMemberId
   , mkMembership
+  , reifyMembership
   , runMembership
   , compareMembership
   , impossibleMembership
@@ -50,6 +51,7 @@ module Data.Extensible.Internal (
   , Half
   , Head
   , Tail
+  , Last
   , (++)()
   , Map
   , Merge
@@ -96,6 +98,9 @@ class Member xs x where
 instance (Elaborate x (FindType x xs) ~ 'Expecting pos, KnownPosition pos) => Member xs x where
   membership = Membership (theInt (Proxy :: Proxy pos))
   {-# INLINE membership #-}
+
+reifyMembership :: Word -> (forall x. Membership xs x -> r) -> r
+reifyMembership n k = k (Membership n)
 
 -- | The kind of key-value pairs
 data Assoc k v = k :> v
@@ -209,6 +214,10 @@ type family Half (xs :: [k]) :: [k] where
 type family Tail (xs :: [k]) :: [k] where
   Tail (x ': xs) = xs
   Tail '[] = '[]
+
+type family Last (x :: [k]) :: k where
+  Last '[x] = x
+  Last (x ': xs) = Last xs
 
 -- | Type level binary number
 data Nat = Zero | DNat Nat | SDNat Nat

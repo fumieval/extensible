@@ -2,6 +2,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE UndecidableInstances #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Sum
@@ -23,7 +24,6 @@ module Data.Extensible.Sum (
   , exhaust
   , picked
   , embedAssoc
-  , pattern UnionAt
   ) where
 
 import Data.Extensible.Internal
@@ -42,8 +42,13 @@ data (h :: k -> *) :| (s :: [k]) where
   EmbedAt :: !(Membership xs x) -> h x -> h :| xs
 deriving instance Typeable (:|)
 
-{-# DEPRECATED UnionAt "This has renamed to EmbedAt" #-}
-pattern UnionAt a b = EmbedAt a b
+instance Enum (Proxy :| xs) where
+  fromEnum (EmbedAt m _) = fromIntegral $ getMemberId m
+  toEnum i = reifyMembership (fromIntegral i) $ \m -> EmbedAt m Proxy
+
+instance (Last xs ∈ xs) => Bounded (Proxy :| xs) where
+  minBound = reifyMembership 0 $ \m -> EmbedAt m Proxy
+  maxBound = EmbedAt (membership :: Membership xs (Last xs)) Proxy
 
 -- | Change the wrapper.
 hoist :: (forall x. g x -> h x) -> g :| xs -> h :| xs
