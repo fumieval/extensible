@@ -77,6 +77,10 @@ instance (KnownSymbol k, Wrapper h, Show (Repr h v)) => Show (Field h (k ':> v))
     . showString " @= "
     . showsPrec 1 (view _Wrapper a)
 
+instance Monoid (h (AssocValue kv)) => Monoid (Field h kv) where
+    mempty = Field mempty
+    Field a `mappend` Field b = Field (mappend a b)
+
 -- | The type of records which contain several fields.
 --
 -- @RecordOf :: (v -> *) -> [Assoc k v] -> *@
