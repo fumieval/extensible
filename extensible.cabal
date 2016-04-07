@@ -40,6 +40,7 @@ library
     Data.Extensible.Nullable
     Data.Extensible.Plain
     Data.Extensible.Product
+    Data.Extensible.Record
     Data.Extensible.Sum
     Data.Extensible.Union
     Data.Extensible.Wrapper

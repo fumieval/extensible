@@ -20,6 +20,7 @@ module Data.Extensible (
   , module Data.Extensible.Nullable
   , module Data.Extensible.Plain
   , module Data.Extensible.Product
+  , module Data.Extensible.Record
   , module Data.Extensible.Sum
   , module Data.Extensible.TH
   , module Data.Extensible.Union
@@ -35,6 +36,7 @@ import Data.Extensible.Match
 import Data.Extensible.Nullable
 import Data.Extensible.Plain
 import Data.Extensible.Product
+import Data.Extensible.Record
 import Data.Extensible.Sum
 import Data.Extensible.TH
 import Data.Extensible.Union
