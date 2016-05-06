@@ -24,7 +24,7 @@ deriveIsRecord name = reify name >>= \case
     rec <- newName "rec"
     let names = [x | (x, _, _) <- vst]
     newNames <- traverse (newName . nameBase) names
-    let tvmap = [(tvName tv, VarT (mkName $ "p" ++ show i)) | (i, tv) <- zip [0..] vars]
+    let tvmap = [(tvName tv, VarT (mkName $ "p" ++ show i)) | (i, tv) <- zip [0 :: Int ..] vars]
     let ty = foldl AppT (ConT name) $ map snd tvmap
     let refineTV (VarT t) | Just t' <- lookup t tvmap = t'
         refineTV (AppT a b) = refineTV a `AppT` refineTV b
