@@ -15,7 +15,6 @@ stability:           provisional
 
 extra-source-files:
   examples/*.hs
-  benchmarks/*.hs
   .gitignore
   .travis.yml
   README.md
