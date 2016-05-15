@@ -13,7 +13,11 @@
 ------------------------------------------------------------------------
 module Data.Extensible.Inclusion (
   -- * Inclusion
-   (⊆)()
+#if __GLASGOW_HASKELL__ >= 800
+  type (⊆)
+#else
+  (⊆)()
+#endif
   , Include
   , inclusion
   , shrink

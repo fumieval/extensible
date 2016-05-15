@@ -28,7 +28,11 @@ module Data.Extensible.Internal (
   -- * Member class
   , Member(..)
   , remember
+#if __GLASGOW_HASKELL__ >= 800
+  , type (∈)
+#else
   , (∈)()
+#endif
   , FindType
   -- * Association
   , Assoc(..)
@@ -52,7 +56,11 @@ module Data.Extensible.Internal (
   , Head
   , Tail
   , Last
+#if __GLASGOW_HASKELL__ >= 800
+  , type (++)
+#else
   , (++)()
+#endif
   , Map
   , Merge
   , Concat

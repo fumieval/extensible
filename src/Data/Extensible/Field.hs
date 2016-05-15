@@ -1,5 +1,8 @@
 {-# LANGUAGE MultiParamTypeClasses, UndecidableInstances #-}
 {-# LANGUAGE ScopedTypeVariables, TypeFamilies #-}
+#if __GLASGOW_HASKELL__ >= 800
+{-# LANGUAGE UndecidableSuperClasses #-}
+#endif
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Record
@@ -127,7 +130,12 @@ matchField = matchWithField runMatch
 --
 -- 'FieldOptic's can be generated using 'mkField' defined in the "Data.Extensible.TH" module.
 --
-type FieldOptic k = forall f p t xs (h :: kind -> *) (v :: kind). (Extensible f p t
+#if __GLASGOW_HASKELL__ >= 800
+type FieldOptic k = forall kind. forall f p t xs (h :: kind -> *) (v :: kind).
+#else
+type FieldOptic k = forall f p t xs (h :: kind -> *) (v :: kind).
+#endif
+  (Extensible f p t
   , Associate k v xs
   , Labelling k p
   , Wrapper h)

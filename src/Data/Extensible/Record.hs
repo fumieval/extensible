@@ -20,7 +20,11 @@ tvName (KindedTV n _) = n
 
 deriveIsRecord :: Name -> DecsQ
 deriveIsRecord name = reify name >>= \case
+#if MIN_VERSION_template_haskell(2,11,0)
+  TyConI (DataD _ _ vars _ [RecC conName vst] _) -> do
+#else
   TyConI (DataD _ _ vars [RecC conName vst] _) -> do
+#endif
     rec <- newName "rec"
     let names = [x | (x, _, _) <- vst]
     newNames <- traverse (newName . nameBase) names
@@ -30,7 +34,11 @@ deriveIsRecord name = reify name >>= \case
         refineTV (AppT a b) = refineTV a `AppT` refineTV b
         refineTV t = t
     return
+#if MIN_VERSION_template_haskell(2,11,0)
+      [InstanceD Nothing [] (ConT ''IsRecord `AppT` ty)
+#else
       [InstanceD [] (ConT ''IsRecord `AppT` ty)
+#endif
         [ TySynInstD ''RecFields $ TySynEqn [ty] $ foldr
             (\(v, _, t) r -> PromotedConsT `AppT` (PromotedT '(:>) `AppT` LitT (StrTyLit $ nameBase v) `AppT` refineTV t) `AppT` r)
             PromotedNilT
