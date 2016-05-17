@@ -32,10 +32,11 @@ module Data.Extensible.Field (
   -- * Matching
   , matchWithField
   , matchField
-  -- * Constraint
+  -- * Key / value
   , AssocKey
   , AssocValue
   , KeyValue
+  , proxyAssocKey
   -- * Internal
   , LabelPhantom
   , Labelling
@@ -53,9 +54,15 @@ import Data.Extensible.Wrapper
 import Data.Functor.Identity
 import GHC.TypeLits hiding (Nat)
 
+-- | Take the type of the key
 type family AssocKey (kv :: Assoc k v) :: k where
   AssocKey (k ':> v) = k
 
+-- | Proxy-level 'AssocKey'. This is useful when using 'symbolVal'.
+proxyAssocKey :: proxy kv -> Proxy (AssocKey kv)
+proxyAssocKey _ = Proxy
+
+-- | Take the type of the value
 type family AssocValue (kv :: Assoc k v) :: v where
   AssocValue (k ':> v) = v
 
@@ -63,7 +70,7 @@ class (pk (AssocKey kv), pv (AssocValue kv)) => KeyValue pk pv kv where
 
 instance (pk k, pv v) => KeyValue pk pv (k ':> v)
 
--- | A @'Field' h (k ':> v)@ is @h v@, but is along with the index @k@.
+-- | A @'Field' h (k ':> v)@ is @h v@ annotated with the field name @k@.
 --
 -- @'Field' :: (v -> *) -> Assoc k v -> *@
 --
@@ -81,8 +88,10 @@ instance (KnownSymbol k, Wrapper h, Show (Repr h v)) => Show (Field h (k ':> v))
     . showsPrec 1 (view _Wrapper a)
 
 instance Monoid (h (AssocValue kv)) => Monoid (Field h kv) where
-    mempty = Field mempty
-    Field a `mappend` Field b = Field (mappend a b)
+  mempty = Field mempty
+  {-# INLINE mempty #-}
+  Field a `mappend` Field b = Field (mappend a b)
+  {-# INLINE mappend #-}
 
 -- | The type of records which contain several fields.
 --
@@ -107,6 +116,7 @@ emptyRecord :: Record '[]
 emptyRecord = Nil
 {-# INLINE emptyRecord #-}
 
+-- | Select a corresponding field of a variant.
 matchWithField :: (forall x. f x -> g x -> r) -> RecordOf f xs -> VariantOf g xs -> r
 matchWithField h = matchWith (\(Field x) (Field y) -> h x y)
 {-# INLINE matchWithField #-}
@@ -173,6 +183,7 @@ infix 1 @=
 {-# INLINE (<@=>) #-}
 infix 1 <@=>
 
+-- | Annotate a value by the field name without 'Wrapper'.
 (@:>) :: FieldName k -> h v -> Field h (k ':> v)
 (@:>) _ = Field
 infix 1 @:>
