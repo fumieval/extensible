@@ -41,7 +41,6 @@ library
     Data.Extensible.Product
     Data.Extensible.Record
     Data.Extensible.Sum
-    Data.Extensible.Union
     Data.Extensible.Wrapper
     Data.Extensible.TH
   default-extensions: TypeOperators

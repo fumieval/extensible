@@ -23,7 +23,6 @@ module Data.Extensible (
   , module Data.Extensible.Record
   , module Data.Extensible.Sum
   , module Data.Extensible.TH
-  , module Data.Extensible.Union
   , module Data.Extensible.Wrapper
   ) where
 
@@ -39,5 +38,4 @@ import Data.Extensible.Product
 import Data.Extensible.Record
 import Data.Extensible.Sum
 import Data.Extensible.TH
-import Data.Extensible.Union
 import Data.Extensible.Wrapper
