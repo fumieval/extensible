@@ -1,17 +1,17 @@
 name:                extensible
-version:             0.3.6
-synopsis:            Extensible, efficient, lens-friendly data types
+version:             0.3.7
+synopsis:            Extensible, efficient, optics-friendly data types
 homepage:            https://github.com/fumieval/extensible
 bug-reports:         http://github.com/fumieval/extensible/issues
-description:         Combinators and types for extensible product and sum
+description:         Poly-kinded extensible records and variants
 license:             BSD3
 license-file:        LICENSE
 author:              Fumiaki Kinoshita
 maintainer:          Fumiaki Kinoshita <fumiexcel@gmail.com>
-copyright:           Copyright (C) 2015 Fumiaki Kinoshita
+copyright:           Copyright (C) 2016 Fumiaki Kinoshita
 category:            Data, Records
 build-type:          Simple
-stability:           provisional
+stability:           experimental
 
 extra-source-files:
   examples/*.hs

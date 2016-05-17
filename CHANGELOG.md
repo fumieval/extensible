@@ -1,3 +1,11 @@
+0.3.7
+-----------------------------------------------------
+* Support GHC 8.0
+* Added a `Monoid` instance for `Field`
+* Added `Data.Extensible.Record`
+* Added `Enum` and `Bounded` instances for `Proxy :| xs`
+* Removed `Data.Extensible.Union`
+
 0.3.6
 -----------------------------------------------------
 * Added `(@:>)`
