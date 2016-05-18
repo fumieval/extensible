@@ -206,16 +206,6 @@ pieceAt_ i f = flip go i where
   go Nil = error "Impossible"
 {-# INLINE pieceAt_ #-}
 
-{-# DEPRECATED sectorAt "Use pieceAt" #-}
--- | The legacy name for 'pieceAt'
-sectorAt :: Functor f => Membership xs x -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)
-sectorAt = pieceAt
-
-{-# DEPRECATED sector "Use piece" #-}
--- | The legacy name for 'piece'
-sector :: (Functor f, x ∈ xs) => (h x -> f (h x)) -> h :* xs -> f (h :* xs)
-sector = piece
-
 -- | Given a function that maps types to values, we can "collect" entities all you want.
 class Generate (xs :: [k]) where
   -- | /O(n)/ Generate a product with the given function.

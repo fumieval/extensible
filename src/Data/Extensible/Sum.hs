@@ -89,14 +89,6 @@ embedAssoc :: Associate k a xs => h (k ':> a) -> h :| xs
 embedAssoc = EmbedAt association
 {-# INLINE embedAssoc #-}
 
-{-# DEPRECATED picked "Use piece instead" #-}
--- | A traversal that tries to point a specific element.
-picked :: forall f h x xs. (x ∈ xs, Applicative f) => (h x -> f (h x)) -> h :| xs -> f (h :| xs)
-picked f u@(EmbedAt i h) = case compareMembership (membership :: Membership xs x) i of
-  Right Refl -> fmap (EmbedAt i) (f h)
-  _ -> pure u
-{-# INLINE picked #-}
-
 instance (Applicative f, Choice p) => Extensible f p (:|) where
   pieceAt m = dimap (\t@(EmbedAt i h) -> case compareMembership i m of
     Right Refl -> Right h
