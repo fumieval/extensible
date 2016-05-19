@@ -22,7 +22,6 @@ module Data.Extensible.Sum (
   , strikeAt
   , (<:|)
   , exhaust
-  , picked
   , embedAssoc
   ) where
 
