@@ -36,8 +36,6 @@ module Data.Extensible.Product (
   -- * Lookup
   , hlookup
   , hindex
-  , sectorAt
-  , sector
   -- * Generation
   , Generate(..)
   , htabulate
