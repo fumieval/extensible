@@ -1,5 +1,5 @@
 {-# LANGUAGE Trustworthy #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ViewPatterns, ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses, UndecidableInstances #-}
 -----------------------------------------------------------------------------
@@ -54,6 +54,9 @@ import Data.Extensible.Class
 import Data.Functor.Identity
 import Data.Extensible.Wrapper
 import Data.Profunctor.Unsafe
+import Data.Profunctor.Rep
+import Data.Profunctor.Sieve
+import Control.Comonad
 
 -- | The type of extensible products.
 --
@@ -188,20 +191,21 @@ htraverseWithIndex f = go id where
   go _ Nil = pure Nil
 {-# INLINE htraverseWithIndex #-}
 
-instance Functor f => Extensible f (->) (:*) where
+instance (Corepresentable p, Comonad (Corep p), Functor f) => Extensible f p (:*) where
   -- | /O(log n)/ A lens for a value in a known position.
   pieceAt = pieceAt_
   {-# INLINE pieceAt #-}
 
-pieceAt_ :: forall (xs :: [k]) (x :: k) (h :: k -> *) (f :: * -> *). Functor f
-  => Membership xs x -> (h x -> f (h x)) -> h :* xs -> f (h :* xs)
-pieceAt_ i f = flip go i where
-  go :: forall t. h :* t -> Membership t x -> f (h :* t)
-  go (Tree h a b) = navigate
-    (\Here -> fmap (\h' -> Tree h' a b) (f h))
-    (fmap (\a' -> Tree h a' b) . go a)
-    (fmap (\b' -> Tree h a b') . go b)
-  go Nil = error "Impossible"
+pieceAt_ :: forall (xs :: [k]) (x :: k) (h :: k -> *) (f :: * -> *) (p :: * -> * -> *).
+  (Functor f, Corepresentable p, Comonad (Corep p))
+  => Membership xs x -> p (h x) (f (h x)) -> p (h :* xs) (f (h :* xs))
+pieceAt_ i f = cotabulate $ flip go i where
+  go :: forall t. Corep p (h :* t) -> Membership t x -> f (h :* t)
+  go w@(extract -> Tree h a b) = navigate
+    (\Here -> fmap (\h' -> Tree h' a b) (cosieve f (h <$ w)))
+    (fmap (\a' -> Tree h a' b) . go (a <$ w))
+    (fmap (\b' -> Tree h a b') . go (b <$ w))
+  go _ = error "Impossible"
 {-# INLINE pieceAt_ #-}
 
 -- | Given a function that maps types to values, we can "collect" entities all you want.

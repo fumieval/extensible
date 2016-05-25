@@ -58,6 +58,7 @@ library
     , template-haskell
     , constraints
     , profunctors
+    , comonad
     , tagged
     , transformers
     , monad-skeleton >= 0.1.2
