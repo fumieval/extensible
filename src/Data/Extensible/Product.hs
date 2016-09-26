@@ -28,6 +28,7 @@ module Data.Extensible.Product (
   , hzipWith
   , hzipWith3
   , hfoldMap
+  , hfoldMapWithIndex
   , htraverse
   , htraverseWithIndex
   , hsequence
@@ -138,6 +139,14 @@ hzipWith3 _ _ _ Nil = Nil
 hfoldMap :: Monoid a => (forall x. h x -> a) -> h :* xs -> a
 hfoldMap f (Tree h a b) = f h <> hfoldMap f a <> hfoldMap f b
 hfoldMap _ Nil = mempty
+
+-- | 'hfoldMap' with the membership of elements.
+hfoldMapWithIndex :: forall g a xs. Monoid a
+  => (forall x. Membership xs x -> g x -> a) -> g :* xs -> a
+hfoldMapWithIndex f = go id where
+  go :: (forall x. Membership t x -> Membership xs x) -> g :* t -> a
+  go k (Tree g a b) = f (k here) g <> go (k . navL) a <> go (k . navR) b
+  go _ Nil = mempty
 
 -- | Traverse all elements and combine the result sequentially.
 -- @
