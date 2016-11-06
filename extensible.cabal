@@ -1,5 +1,5 @@
 name:                extensible
-version:             0.3.7
+version:             0.3.7.1
 synopsis:            Extensible, efficient, optics-friendly data types
 homepage:            https://github.com/fumieval/extensible
 bug-reports:         http://github.com/fumieval/extensible/issues
@@ -39,6 +39,7 @@ library
     Data.Extensible.Nullable
     Data.Extensible.Plain
     Data.Extensible.Product
+    Data.Extensible.Product.Ordered
     Data.Extensible.Record
     Data.Extensible.Sum
     Data.Extensible.Tangle
