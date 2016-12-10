@@ -7,36 +7,42 @@ import Data.Extensible.Class
 import Data.Extensible.Field
 import Data.Extensible.Product
 import Data.Extensible.Internal.Rig
+import Data.Extensible.Nullable
+import Data.Extensible.Wrapper
 
--- | @'TangleT' xs m@ is the monad of computations that may depend on the fields in 'xs'.
-newtype TangleT xs m a = TangleT
-    { unTangleT :: RWST (RecordOf (TangleT xs m) xs) () (RecordOf Maybe xs) m a }
+-- | @'TangleT' h xs m@ is the monad of computations that may depend on the fields in 'xs'.
+newtype TangleT h xs m a = TangleT
+    { unTangleT :: RWST
+        (RecordOf (Comp (TangleT h xs m) h) xs)
+        ()
+        (RecordOf (Nullable h) xs)
+        m a }
     deriving (Functor, Applicative, Monad)
 
-instance MonadTrans (TangleT xs) where
+instance MonadTrans (TangleT h xs) where
     lift = TangleT . lift
 
 -- | Get a value of the specified field.
-hitch :: forall k v m xs. (Monad m, Associate k v xs) => FieldName k -> TangleT xs m v
+hitch :: forall k v m h xs. (Monad m, Associate k v xs) => FieldName k -> TangleT h xs m (h v)
 hitch _ = hitchAt (association :: Membership xs (k ':> v))
 
 -- | Take a value from the tangles. The result is memoized.
-hitchAt :: Monad m => Membership xs kv -> TangleT xs m (AssocValue kv)
+hitchAt :: Monad m => Membership xs kv -> TangleT h xs m (h (AssocValue kv))
 hitchAt k = TangleT $ do
     mem <- get
-    case getField $ hlookup k mem of
+    case getNullable $ getField $ hlookup k mem of
         Just a -> return a
         Nothing -> do
             tangles <- ask
-            a <- unTangleT $ getField $ hlookup k tangles
-            modify $ over (pieceAt k) $ const $ Field (Just a)
+            a <- unTangleT $ getComp $ getField $ hlookup k tangles
+            modify $ over (pieceAt k) $ const $ Field $ Nullable $ Just a
             return a
 
 -- | Run tangles and collect the results as a 'Record'.
 runTangles :: Monad m
-    => RecordOf (TangleT xs m) xs -- ^ tangle matrix
-    -> RecordOf Maybe xs -- ^ pre-calculated values
-    -> m (Record xs)
+    => RecordOf (Comp (TangleT h xs m) h) xs -- ^ tangle matrix
+    -> RecordOf (Nullable h) xs -- ^ pre-calculated values
+    -> m (RecordOf h xs)
 runTangles tangles rec0 = fst <$> evalRWST
-    (unTangleT $ htraverseWithIndex (\k _ -> Field <$> pure <$> hitchAt k) rec0)
+    (unTangleT $ htraverseWithIndex (\k _ -> Field <$> hitchAt k) rec0)
     tangles rec0
