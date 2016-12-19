@@ -12,8 +12,11 @@ module Data.Extensible.Effect (Instruction(..)
   , Function
   , receive
   -- * Successive handling
+  , Effectful(EffectsOf)
   , (!-!!)
   , squash
+  , eliminate
+  , intercept
   , nihility) where
 
 import Control.Monad.Skeleton
@@ -67,6 +70,19 @@ handleWith hs m = case unbone m of
   Return a -> Return a
 {-# INLINABLE handleWith #-}
 
+class xs ~ EffectsOf r => Effectful xs r where
+  type EffectsOf r :: [Assoc k (* -> *)]
+  relay :: Instruction xs a -> (a -> r) -> r
+
+instance Effectful xs (Eff xs a) where
+  type EffectsOf (Eff xs a) = xs
+  relay i k = bone i >>= k
+  {-# INLINE relay #-}
+
+instance Effectful xs r => Effectful xs (a -> r) where
+  type EffectsOf (a -> r) = EffectsOf r
+  relay i k x = relay i (\y -> k y x)
+
 (!-!!) :: Monad m => (forall x. t x -> m x)
   -> (forall x. Eff xs x -> m x)
   -> Eff ((s ':> t) ': xs) a -> m a
@@ -86,10 +102,23 @@ nihility m = case unbone m of
 
 -- | @'squash' = ('!-!!' 'id')@
 squash :: (forall x. t x -> Eff xs x) -> Eff ((s ':> t) ': xs) a -> Eff xs a
-squash f = go where
-  go m = case unbone m of
-    Return a -> return a
-    Instruction i t :>>= k -> runMembership i
-      (\Refl -> f t >>= go . k)
-      (\j -> boned $ Instruction j t :>>= go . k)
+squash f = eliminate return (\t k -> f t >>= k)
 {-# INLINE squash #-}
+
+eliminate :: Effectful xs r => (a -> r) -> (forall x. t x -> (x -> r) -> r) -> Eff ((s ':> t) ': xs) a -> r
+eliminate f g = go where
+  go m = case unbone m of
+    Return a -> f a
+    Instruction i t :>>= k -> runMembership i
+      (\Refl -> g t (go . k))
+      (\j -> relay (Instruction j t) (go . k))
+{-# INLINE eliminate #-}
+
+intercept :: forall s t a r xs proxy. (Effectful xs r, Associate s t xs) => proxy s -> (a -> r) -> (forall x. t x -> (x -> r) -> r) -> Eff xs a -> r
+intercept _ f g = go where
+  go m = case unbone m of
+    Return a -> f a
+    Instruction i t :>>= k -> case compareMembership i (association :: Membership xs (s ':> t)) of
+      Right Refl -> g t (go . k)
+      Left _ -> relay (Instruction i t) (go . k)
+{-# INLINE intercept #-}
