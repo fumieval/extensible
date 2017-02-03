@@ -1,5 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses, UndecidableInstances #-}
+{-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables, TypeFamilies #-}
+{-# LANGUAGE CPP #-}
 #if __GLASGOW_HASKELL__ >= 800
 {-# LANGUAGE UndecidableSuperClasses #-}
 #endif
@@ -42,6 +44,7 @@ module Data.Extensible.Field (
   , Labelling
   , Inextensible
   ) where
+import Control.DeepSeq (NFData)
 import Data.Extensible.Class
 import Data.Extensible.Sum
 import Data.Extensible.Match
@@ -52,6 +55,8 @@ import Data.Profunctor.Unsafe
 import Data.Constraint
 import Data.Extensible.Wrapper
 import Data.Functor.Identity
+import Data.Semigroup
+import Foreign.Storable (Storable)
 import GHC.TypeLits hiding (Nat)
 
 -- | Take the type of the key
@@ -76,6 +81,24 @@ instance (pk k, pv v) => KeyValue pk pv (k ':> v)
 --
 newtype Field (h :: v -> *) (kv :: Assoc k v) = Field { getField :: h (AssocValue kv) }
 
+#define ND_Field(c) deriving instance c (h (AssocValue kv)) => c (Field h kv)
+
+ND_Field(Eq)
+ND_Field(Ord)
+ND_Field(Num)
+ND_Field(Integral)
+ND_Field(Fractional)
+ND_Field(Floating)
+ND_Field(Real)
+ND_Field(RealFloat)
+ND_Field(RealFrac)
+ND_Field(Semigroup)
+ND_Field(Storable)
+ND_Field(Monoid)
+ND_Field(Enum)
+ND_Field(Bounded)
+ND_Field(NFData)
+
 instance Wrapper h => Wrapper (Field h) where
   type Repr (Field h) kv = Repr h (AssocValue kv)
   _Wrapper = dimap getField (fmap Field) . _Wrapper
@@ -86,12 +109,6 @@ instance (KnownSymbol k, Wrapper h, Show (Repr h v)) => Show (Field h (k ':> v))
   showsPrec d (Field a) = showParen (d >= 1) $ showString (symbolVal (Proxy :: Proxy k))
     . showString " @= "
     . showsPrec 1 (view _Wrapper a)
-
-instance Monoid (h (AssocValue kv)) => Monoid (Field h kv) where
-  mempty = Field mempty
-  {-# INLINE mempty #-}
-  Field a `mappend` Field b = Field (mappend a b)
-  {-# INLINE mappend #-}
 
 -- | The type of records which contain several fields.
 --

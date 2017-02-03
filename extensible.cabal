@@ -60,7 +60,9 @@ library
     , template-haskell
     , constraints
     , profunctors
+    , semigroups
     , comonad
+    , deepseq
     , tagged
     , transformers
     , monad-skeleton >= 0.1.2
