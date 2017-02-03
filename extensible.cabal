@@ -32,6 +32,7 @@ library
     Data.Extensible.Dictionary
     Data.Extensible.Field
     Data.Extensible.Effect
+    Data.Extensible.HList
     Data.Extensible.Inclusion
     Data.Extensible.Internal
     Data.Extensible.Internal.Rig
@@ -39,8 +40,8 @@ library
     Data.Extensible.Nullable
     Data.Extensible.Plain
     Data.Extensible.Product
-    Data.Extensible.Product.Ordered
     Data.Extensible.Record
+    Data.Extensible.Struct
     Data.Extensible.Sum
     Data.Extensible.Tangle
     Data.Extensible.Wrapper
@@ -59,6 +60,8 @@ library
   build-depends:       base >= 4.7 && <5
     , template-haskell
     , constraints
+    , ghc-prim
+    , primitive
     , profunctors
     , semigroups
     , comonad

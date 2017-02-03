@@ -1,8 +1,9 @@
 {-# LANGUAGE LambdaCase, TemplateHaskell, TypeFamilies, DeriveFunctor #-}
-module Data.Extensible.Record (IsRecord(..), deriveIsRecord) where
+module Data.Extensible.Record (IsRecord(..), toRecord, fromRecord, deriveIsRecord) where
 
 import Language.Haskell.TH
 import Data.Extensible.Internal
+import Data.Extensible.HList
 import Data.Extensible.Product
 import Data.Extensible.Field
 import Data.Functor.Identity
@@ -11,8 +12,14 @@ import GHC.TypeLits
 -- | The class of types that can be converted to/from a 'Record'.
 class IsRecord a where
   type RecFields a :: [Assoc Symbol *]
-  fromRecord :: Record (RecFields a) -> a
-  toRecord :: a -> Record (RecFields a)
+  recordFromList :: HList (Field Identity) (RecFields a) -> a
+  recordToList :: a -> HList (Field Identity) (RecFields a)
+
+toRecord :: IsRecord a => a -> Record (RecFields a)
+toRecord = fromHList . recordToList
+
+fromRecord :: IsRecord a => Record (RecFields a) -> a
+fromRecord = recordFromList . toHList
 
 tvName :: TyVarBndr -> Name
 tvName (PlainTV n) = n
@@ -43,16 +50,14 @@ deriveIsRecord name = reify name >>= \case
             (\(v, _, t) r -> PromotedConsT `AppT` (PromotedT '(:>) `AppT` LitT (StrTyLit $ nameBase v) `AppT` refineTV t) `AppT` r)
             PromotedNilT
             vst
-        , FunD 'fromRecord [Clause
-            [shape2Pat $ fmap (\x -> ConP 'Field [ConP 'Identity [VarP x]]) $ foldr consShape SNil newNames]
+        , FunD 'recordFromList [Clause
+            [shape2Pat $ fmap (\x -> ConP 'Field [ConP 'Identity [VarP x]]) newNames]
             (NormalB $ RecConE conName [(n, VarE n') | (n, n') <- zip names newNames])
             []
             ]
-        , FunD 'toRecord [Clause
+        , FunD 'recordToList [Clause
             [VarP rec]
-            (NormalB $ shape2Exp
-              $ foldr consShape SNil
-              [AppE (ConE 'Field)
+            (NormalB $ shape2Exp [AppE (ConE 'Field)
                 $ AppE (ConE 'Identity)
                 $ VarE n `AppE` VarE rec
               | n <- names])
@@ -62,18 +67,10 @@ deriveIsRecord name = reify name >>= \case
       ]
   info -> fail $ "deriveAsRecord: Unsupported " ++ show info
 
-shape2Pat :: Shape Pat -> Pat
-shape2Pat SNil = ConP 'Nil []
-shape2Pat (STree p l r) = ConP 'Tree [p, shape2Pat l, shape2Pat r]
+shape2Pat :: [Pat] -> Pat
+shape2Pat [] = ConP 'HNil []
+shape2Pat (x : xs) = ConP 'HCons [x, shape2Pat xs]
 
-shape2Exp :: Shape Exp -> Exp
-shape2Exp SNil = ConE 'Nil
-shape2Exp (STree e l r) = ConE 'Tree `AppE` e `AppE` shape2Exp l `AppE` shape2Exp r
-
-data Shape a = SNil
-    | STree a (Shape a) (Shape a)
-    deriving Functor
-
-consShape :: a -> Shape a -> Shape a
-consShape a SNil = STree a SNil SNil
-consShape a (STree b l r) = STree a (consShape b r) l
+shape2Exp :: [Exp] -> Exp
+shape2Exp [] = ConE 'HNil
+shape2Exp (x : xs) = ConE 'HCons `AppE` x `AppE` shape2Exp xs

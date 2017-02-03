@@ -48,27 +48,14 @@ module Data.Extensible.Internal (
   , Elaborated(..)
   -- * Tree navigation
   , NavHere(..)
-  , navigate
   , here
   , navNext
-  , navL
-  , navR
   -- * Miscellaneous
   , Nat(..)
   , KnownPosition(..)
   , Succ
-  , Half
   , Head
-  , Tail
   , Last
-#if __GLASGOW_HASKELL__ >= 800
-  , type (++)
-#else
-  , (++)()
-#endif
-  , Map
-  , Merge
-  , Concat
   , module Data.Type.Equality
   , module Data.Proxy
   ) where
@@ -96,7 +83,7 @@ mkMembership n = do
     $ conT ''Membership `appT` pure t `appT` varT (names !! n)
 
 -- | The position of @x@ in the type level set @xs@.
-newtype Membership (xs :: [k]) (x :: k) = Membership { getMemberId :: Word } deriving Typeable
+newtype Membership (xs :: [k]) (x :: k) = Membership { getMemberId :: Int } deriving Typeable
 
 newtype Remembrance xs x r = Remembrance (Member xs x => r)
 
@@ -112,7 +99,7 @@ instance (Elaborate x (FindType x xs) ~ 'Expecting pos, KnownPosition pos) => Me
   membership = Membership (theInt (Proxy :: Proxy pos))
   {-# INLINE membership #-}
 
-reifyMembership :: Word -> (forall x. Membership xs x -> r) -> r
+reifyMembership :: Int -> (forall x. Membership xs x -> r) -> r
 reifyMembership n k = k (Membership n)
 
 -- | The kind of key-value pairs
@@ -171,19 +158,6 @@ compareMembership (Membership m) (Membership n) = case compare m n of
 impossibleMembership :: Membership '[] x -> r
 impossibleMembership _ = error "Impossible"
 
--- | PRIVILEGED: Navigate a tree.
-navigate :: (NavHere xs x -> r)
-  -> (Membership (Half (Tail xs)) x -> r)
-  -> (Membership (Half (Tail (Tail xs))) x -> r)
-  -> Membership xs x
-  -> r
-navigate h nl nr = \case
-  Membership 0 -> h (unsafeCoerce Here)
-  Membership n -> if n .&. 1 == 0
-    then nr (Membership (unsafeShiftR (n - 1) 1))
-    else nl (Membership (unsafeShiftR (n - 1) 1))
-{-# INLINE navigate #-}
-
 -- | Ensure that the first element of @xs@ is @x@
 data NavHere xs x where
   Here :: NavHere (x ': xs) x
@@ -198,16 +172,6 @@ navNext :: Membership xs y -> Membership (x ': xs) y
 navNext (Membership n) = Membership (n + 1)
 {-# INLINE navNext #-}
 
--- | Describes the relation of 'Membership' within a tree
-navL :: Membership (Half xs) y -> Membership (x ': xs) y
-navL (Membership x) = Membership (x * 2 + 1)
-{-# INLINE navL #-}
-
--- | Describes the relation of 'Membership' within a tree
-navR :: Membership (Half (Tail xs)) y -> Membership (x ': xs) y
-navR (Membership x) = Membership (x * 2 + 2)
-{-# INLINE navR #-}
-
 -- | Unicode flipped alias for 'Member'
 type x ∈ xs = Member xs x
 
@@ -220,17 +184,6 @@ type family FindType (x :: k) (xs :: [k]) :: [Nat] where
   FindType x (y ': ys) = MapSucc (FindType x ys)
   FindType x '[] = '[]
 
--- | Interleaved list
-type family Half (xs :: [k]) :: [k] where
-  Half '[] = '[]
-  Half (x ': y ': zs) = x ': Half zs
-  Half (x ': '[]) = '[x]
-
--- | Type-level tail
-type family Tail (xs :: [k]) :: [k] where
-  Tail (x ': xs) = xs
-  Tail '[] = '[]
-
 type family Last (x :: [k]) :: k where
   Last '[x] = x
   Last (x ': xs) = Last xs
@@ -240,7 +193,7 @@ data Nat = Zero | DNat Nat | SDNat Nat
 
 -- | Converts type naturals into 'Word'.
 class KnownPosition n where
-  theInt :: proxy n -> Word
+  theInt :: proxy n -> Int
 
 instance KnownPosition 'Zero where
   theInt _ = 0
@@ -264,26 +217,3 @@ type family Succ (x :: Nat) :: Nat where
 type family MapSucc (xs :: [Nat]) :: [Nat] where
   MapSucc '[] = '[]
   MapSucc (x ': xs) = Succ x ': MapSucc xs
-
--- | Type level map
-type family Map (f :: k -> k) (xs :: [k]) :: [k] where
-  Map f '[] = '[]
-  Map f (x ': xs) = f x ': Map f xs
-
--- | Type level ++
-type family (++) (xs :: [k]) (ys :: [k]) :: [k] where
-  '[] ++ ys = ys
-  (x ': xs) ++ ys = x ': xs ++ ys
-
-infixr 5 ++
-
--- | Type level concat
-type family Concat (xs :: [[k]]) :: [k] where
-  Concat '[] = '[]
-  Concat (x ': xs) = x ++ Concat xs
-
--- | Type level merging
-type family Merge (xs :: [k]) (ys :: [k]) :: [k] where
-  Merge (x ': xs) (y ': ys) = x ': y ': Merge xs ys
-  Merge xs '[] = xs
-  Merge '[] ys = ys
