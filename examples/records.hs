@@ -5,12 +5,12 @@ import Control.Lens
 mkField "name weight price description featured quantity"
 
 type Stock c = Record '[
-    "name" :> String
-  , "weight" :> Float
-  , "price" :> c
-  , "featured" :> Bool
-  , "description" :> String
-  , "quantity" :> Int]
+    "name" >: String
+  , "weight" >: Float
+  , "price" >: c
+  , "featured" >: Bool
+  , "description" >: String
+  , "quantity" >: Int]
 
 s0 :: Num c => Stock c
 s0 = name @= "DA-192H"
@@ -19,7 +19,7 @@ s0 = name @= "DA-192H"
   <: featured @= True
   <: description @= "High-quality (24bit 192kHz), lightweight portable DAC"
   <: quantity @= 20
-  <: Nil
+  <: emptyRecord
 
 -- Use shrinkAssoc to permute elements
 s1 :: Num c => Stock c
@@ -30,7 +30,7 @@ s1 = shrinkAssoc
   <: price @= 330
   <: quantity @= 55
   <: weight @= 200
-  <: Nil
+  <: emptyRecord
 
 -- If "quantity" is missing,
 --    Couldn't match type ‘Missing "quantity"’ with ‘Expecting one’

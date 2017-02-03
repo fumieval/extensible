@@ -32,6 +32,11 @@ module Data.Extensible.Class (
   , FindType
   -- * Association
   , Assoc(..)
+#if __GLASGOW_HASKELL__ >= 800
+  , type (>:)
+#else
+  , (>:)()
+#endif
   , Associate(..)
   , FindAssoc
   -- * Sugar

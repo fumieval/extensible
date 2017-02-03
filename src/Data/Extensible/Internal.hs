@@ -36,6 +36,11 @@ module Data.Extensible.Internal (
   , FindType
   -- * Association
   , Assoc(..)
+#if __GLASGOW_HASKELL__ >= 800
+  , type (>:)
+#else
+  , (>:)()
+#endif
   , Associate(..)
   , FindAssoc
   -- * Sugar
@@ -113,6 +118,9 @@ reifyMembership n k = k (Membership n)
 -- | The kind of key-value pairs
 data Assoc k v = k :> v
 infix 0 :>
+
+-- | A synonym for (':>')
+type (>:) = (:>)
 
 -- | @'Associate' k v xs@ is essentially identical to @(k :> v) ∈ xs@
 -- , but the type @v@ is inferred from @k@ and @xs@.
