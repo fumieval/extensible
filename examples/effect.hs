@@ -1,20 +1,43 @@
 {-# LANGUAGE TemplateHaskell, DataKinds, FlexibleContexts #-}
 import Data.Extensible
+import Control.Monad.Trans.Writer.Strict
+import Control.Monad.Skeleton
 
 decEffects [d|
-  data Example x where -- the name doesn't matter
-    Foo :: Int -> Example ()
-    Bar :: Example String
-    Baz :: Bool -> Bool -> Example Int
+  data Example x where
+    Reset :: Int -> Example ()
+    PrintString :: String -> Example ()
+    Hello :: Example ()
+    Count :: Example Int
     |]
 
-mkField "Foo Bar Baz"
+mkField "Reset PrintString Hello Count"
 
-test :: (Associate "Foo" (Action '[Int] ()) xs
-  , Associate "Bar" (Action '[] String) xs
-  , Associate "Baz" (Action '[Bool, Bool] Int) xs) => Eff xs Int
+test :: IncludeAssoc xs Example => Eff xs ()
 test = do
-  foo 42
-  s <- bar
-  t <- bar
-  baz (s == "bar") (s == t)
+  hello
+  hello
+  n <- count
+  printString (show n)
+  reset 0
+  n' <- count
+  printString (show n')
+
+-- | Object-like stateful handler
+newtype Methods xs m = Methods
+  { getMethods :: RecordOf (Handler (WriterT (Methods xs m) m)) xs }
+
+runMethods :: Monad m => Methods xs m -> Eff xs a -> m (a, Methods xs m)
+runMethods rec eff = case handleEff (getMethods rec) eff of
+  Return a -> return (a, rec)
+  m :>>= k -> do
+    (a, rec') <- runWriterT m
+    runMethods rec' (k a)
+
+example :: Int -> Methods Example IO
+example n = Methods
+  $ _Reset @!? do \n' -> writer ((), example n')
+  <: _PrintString @!? do \str -> WriterT $ ((), example n) <$ putStrLn str
+  <: _Hello @!? do WriterT $ ((), example $ n + 1) <$ putStrLn "Hello!"
+  <: _Count @!? do writer (n, example n)
+  <: nil
