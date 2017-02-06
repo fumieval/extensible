@@ -1,5 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies #-}
 ------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Inclusion
@@ -30,6 +31,7 @@ module Data.Extensible.Inclusion (
   , spreadAssoc
   ) where
 
+import Data.Constraint
 import Data.Extensible.Class
 import Data.Extensible.Product
 import Data.Extensible.Sum
@@ -62,12 +64,16 @@ spread (EmbedAt i h) = views (pieceAt i) EmbedAt inclusion h
 class Associated xs t where
   getAssociation :: Membership xs t
 
-instance Associate k v xs => Associated xs (k ':> v) where
+instance (Associate k v xs) => Associated xs (k ':> v) where
   getAssociation = association
   {-# INLINE getAssociation #-}
 
 -- | Similar to 'Include', but this focuses on keys.
-type IncludeAssoc ys = Forall (Associated ys)
+type IncludeAssoc ys xs = (Forall (Associated ys) xs, IncludeAssoc' ys xs)
+
+type family IncludeAssoc' ys xs :: Constraint where
+  IncludeAssoc' ys '[] = ()
+  IncludeAssoc' ys ((k ':> v) ': xs) = (Associate k v ys, IncludeAssoc' ys xs)
 
 -- | Reify the inclusion of type level sets.
 inclusionAssoc :: forall xs ys. IncludeAssoc ys xs => Membership ys :* xs
