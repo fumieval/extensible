@@ -8,6 +8,8 @@ module Data.Extensible.Effect (
   , hoistEff
   , handleEff
   , peelEff
+  , leaveEff
+  , retractEff
   , Handler(..)
   -- * Anonymous actions
   , Action(..)
@@ -67,6 +69,19 @@ peelEff ret wrap pass _ = go where
       (\Refl -> wrap t (go . k))
       (\j -> pass (Instruction j t) (go . k))
 {-# INLINE peelEff #-}
+
+-- | Reveal the final result of 'Eff'.
+leaveEff :: Eff '[] a -> a
+leaveEff m = case unbone m of
+  Return a -> a
+  _ -> error "Impossible"
+
+retractEff :: Monad m => proxy k -> Eff '[k >: m] a -> m a
+retractEff p m = case unbone m of
+  Return a -> return a
+  Instruction i t :>>= k -> runMembership i
+    (\Refl -> t >>= retractEff p . k)
+    (error "Impossible")
 
 -- | Transformation between effects
 newtype Handler f g = Handler { runHandler :: forall a. g a -> f a }
