@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ScopedTypeVariables, BangPatterns #-}
 module Data.Extensible.HList where
 
 import Prelude hiding (length)
@@ -20,13 +20,18 @@ htraverseWithIndex f = go id where
   go :: (forall x. Membership t x -> Membership xs x) -> HList g t -> f (HList h t)
   go k (HCons x xs) = HCons <$> f (k here) x <*> go (k . navNext) xs
   go _ HNil = pure HNil
+{-# INLINE htraverseWithIndex #-}
 
 hfoldrWithIndex :: forall h r xs. (forall x. Membership xs x -> h x -> r -> r) -> r -> HList h xs -> r
 hfoldrWithIndex f r = go id where
   go :: (forall x. Membership t x -> Membership xs x) -> HList h t -> r
   go k (HCons x xs) = f (k here) x $ go (k . navNext) xs
   go _ HNil = r
+{-# INLINE hfoldrWithIndex #-}
 
 length :: HList h xs -> Int
-length HNil = 0
-length (HCons _ xs) = length xs + 1
+length = go 0 where
+  go :: Int -> HList h xs -> Int
+  go n HNil = n
+  go n (HCons _ xs) = let n' = n + 1 in go n' xs
+{-# INLINE length #-}

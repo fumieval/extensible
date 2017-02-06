@@ -96,6 +96,7 @@ thaw (HProduct ar) = primitive $ \s -> case thawSmallArray# ar 0# (sizeofSmallAr
 
 hlength :: h :* xs -> Int
 hlength (HProduct ar) = I# (sizeofSmallArray# ar)
+{-# INLINE hlength #-}
 
 unsafeMembership :: Int -> Membership xs x
 unsafeMembership = unsafeCoerce#
@@ -103,6 +104,7 @@ unsafeMembership = unsafeCoerce#
 hfoldrWithIndex :: (forall x. Membership xs x -> h x -> r -> r) -> r -> h :* xs -> r
 hfoldrWithIndex f r p = foldr
   (\i -> let m = unsafeMembership i in f m (hlookup m p)) r [0..hlength p - 1]
+{-# INLINE hfoldrWithIndex #-}
 
 -- | Convert a product into an 'HList'.
 toHList :: forall h xs. h :* xs -> L.HList h xs
@@ -135,6 +137,7 @@ hlookup (getMemberId -> I# i) (HProduct ar) = case indexSmallArray# ar i of
 
 hfrozen :: (forall s. ST s (Struct s h xs)) -> h :* xs
 hfrozen m = runST $ m >>= unsafeFreeze
+{-# INLINE hfrozen #-}
 
 instance (Corepresentable p, Comonad (Corep p), Functor f) => Extensible f p (:*) where
   -- | /O(log n)/ A lens for a value in a known position.
