@@ -49,7 +49,7 @@ mkField str = fmap concat $ forM (words str) $ \s@(x:xs) -> do
 decEffects :: DecsQ -> DecsQ
 decEffects decs = decs >>= \ds -> fmap concat $ forM ds $ \case
 #if MIN_VERSION_template_haskell(2,11,0)
-  DataD _ _ (fmap getTV -> tyvars) _ cs _
+  DataD _ dataName (fmap getTV -> tyvars) _ cs _
 #else
   DataD _ dataName (fmap getTV -> tyvars) cs _
 #endif
