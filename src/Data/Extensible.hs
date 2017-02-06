@@ -22,6 +22,7 @@ module Data.Extensible (
   , module Data.Extensible.Product
   , module Data.Extensible.Record
   , module Data.Extensible.Sum
+  , module Data.Extensible.Tangle
   , module Data.Extensible.TH
   , module Data.Extensible.Wrapper
   ) where
@@ -37,5 +38,6 @@ import Data.Extensible.Plain
 import Data.Extensible.Product
 import Data.Extensible.Record
 import Data.Extensible.Sum
+import Data.Extensible.Tangle
 import Data.Extensible.TH
 import Data.Extensible.Wrapper
