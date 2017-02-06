@@ -57,11 +57,13 @@ infixr 0 <:
 
 nil :: h :* '[]
 nil = hfrozen $ new $ error "Impossible"
+{-# NOINLINE nil #-}
 {-# RULES "toHList/nil" toHList nil = HList.HNil #-}
 
 -- | Convert 'L.HList' into a product.
 fromHList :: HList.HList h xs -> h :* xs
 fromHList xs = hfrozen (newFromHList xs)
+{-# NOINLINE fromHList #-}
 {-# RULES "toHList/fromHList" forall x. toHList (fromHList x) = x #-}
 
 -- | Flipped 'hlookup'
@@ -72,6 +74,7 @@ hindex = flip hlookup
 -- | Map a function to every element of a product.
 hmapWithIndex :: (forall x. Membership xs x -> g x -> h x) -> g :* xs -> h :* xs
 hmapWithIndex t p = hfrozen (newFrom p t)
+{-# INLINE hmapWithIndex #-}
 
 -- | Transform every element in a product, preserving the order.
 --
@@ -81,25 +84,30 @@ hmapWithIndex t p = hfrozen (newFrom p t)
 -- @
 hmap :: (forall x. g x -> h x) -> g :* xs -> h :* xs
 hmap f = hmapWithIndex (const f)
+{-# INLINE hmap #-}
 
 -- | 'zipWith' for heterogeneous product
 hzipWith :: (forall x. f x -> g x -> h x) -> f :* xs -> g :* xs -> h :* xs
 hzipWith t xs ys = hmapWithIndex (\i x -> t x (hlookup i ys)) xs
+{-# INLINE hzipWith #-}
 
 -- | 'zipWith3' for heterogeneous product
 hzipWith3 :: (forall x. f x -> g x -> h x -> i x) -> f :* xs -> g :* xs -> h :* xs -> i :* xs
 hzipWith3 t xs ys zs = hmapWithIndex (\i x -> t x (hlookup i ys) (hlookup i zs)) xs
+{-# INLINE hzipWith3 #-}
 
 -- | Map elements to a monoid and combine the results.
 --
 -- @'hfoldMap' f . 'hmap' g ≡ 'hfoldMap' (f . g)@
 hfoldMap :: Monoid a => (forall x. h x -> a) -> h :* xs -> a
 hfoldMap f = hfoldMapWithIndex (const f)
+{-# INLINE hfoldMap #-}
 
 -- | 'hfoldMap' with the membership of elements.
 hfoldMapWithIndex :: Monoid a
   => (forall x. Membership xs x -> g x -> a) -> g :* xs -> a
 hfoldMapWithIndex f = hfoldrWithIndex (\i -> mappend . f i) mempty
+{-# INLINE hfoldMapWithIndex #-}
 
 -- | Traverse all elements and combine the result sequentially.
 -- @
@@ -109,6 +117,7 @@ hfoldMapWithIndex f = hfoldrWithIndex (\i -> mappend . f i) mempty
 -- @
 htraverse :: Applicative f => (forall x. g x -> f (h x)) -> g :* xs -> f (h :* xs)
 htraverse f = fmap fromHList . HList.htraverse f . toHList
+{-# INLINE htraverse #-}
 
 -- | 'sequence' analog for extensible products
 hsequence :: Applicative f => Comp f h :* xs -> f (h :* xs)
@@ -129,6 +138,7 @@ hdistribute = hcollect id
 htraverseWithIndex :: Applicative f
   => (forall x. Membership xs x -> g x -> f (h x)) -> g :* xs -> f (h :* xs)
 htraverseWithIndex f = fmap fromHList . HList.htraverseWithIndex f . toHList
+{-# INLINE htraverseWithIndex #-}
 
 -- | Pure version of 'hgenerate'.
 --
