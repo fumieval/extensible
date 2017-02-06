@@ -48,6 +48,10 @@ instance Wrapper Identity where
   _Wrapper = dimap runIdentity (fmap Identity)
   {-# INLINE _Wrapper #-}
 
+instance Wrapper Maybe where
+    type Repr Maybe a = Maybe a
+    _Wrapper = id
+
 -- | Poly-kinded composition
 newtype Comp (f :: j -> *) (g :: i -> j) (a :: i) = Comp { getComp :: f (g a) } deriving (Show, Eq, Ord, Typeable)
 
