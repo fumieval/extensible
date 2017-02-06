@@ -130,7 +130,7 @@ type Variant = VariantOf Identity
 
 -- | An empty 'Record'.
 emptyRecord :: Record '[]
-emptyRecord = Nil
+emptyRecord = nil
 {-# INLINE emptyRecord #-}
 
 -- | Select a corresponding field of a variant.

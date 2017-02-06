@@ -34,24 +34,12 @@ library :: forall c xs. Forall c xs => Comp Dict c :* xs
 library = htabulateFor (Proxy :: Proxy c) $ const (Comp Dict)
 {-# INLINE library #-}
 
-newtype MergeList a = MergeList { getMerged :: [a] }
-
-instance Monoid (MergeList a) where
-  mempty = MergeList []
-  {-# INLINE mempty #-}
-  mappend (MergeList a) (MergeList b) = MergeList $ merge a b where
-    merge (x:xs) (y:ys) = x : y : merge xs ys
-    merge xs [] = xs
-    merge [] ys = ys
-  {-# INLINE mappend #-}
-
 instance WrapForall Show h xs => Show (h :* xs) where
   showsPrec d = showParen (d > 0)
-    . (.showString "Nil")
+    . (.showString "nil")
     . foldr (.) id
-    . getMerged
     . hfoldMap getConst'
-    . hzipWith (\(Comp Dict) h -> Const' $ MergeList [showsPrec 0 h . showString " <: "]) (library :: Comp Dict (Instance1 Show h) :* xs)
+    . hzipWith (\(Comp Dict) h -> Const' [showsPrec 0 h . showString " <: "]) (library :: Comp Dict (Instance1 Show h) :* xs)
 
 instance WrapForall Eq h xs => Eq (h :* xs) where
   xs == ys = getAll $ hfoldMap (All #. getConst')
