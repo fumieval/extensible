@@ -51,14 +51,18 @@ decEffects decs = decs >>= \ds -> fmap concat $ forM ds $ \case
 #if MIN_VERSION_template_haskell(2,11,0)
   DataD _ _ (fmap getTV -> tyvars) _ cs _
 #else
-  DataD _ _ (fmap getTV -> tyvars) cs _
+  DataD _ dataName (fmap getTV -> tyvars) cs _
 #endif
-    | not (null tyvars) -> fmap concat $ forM cs $ \case
-      NormalC con st -> mk tyvars [] con st
-      ForallC _ eqs (NormalC con st) -> mk tyvars eqs con st
-      p -> do
-        runIO (print p)
-        fail "Unsupported constructor"
+    | not (null tyvars) -> do
+      (cxts, dcs) <- fmap unzip $ forM cs $ \case
+        NormalC con st -> mk tyvars [] con st
+        ForallC _ eqs (NormalC con st) -> mk tyvars eqs con st
+        p -> do
+          runIO (print p)
+          fail "Unsupported constructor"
+      return $ TySynD dataName [] (foldr
+        (\(k, v) xs -> PromotedConsT `AppT` (PromotedT '(:>) `AppT` k `AppT` v) `AppT` xs) PromotedNilT cxts)
+          : concat dcs
   _ -> fail "mkEffects accepts GADT declaration"
   where
     mk tyvars eqs con (fmap snd -> argTypes) = do
@@ -129,8 +133,8 @@ decEffects decs = decs >>= \ds -> fmap concat $ forM ds $ \case
                          (map VarE argNames)
 
       let fName = let (ch : rest) = nameBase con in mkName $ toLower ch : rest
-      return [SigD fName typ
-        , FunD fName [Clause (map VarP argNames) (NormalB ex) []]]
+      return ((nameT, eff), [SigD fName typ
+        , FunD fName [Clause (map VarP argNames) (NormalB ex) []]])
 
     getTV (PlainTV n) = n
     getTV (KindedTV n _) = n
