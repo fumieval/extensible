@@ -107,7 +107,7 @@ data Assoc k v = k :> v
 infix 0 :>
 
 -- | A synonym for (':>')
-type (>:) = (:>)
+type (>:) = '(:>)
 
 -- | @'Associate' k v xs@ is essentially identical to @(k :> v) ∈ xs@
 -- , but the type @v@ is inferred from @k@ and @xs@.
