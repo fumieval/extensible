@@ -10,6 +10,7 @@
   * Removed `nihility`, `(!-!!)`, `squash`
   * Renamed `handleWith` to `handleEff`
   * `decEffects` now produces the type synonym for the declared list of effects.
+  * Added `Data.Extensible.Effect.Default` 
 * Added `Data.Extensible.Tangle`
 * `IncludeAssoc ys [k :> v, ..]` now implies `Associate k v ys`, ..
 

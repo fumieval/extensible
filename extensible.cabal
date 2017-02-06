@@ -32,6 +32,7 @@ library
     Data.Extensible.Dictionary
     Data.Extensible.Field
     Data.Extensible.Effect
+    Data.Extensible.Effect.Default
     Data.Extensible.HList
     Data.Extensible.Inclusion
     Data.Extensible.Internal
@@ -68,6 +69,7 @@ library
     , deepseq
     , tagged
     , transformers
+    , mtl
     , monad-skeleton >= 0.1.2
   hs-source-dirs:      src
   ghc-options: -Wall
