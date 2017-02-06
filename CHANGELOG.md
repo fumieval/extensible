@@ -1,7 +1,22 @@
+0.4
+---------------------------------------------------
+* Added `Data.Extensible.Struct`
+* Removed `(<:*)`. `hhead`, `htail`, `huncons`, `(*++*)`, `htrans`
+* Added various derived instances for `Field`
+* Added a `Wrapper` instance for `Maybe`
+* Added `>:` as a synonym for `:>`
+* `Data.Extensible.Effect`
+  * Added common handlers: `runReaderAs`, `runStateAs`, `runWriterAs`, `runMaybeAs`, `runEitherAs`
+  * Removed `nihility`, `(!-!!)`, `squash`
+  * Renamed `handleWith` to `handleEff`
+  * `decEffects` now produces the type synonym for the declared list of effects.
+* Added `Data.Extensible.Tangle`
+* `IncludeAssoc ys [k :> v, ..]` now implies `Associate k v ys`, ..
+
 0.3.7.1
 ----------------------------------------------------
 * `pieceAt` for `(:*)` is now index-preserving
-* Removed `sector`, `sectorAt`, `picked` 
+* Removed `sector`, `sectorAt`, `picked`
 
 0.3.7
 -----------------------------------------------------
