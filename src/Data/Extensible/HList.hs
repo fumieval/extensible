@@ -1,8 +1,10 @@
 {-# LANGUAGE ScopedTypeVariables, BangPatterns #-}
+{-# LANGUAGE Trustworthy #-}
 module Data.Extensible.HList where
 
 import Prelude hiding (length)
 import Data.Extensible.Internal
+import Unsafe.Coerce
 
 data HList (h :: k -> *) (xs :: [k]) where
   HNil :: HList h '[]
@@ -16,16 +18,16 @@ htraverse f (HCons h xs) = HCons <$> f h <*> htraverse f xs
 
 htraverseWithIndex :: forall f g h xs. Applicative f
     => (forall x. Membership xs x -> g x -> f (h x)) -> HList g xs -> f (HList h xs)
-htraverseWithIndex f = go id where
-  go :: (forall x. Membership t x -> Membership xs x) -> HList g t -> f (HList h t)
-  go k (HCons x xs) = HCons <$> f (k here) x <*> go (k . navNext) xs
+htraverseWithIndex f = go 0 where
+  go :: Int -> HList g t -> f (HList h t)
+  go !k (HCons x xs) = HCons <$> f (unsafeCoerce k) x <*> go (k + 1) xs
   go _ HNil = pure HNil
 {-# INLINE htraverseWithIndex #-}
 
 hfoldrWithIndex :: forall h r xs. (forall x. Membership xs x -> h x -> r -> r) -> r -> HList h xs -> r
-hfoldrWithIndex f r = go id where
-  go :: (forall x. Membership t x -> Membership xs x) -> HList h t -> r
-  go k (HCons x xs) = f (k here) x $ go (k . navNext) xs
+hfoldrWithIndex f r = go 0 where
+  go :: Int -> HList h t -> r
+  go !k (HCons x xs) = f (unsafeCoerce k) x $ go (k + 1) xs
   go _ HNil = r
 {-# INLINE hfoldrWithIndex #-}
 
