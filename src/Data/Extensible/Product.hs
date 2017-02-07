@@ -88,12 +88,12 @@ hmap f = hmapWithIndex (const f)
 
 -- | 'zipWith' for heterogeneous product
 hzipWith :: (forall x. f x -> g x -> h x) -> f :* xs -> g :* xs -> h :* xs
-hzipWith t xs ys = hmapWithIndex (\i x -> t x (hlookup i ys)) xs
+hzipWith t xs = hmapWithIndex (\i -> t (hlookup i xs))
 {-# INLINE hzipWith #-}
 
 -- | 'zipWith3' for heterogeneous product
 hzipWith3 :: (forall x. f x -> g x -> h x -> i x) -> f :* xs -> g :* xs -> h :* xs -> i :* xs
-hzipWith3 t xs ys zs = hmapWithIndex (\i x -> t x (hlookup i ys) (hlookup i zs)) xs
+hzipWith3 t xs ys = hmapWithIndex (\i -> t (hlookup i xs) (hlookup i ys))
 {-# INLINE hzipWith3 #-}
 
 -- | Map elements to a monoid and combine the results.
