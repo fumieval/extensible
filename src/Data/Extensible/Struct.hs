@@ -24,7 +24,6 @@ module Data.Extensible.Struct (
 import GHC.Prim
 import Control.Monad.Primitive
 import Control.Monad.ST
-import Control.Monad
 import Data.Extensible.Class
 import Data.Extensible.Internal
 import Control.Comonad
@@ -40,9 +39,11 @@ set :: PrimMonad m => Struct (PrimState m) h xs -> Membership xs x -> h x -> m (
 set (Struct m) (getMemberId -> I# i) e = primitive
   $ \s -> case unsafeCoerce# writeSmallArray# m i e s of
     s' -> (# s', () #)
+{-# INLINE set #-}
 
 get :: PrimMonad m => Struct (PrimState m) h xs -> Membership xs x -> m (h x)
 get (Struct m) (getMemberId -> I# i) = primitive $ unsafeCoerce# readSmallArray# m i
+{-# INLINE get #-}
 
 -- | Create a new 'Struct' using the supplied initializer.
 new :: forall h m xs. (PrimMonad m, Generate xs)
@@ -60,7 +61,7 @@ newFor :: forall proxy c h m xs. (PrimMonad m, Forall c xs)
   -> (forall x. c x => Membership xs x -> h x)
   -> m (Struct (PrimState m) h xs)
 newFor p k = do
-  let !(I# n) = henumerateFor p (Proxy :: Proxy xs) (const (+1) :: Membership xs x -> Int -> Int) 0
+  let !(I# n) = henumerateFor p (Proxy :: Proxy xs) (\_ f m -> f $! m + 1) id 0
   m <- primitive $ \s -> case newSmallArray# n undefined s of
     (# s', a #) -> (# s', Struct a #)
   henumerateFor p (Proxy :: Proxy xs) (\i cont -> set m i (k i) >> cont) $ return m
@@ -124,11 +125,16 @@ newFrom :: forall g h m xs. (PrimMonad m)
   -> (forall x. Membership xs x -> g x -> h x)
   -> m (Struct (PrimState m) h xs)
 newFrom hp@(HProduct ar) k = do
-  st <- primitive $ \s -> case newSmallArray# (sizeofSmallArray# ar) undefined s of
+  let !n = sizeofSmallArray# ar
+  st <- primitive $ \s -> case newSmallArray# n undefined s of
     (# s', a #) -> (# s', Struct a #)
-  forM_ [0..I# (sizeofSmallArray# ar) - 1]
-    $ \i -> let m = unsafeMembership i in set st m $ k m (hlookup m hp)
-  return st
+  let go i
+        | i == I# n = return st
+        | otherwise = do
+          let !m = unsafeMembership i
+          set st m $ k m (hlookup m hp)
+          go (i + 1)
+  go 0
 
 hlookup :: Membership xs x -> h :* xs -> h x
 hlookup (getMemberId -> I# i) (HProduct ar) = case indexSmallArray# ar i of
