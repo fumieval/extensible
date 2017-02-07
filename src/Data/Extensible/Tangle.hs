@@ -22,6 +22,7 @@ instance MonadTrans (TangleT h xs) where
 lasso :: forall k v m h xs. (Monad m, Associate k v xs, Wrapper h)
     => FieldName k -> TangleT h xs m (Repr h (k ':> v))
 lasso _ = view _Wrapper <$> hitchAt (association :: Membership xs (k ':> v))
+{-# INLINE lasso #-}
 
 -- | Take a value from the tangles. The result is memoized.
 hitchAt :: Monad m => Membership xs x -> TangleT h xs m (h x)
