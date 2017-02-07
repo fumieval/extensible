@@ -19,7 +19,6 @@
 -- Also includes orphan instances.
 -----------------------------------------------------------------------
 module Data.Extensible.Dictionary (library, WrapForall, Instance1) where
-import Data.Monoid
 import Data.Extensible.Class
 import Data.Extensible.Product
 import Data.Extensible.Sum
@@ -27,7 +26,6 @@ import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
 import Data.Constraint
 import Data.Extensible.Wrapper
-import Data.Profunctor.Unsafe
 
 -- | Reify a collection of dictionaries, as you wish.
 library :: forall c xs. Forall c xs => Comp Dict c :* xs
@@ -35,26 +33,26 @@ library = htabulateFor (Proxy :: Proxy c) $ const (Comp Dict)
 {-# INLINE library #-}
 
 instance WrapForall Show h xs => Show (h :* xs) where
-  showsPrec d = showParen (d > 0)
-    . (.showString "nil")
-    . foldr (.) id
-    . hfoldMap getConst'
-    . hzipWith (\(Comp Dict) h -> Const' [showsPrec 0 h . showString " <: "]) (library :: Comp Dict (Instance1 Show h) :* xs)
+  showsPrec d xs = showParen (d > 0)
+    $ henumerateFor (Proxy :: Proxy (Instance1 Show h)) xs
+    (\i r -> showsPrec 0 (hlookup i xs) . showString " <: " . r)
+    (showString "nil")
 
 instance WrapForall Eq h xs => Eq (h :* xs) where
-  xs == ys = getAll $ hfoldMap (All #. getConst')
-    $ hzipWith3 (\(Comp Dict) x y -> Const' $ x == y) (library :: Comp Dict (Instance1 Eq h) :* xs) xs ys
+  xs == ys = henumerateFor (Proxy :: Proxy (Instance1 Eq h)) xs
+    (\i r -> hlookup i xs == hlookup i ys && r) True
   {-# INLINE (==) #-}
 
 instance (Eq (h :* xs), WrapForall Ord h xs) => Ord (h :* xs) where
-  compare xs ys = hfoldMap getConst'
-    $ hzipWith3 (\(Comp Dict) x y -> Const' $ compare x y) (library :: Comp Dict (Instance1 Ord h) :* xs) xs ys
+  compare xs ys = henumerateFor (Proxy :: Proxy (Instance1 Ord h)) xs
+    (\i r -> (hlookup i xs `compare` hlookup i ys) `mappend` r) mempty
   {-# INLINE compare #-}
 
 instance WrapForall Monoid h xs => Monoid (h :* xs) where
-  mempty = hmap (\(Comp Dict) -> mempty) (library :: Comp Dict (Instance1 Monoid h) :* xs)
+  mempty = htabulateFor (Proxy :: Proxy (Instance1 Monoid h)) $ const mempty
   {-# INLINE mempty #-}
-  mappend xs ys = hzipWith3 (\(Comp Dict) -> mappend) (library :: Comp Dict (Instance1 Monoid h) :* xs) xs ys
+  mappend = hzipWith3 (\(Comp Dict) -> mappend)
+    (library :: Comp Dict (Instance1 Monoid h) :* xs)
   {-# INLINE mappend #-}
 
 instance WrapForall Show h xs => Show (h :| xs) where
