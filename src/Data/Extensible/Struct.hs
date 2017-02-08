@@ -89,6 +89,7 @@ data (h :: k -> *) :* (s :: [k]) = HProduct (SmallArray# Any)
 unsafeFreeze :: PrimMonad m => Struct (PrimState m) h xs -> m (h :* xs)
 unsafeFreeze (Struct m) = primitive $ \s -> case unsafeFreezeSmallArray# m s of
   (# s', a #) -> (# s', HProduct a #)
+{-# INLINE unsafeFreeze #-}
 
 -- | Create a new 'Struct' from a product.
 thaw :: PrimMonad m => h :* xs -> m (Struct (PrimState m) h xs)
