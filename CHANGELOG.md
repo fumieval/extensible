@@ -3,6 +3,7 @@
 * Added `Data.Extensible.Struct`
 * Removed `(<:*)`. `hhead`, `htail`, `huncons`, `(*++*)`, `htrans`
 * Added various derived instances for `Field`
+* Added `liftField`, `liftField2`
 * Added a `Wrapper` instance for `Maybe`
 * Added `>:` as a synonym for `:>`
 * `Data.Extensible.Effect`
@@ -10,7 +11,7 @@
   * Removed `nihility`, `(!-!!)`, `squash`
   * Renamed `handleWith` to `handleEff`
   * `decEffects` now produces the type synonym for the declared list of effects.
-  * Added `Data.Extensible.Effect.Default` 
+  * Added `Data.Extensible.Effect.Default`
 * Added `Data.Extensible.Tangle`
 * `IncludeAssoc ys [k :> v, ..]` now implies `Associate k v ys`, ..
 

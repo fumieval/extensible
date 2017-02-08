@@ -17,6 +17,7 @@ import Data.Extensible.Internal
 import Data.Extensible.Class (itemAssoc)
 import Data.Extensible.Effect
 import Data.Extensible.Field
+import Data.List (nub)
 import Language.Haskell.TH
 import Data.Char
 import Control.Monad
@@ -45,6 +46,11 @@ mkField str = fmap concat $ forM (words str) $ \s@(x:xs) -> do
     , return $ PragmaD $ InlineP name Inline FunLike AllPhases
     ]
 
+allVars :: Type -> [Name]
+allVars (AppT s t) = allVars s ++ allVars t
+allVars (VarT n) = [n]
+allVars _ = []
+
 -- | Generate named effects from a GADT declaration.
 decEffects :: DecsQ -> DecsQ
 decEffects decs = decs >>= \ds -> fmap concat $ forM ds $ \case
@@ -60,7 +66,8 @@ decEffects decs = decs >>= \ds -> fmap concat $ forM ds $ \case
         p -> do
           runIO (print p)
           fail "Unsupported constructor"
-      return $ TySynD dataName [] (foldr
+      let vars = map PlainTV $ nub $ concatMap (allVars . snd) cxts
+      return $ TySynD dataName vars (foldr
         (\(k, v) xs -> PromotedConsT `AppT` (PromotedT '(:>) `AppT` k `AppT` v) `AppT` xs) PromotedNilT cxts)
           : concat dcs
   _ -> fail "mkEffects accepts GADT declaration"

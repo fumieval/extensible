@@ -18,6 +18,7 @@ module Data.Extensible.Product (
   (:*)
   , nil
   , (<:)
+  , hlength
   , hmap
   , hmapWithIndex
   , hzipWith

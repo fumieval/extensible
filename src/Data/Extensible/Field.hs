@@ -25,6 +25,8 @@ module Data.Extensible.Field (
   , (@:>)
   , FieldOptic
   , FieldName
+  , liftField
+  , liftField2
   -- * Records and variants
   , RecordOf
   , Record
@@ -45,6 +47,7 @@ module Data.Extensible.Field (
   , Inextensible
   ) where
 import Control.DeepSeq (NFData)
+import Data.Coerce
 import Data.Extensible.Class
 import Data.Extensible.Sum
 import Data.Extensible.Match
@@ -98,6 +101,15 @@ ND_Field(Monoid)
 ND_Field(Enum)
 ND_Field(Bounded)
 ND_Field(NFData)
+
+liftField :: (g (AssocValue kv) -> h (AssocValue kv)) -> Field g kv -> Field h kv
+liftField = coerce
+{-# INLINE liftField #-}
+
+liftField2 :: (f (AssocValue kv) -> g (AssocValue kv) -> h (AssocValue kv))
+    -> Field f kv -> Field g kv -> Field h kv
+liftField2 = coerce
+{-# INLINE liftField2 #-}
 
 instance Wrapper h => Wrapper (Field h) where
   type Repr (Field h) kv = Repr h (AssocValue kv)
