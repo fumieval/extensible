@@ -12,11 +12,11 @@ import Data.Extensible.Wrapper
 
 -- | @'TangleT' h xs m@ is the monad of computations that may depend on the elements in 'xs'.
 newtype TangleT h xs m a = TangleT
-    { unTangleT :: RWST (Comp (TangleT h xs m) h :* xs) () (Nullable h :* xs) m a }
-    deriving (Functor, Applicative, Monad)
+  { unTangleT :: RWST (Comp (TangleT h xs m) h :* xs) () (Nullable h :* xs) m a }
+  deriving (Functor, Applicative, Monad)
 
 instance MonadTrans (TangleT h xs) where
-    lift = TangleT . lift
+  lift = TangleT . lift
 
 -- | Hitch an element associated to the 'FieldName' through a wrapper.
 lasso :: forall k v m h xs. (Monad m, Associate k v xs, Wrapper h)
@@ -27,19 +27,28 @@ lasso _ = view _Wrapper <$> hitchAt (association :: Membership xs (k ':> v))
 -- | Take a value from the tangles. The result is memoized.
 hitchAt :: Monad m => Membership xs x -> TangleT h xs m (h x)
 hitchAt k = TangleT $ do
-    mem <- get
-    case getNullable $ hlookup k mem of
-        Just a -> return a
-        Nothing -> do
-            tangles <- ask
-            a <- unTangleT $ getComp $ hlookup k tangles
-            modify $ over (pieceAt k) $ const $ Nullable $ Just a
-            return a
+  mem <- get
+  case getNullable $ hlookup k mem of
+    Just a -> return a
+    Nothing -> do
+      tangles <- ask
+      a <- unTangleT $ getComp $ hlookup k tangles
+      modify $ over (pieceAt k) $ const $ Nullable $ Just a
+      return a
 
--- | Run tangles and collect the results as a 'Record'.
+-- | Run a 'TangleT' action.
+runTangleT :: Monad m
+  => Comp (TangleT h xs m) h :* xs -- ^ tangle matrix
+  -> Nullable h :* xs -- ^ pre-calculated values
+  -> TangleT h xs m a
+  -> m a
+runTangleT tangles rec0 (TangleT m) = fst <$> evalRWST m tangles rec0
+{-# INLINE runTangleT #-}
+
+-- | Run tangles and collect all the results as a 'Record'.
 runTangles :: Monad m
-    => Comp (TangleT h xs m) h :* xs -- ^ tangle matrix
-    -> Nullable h :* xs -- ^ pre-calculated values
-    -> m (h :* xs)
-runTangles tangles rec0 = fst <$> evalRWST
-    (unTangleT $ htraverseWithIndex (const . hitchAt) rec0) tangles rec0
+  => Comp (TangleT h xs m) h :* xs -- ^ tangle matrix
+  -> Nullable h :* xs -- ^ pre-calculated values
+  -> m (h :* xs)
+runTangles ts vs = runTangleT ts vs $ htraverseWithIndex (const . hitchAt) vs
+{-# INLINE runTangles #-}
