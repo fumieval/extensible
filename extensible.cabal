@@ -75,3 +75,9 @@ library
   hs-source-dirs:      src
   ghc-options: -Wall
   default-language:    Haskell2010
+
+test-suite effects
+  type: exitcode-stdio-1.0
+  main-is: effects.hs
+  build-depends: base, extensible
+  hs-source-dirs: tests
