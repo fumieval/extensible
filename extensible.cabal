@@ -81,3 +81,10 @@ test-suite effects
   main-is: effects.hs
   build-depends: base, extensible
   hs-source-dirs: tests
+
+benchmark records
+  type:           exitcode-stdio-1.0
+  main-is:        records.hs
+  ghc-options:    -O2
+  hs-source-dirs: benchmarks
+  build-depends: base, lens, criterion, extensible
