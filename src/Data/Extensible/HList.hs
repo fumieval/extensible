@@ -2,7 +2,6 @@
 {-# LANGUAGE Trustworthy #-}
 module Data.Extensible.HList where
 
-import Prelude hiding (length)
 import Data.Extensible.Internal
 import Unsafe.Coerce
 
@@ -31,9 +30,9 @@ hfoldrWithIndex f r = go 0 where
   go _ HNil = r
 {-# INLINE hfoldrWithIndex #-}
 
-length :: HList h xs -> Int
-length = go 0 where
+hlength :: HList h xs -> Int
+hlength = go 0 where
   go :: Int -> HList h xs -> Int
   go n HNil = n
   go n (HCons _ xs) = let n' = n + 1 in go n' xs
-{-# INLINE length #-}
+{-# INLINE hlength #-}

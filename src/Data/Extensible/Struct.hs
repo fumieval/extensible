@@ -83,7 +83,7 @@ newFor p k = do
 -- | Create a new 'Struct' from an 'HList'.
 newFromHList :: forall h m xs. PrimMonad m => L.HList h xs -> m (Struct (PrimState m) h xs)
 newFromHList l = do
-  let !(I# size) = L.length l
+  let !(I# size) = L.hlength l
   m <- primitive $ \s -> case newSmallArray# size undefined s of
     (# s', a #) -> (# s', Struct a #)
 
