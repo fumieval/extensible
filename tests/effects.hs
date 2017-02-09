@@ -8,6 +8,8 @@ decEffects [d|
     PolyArg :: a -> Example a b ()
     PolyRes :: Example a b b
     PolyArgRes :: a -> Example a b b
+    UnboundArg :: x -> Example a b ()
+    UnboundRes :: Example a b x
 --    ExtArg :: Show s => s -> Example a b ()
 --    ExtRes :: Read s => Example a b s
   |]

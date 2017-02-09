@@ -46,102 +46,109 @@ mkField str = fmap concat $ forM (words str) $ \s@(x:xs) -> do
     , return $ PragmaD $ InlineP name Inline FunLike AllPhases
     ]
 
-allVars :: Type -> [Name]
-allVars (AppT s t) = allVars s ++ allVars t
-allVars (VarT n) = [n]
-allVars _ = []
-
 -- | Generate named effects from a GADT declaration.
 decEffects :: DecsQ -> DecsQ
 decEffects decs = decs >>= \ds -> fmap concat $ forM ds $ \case
 #if MIN_VERSION_template_haskell(2,11,0)
-  DataD _ dataName (fmap getTV -> tyvars) _ cs _
+  DataD _ dataName tparams _ cs _
 #else
-  DataD _ dataName (fmap getTV -> tyvars) cs _
+  DataD _ dataName tparams cs _
 #endif
-    | not (null tyvars) -> do
+    -> do
       (cxts, dcs) <- fmap unzip $ forM cs $ \case
-        NormalC con st -> mk tyvars [] con st
-        ForallC _ eqs (NormalC con st) -> mk tyvars eqs con st
+        ForallC _ eqs (NormalC name st) -> return $ fromMangledGADT tparams eqs name st
         p -> do
           runIO (print p)
           fail "Unsupported constructor"
-      let vars = map PlainTV $ nub $ concatMap (allVars . snd) cxts
-      return $ TySynD dataName vars (foldr
-        (\(k, v) xs -> PromotedConsT `AppT` (PromotedT '(:>) `AppT` k `AppT` v) `AppT` xs) PromotedNilT cxts)
+      let vars = map PlainTV $ nub $ concatMap (varsT . snd) cxts
+      return $ TySynD dataName vars (typeListT
+        $ map (\(k, v) -> PromotedT '(:>) `AppT` k `AppT` v) cxts)
           : concat dcs
   _ -> fail "mkEffects accepts GADT declaration"
+
+fromMangledGADT :: [TyVarBndr] -> [Type] -> Name -> [(Strict, Type)] -> ((Type, Type), [Dec])
+fromMangledGADT tyvars_ eqs con fieldTypes
+  = effectFunD (nameBase con) argumentsT result
   where
-    mk tyvars eqs con (fmap snd -> argTypes) = do
-#if MIN_VERSION_template_haskell(2,10,0)
-      let dic_ = [(v, t) | AppT (AppT EqualityT (VarT v)) t <- eqs]
-#else
-      let dic_ = [(v, t) | EqualP (VarT v) t <- eqs]
-#endif
-      let dic = dic_ ++ [(t, VarT v) | (v, VarT t) <- dic_]
-
-      let tvs = map mkName $ concatMap (flip replicateM ['a'..'z']) [1..]
-
-      let params' = do
-            (t, v) <- zip tyvars tvs
-            case lookup t dic of
-              Just (VarT p) -> return (t, p)
-              _ -> return (t, v)
-
-      let (_, fts) = foldMap (\(p, t) -> maybe ([VarT t], [t]) (\case
-              VarT _ -> ([VarT t], [t])
-              x -> ([x], [])) (lookup p dic)) (init params')
-
-      let argTypes' = map (\case
-            VarT n -> maybe (VarT n) VarT $ lookup n params'
-            x -> x) argTypes
-
-      let (extra, result) = case lookup (last tyvars) dic of
-            Just (VarT v) -> (id, case lookup v params' of
-              Just p -> VarT p
-              Nothing -> VarT v)
-            Just t -> (id, t)
-            Nothing -> ((PlainTV (mkName "x"):), VarT $ mkName "x")
-
-      -- Eff xs R
-      let rt = ConT ''Eff `AppT` VarT (mkName "xs") `AppT` result
-
-      -- a -> B -> C -> Eff xs R
-      let fun = foldr (\x y -> ArrowT `AppT` x `AppT` y) rt argTypes'
-
-      -- Action [a, B, C] R
-      let eff = ConT ''Action
-            `AppT` foldr (\x y -> PromotedConsT `AppT` x `AppT` y) PromotedNilT argTypes'
-            `AppT` result
-
-      -- "Foo"
-      let nameT = LitT $ StrTyLit $ nameBase con
-
-      -- Associate "Foo" (Foo a B C) xs
-#if MIN_VERSION_template_haskell(2,10,0)
-      let cx = ConT ''Associate
-            `AppT` nameT
-            `AppT` eff
-            `AppT` VarT (mkName "xs")
-#else
-      let cx = ClassP ''Associate [nameT, eff, VarT (mkName "xs")]
-#endif
-
-      let typ = ForallT (PlainTV (mkName "xs") : extra (map PlainTV fts)) [cx] fun
-
-      -- liftEff (Proxy :: Proxy "Foo")
-      let lifter = VarE 'liftEff `AppE` (ConE 'Proxy `SigE` AppT (ConT ''Proxy) nameT)
-
-      let argNames = map (mkName . ("a" ++) . show) [0..length argTypes-1]
-
-      let ex = lifter
-            `AppE` foldr (\x y -> ConE 'AArgument `AppE` x `AppE` y)
-                         (ConE 'AResult)
-                         (map VarE argNames)
-
-      let fName = let (ch : rest) = nameBase con in mkName $ toLower ch : rest
-      return ((nameT, eff), [SigD fName typ
-        , FunD fName [Clause (map VarP argNames) (NormalB ex) []]])
-
     getTV (PlainTV n) = n
     getTV (KindedTV n _) = n
+
+    tyvars = map getTV tyvars_
+
+    dic_ = [(v, t) | AppT (AppT EqualityT (VarT v)) t <- eqs]
+    dic = dic_ ++ [(t, VarT v) | (v, VarT t) <- dic_]
+
+    params' = do
+      (t, v) <- zip tyvars uniqueNames
+      case lookup t dic of
+        Just (VarT p) -> return (t, p)
+        _ -> return (t, v)
+
+    argumentsT = map (\case
+      (_, VarT n) -> maybe (VarT n) VarT $ lookup n params'
+      (_, x) -> x) fieldTypes
+
+    result = case lookup (last tyvars) dic of
+      Just (VarT v) -> case lookup v params' of
+        Just p -> VarT p
+        Nothing -> VarT v
+      Just t -> t
+      Nothing -> VarT $ mkName "x"
+
+varsT :: Type -> [Name]
+varsT (VarT v) = [v]
+varsT (AppT s t) = varsT s ++ varsT t
+varsT _ = []
+
+effectFunD :: String
+  -> [Type]
+  -> Type
+  -> ((Type, Type), [Dec])
+effectFunD key argumentsT resultT = ((nameT, actionT)
+  , [SigD fName typ, FunD fName [effClause nameT (length argumentsT)]]) where
+
+    varList = mkName "xs"
+
+    fName = let (ch : rest) = key in mkName $ toLower ch : rest
+
+    typ = ForallT (map PlainTV $ varList : varsT resultT ++ concatMap varsT argumentsT)
+        [associateT nameT actionT varList]
+        $ effectFunT varList argumentsT resultT
+
+    -- Action [a, B, C] R
+    actionT = ConT ''Action `AppT` typeListT argumentsT `AppT` resultT
+
+    nameT = LitT $ StrTyLit key
+
+effectFunT :: Name
+  -> [Type]
+  -> Type
+  -> Type
+effectFunT varList argumentsT resultT
+  = foldr (\x y -> ArrowT `AppT` x `AppT` y) rt argumentsT where
+    rt = ConT ''Eff `AppT` VarT varList `AppT` resultT
+
+uniqueNames :: [Name]
+uniqueNames = map mkName $ concatMap (flip replicateM ['a'..'z']) [1..]
+
+typeListT :: [Type] -> Type
+typeListT = foldr (\x y -> PromotedConsT `AppT` x `AppT` y) PromotedNilT
+
+associateT :: Type -- key
+  -> Type -- type
+  -> Name -- variable
+  -> Type
+associateT nameT t xs = ConT ''Associate `AppT` nameT `AppT` t `AppT` VarT xs
+
+effClause :: Type -- effect key
+  -> Int -- number of arguments
+  -> Clause
+effClause nameT n = Clause (map VarP argNames) (NormalB rhs) [] where
+  -- liftEff (Proxy :: Proxy "Foo")
+  lifter = VarE 'liftEff `AppE` (ConE 'Proxy `SigE` AppT (ConT ''Proxy) nameT)
+
+  argNames = map (mkName . ("a" ++) . show) [0..n-1]
+
+  rhs = lifter `AppE` foldr (\x y -> ConE 'AArgument `AppE` x `AppE` y)
+    (ConE 'AResult)
+    (map VarE argNames)
