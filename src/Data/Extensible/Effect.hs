@@ -28,6 +28,7 @@ module Data.Extensible.Effect (
   , Function
   , runAction
   , (@!?)
+  , peelAction
   -- * transformers-compatible handlers
   , runReaderAs
   , runStateAs
@@ -71,7 +72,7 @@ hoistEff _ f = hoistSkeleton $ \(Instruction i t) -> case compareMembership (ass
 --   (\i k s -> boned (i :>>= flip k s))
 -- @
 --
-peelEff :: (a -> r) -- return the result
+peelEff :: (a -> r) -- ^ return the result
   -> (forall x. t x -> (x -> r) -> r) -- ^ Handle the foremost type of an action
   -> (forall x. Instruction xs x -> (x -> r) -> r) -- ^ Re-bind an unrelated action
   -> proxy k -> Eff (k >: t ': xs) a -> r
@@ -125,6 +126,24 @@ runAction f (AArgument x a) = runAction (f x) a
 (@!?) :: FieldName k -> Function xs (f a) -> Field (Handler f) (k ':> Action xs a)
 _ @!? f = Field $ Handler (runAction f)
 infix 1 @!?
+
+-- | Specialised version of 'peelEff' for 'Action's.
+peelAction :: forall proxy k ps q a r xs. (a -> r) -- ^ return the result
+  -> Function ps ((q -> r) -> r) -- ^ Handle the foremost action
+  -> (forall x. Instruction xs x -> (x -> r) -> r) -- ^ Re-bind an unrelated action
+  -> proxy k -> Eff (k >: Action ps q ': xs) a -> r
+peelAction ret wrap pass _ = go where
+  go m = case unbone m of
+    Return a -> ret a
+    Instruction i t :>>= k -> runMembership i
+      (\Refl -> case t of
+        (_ :: Action ps q x) ->
+          let run :: forall t. Function t ((q -> r) -> r) -> Action t q x -> r
+              run f AResult = f (go . k)
+              run f (AArgument x a) = run (f x) a
+          in run wrap t)
+      (\j -> pass (Instruction j t) (go . k))
+{-# INLINE peelAction #-}
 
 runReaderAs :: proxy k -> Eff (k >: (->) r ': xs) a -> r -> Eff xs a
 runReaderAs = peelEff (\a _ -> return a)
