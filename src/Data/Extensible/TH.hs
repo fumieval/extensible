@@ -55,20 +55,26 @@ decEffects decs = decs >>= \ds -> fmap concat $ forM ds $ \case
   DataD _ dataName tparams cs _
 #endif
     -> do
-      (cxts, dcs) <- fmap unzip $ forM cs $ \case
-#if MIN_VERSION_template_haskell(2,11,0)
-        ForallC _ _ (GadtC [name] st (AppT _ resultT))
-          -> return $ effectFunD (nameBase name) (map snd st) resultT
-#endif
-        ForallC _ eqs (NormalC name st) -> return $ fromMangledGADT tparams eqs name st
-        p -> do
-          runIO (print p)
-          fail "Unsupported constructor"
+      (cxts, dcs) <- fmap unzip $ traverse (con2Eff tparams) cs
+
       let vars = map PlainTV $ nub $ concatMap (varsT . snd) cxts
+
       return $ TySynD dataName vars (typeListT
         $ map (\(k, v) -> PromotedT '(:>) `AppT` k `AppT` v) cxts)
           : concat dcs
   _ -> fail "mkEffects accepts GADT declaration"
+
+con2Eff :: [TyVarBndr] -> Con -> Q ((Type, Type), [Dec])
+#if MIN_VERSION_template_haskell(2,11,0)
+con2Eff _ (GadtC [name] st (AppT _ resultT))
+  = return $ effectFunD (nameBase name) (map snd st) resultT
+#endif
+con2Eff tparams (ForallC _ eqs (NormalC name st))
+  = return $ fromMangledGADT tparams eqs name st
+con2Eff tparams (ForallC _ _ c) = con2Eff tparams c
+con2Eff _ p = do
+  runIO (print p)
+  fail "Unsupported constructor"
 
 fromMangledGADT :: [TyVarBndr] -> [Type] -> Name -> [(Strict, Type)] -> ((Type, Type), [Dec])
 fromMangledGADT tyvars_ eqs con fieldTypes

@@ -14,4 +14,9 @@ decEffects [d|
 --    ExtRes :: Read s => Example a b s
   |]
 
+decEffects [d|
+  data Simple x where
+    Simple :: Simple ()
+  |]
+
 main = return ()
