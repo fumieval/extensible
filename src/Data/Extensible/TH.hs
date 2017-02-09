@@ -56,6 +56,10 @@ decEffects decs = decs >>= \ds -> fmap concat $ forM ds $ \case
 #endif
     -> do
       (cxts, dcs) <- fmap unzip $ forM cs $ \case
+#if MIN_VERSION_template_haskell(2,11,0)
+        ForallC _ _ (GadtC [name] st (AppT _ resultT))
+          -> return $ effectFunD (nameBase name) (map snd st) resultT
+#endif
         ForallC _ eqs (NormalC name st) -> return $ fromMangledGADT tparams eqs name st
         p -> do
           runIO (print p)
