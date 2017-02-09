@@ -1,4 +1,16 @@
 {-# LANGUAGE LambdaCase, TemplateHaskell, TypeFamilies, DeriveFunctor #-}
+------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Extensible.Record
+-- Copyright   :  (c) Fumiaki Kinoshita 2017
+-- License     :  BSD3
+--
+-- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
+-- Stability   :  experimental
+-- Portability :  non-portable
+--
+-- Bidirectional conversion from/to records
+------------------------------------------------------------------------
 module Data.Extensible.Record (IsRecord(..), toRecord, fromRecord, deriveIsRecord) where
 
 import Language.Haskell.TH
@@ -15,9 +27,11 @@ class IsRecord a where
   recordFromList :: HList (Field Identity) (RecFields a) -> a
   recordToList :: a -> HList (Field Identity) (RecFields a)
 
+-- | Convert a value into a 'Record'.
 toRecord :: IsRecord a => a -> Record (RecFields a)
 toRecord = fromHList . recordToList
 
+-- | Convert a 'Record' to a value.
 fromRecord :: IsRecord a => Record (RecFields a) -> a
 fromRecord = recordFromList . toHList
 
@@ -25,6 +39,7 @@ tvName :: TyVarBndr -> Name
 tvName (PlainTV n) = n
 tvName (KindedTV n _) = n
 
+-- | Create an 'IsRecord' instance for a normal record declaration.
 deriveIsRecord :: Name -> DecsQ
 deriveIsRecord name = reify name >>= \case
 #if MIN_VERSION_template_haskell(2,11,0)

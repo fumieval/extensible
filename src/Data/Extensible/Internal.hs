@@ -92,6 +92,7 @@ remember :: forall xs x r. Membership xs x -> (Member xs x => r) -> r
 remember i r = unsafeCoerce (Remembrance r :: Remembrance xs x r) i
 {-# INLINE remember #-}
 
+-- | @x@ is a member of @xs@
 class Member xs x where
   membership :: Membership xs x
 

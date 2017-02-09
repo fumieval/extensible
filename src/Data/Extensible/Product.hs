@@ -51,11 +51,14 @@ import Data.Extensible.Class
 import qualified Data.Extensible.HList as HList
 import Data.Extensible.Wrapper
 
+-- | O(n) Prepend an element onto a product.
+-- Expressions like @a <: b <: c <: nil@ are transformed to a single 'fromHList'.
 (<:) :: h x -> h :* xs -> h :* (x ': xs)
 (<:) x = fromHList . HList.HCons x . toHList
 {-# INLINE (<:) #-}
 infixr 0 <:
 
+-- | An empty product.
 nil :: h :* '[]
 nil = hfrozen $ new $ error "Impossible"
 {-# NOINLINE nil #-}

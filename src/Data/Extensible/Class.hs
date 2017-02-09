@@ -65,14 +65,17 @@ pieceAssoc :: (Associate k v xs, Extensible f p t) => Optic' p f (t h xs) (h (k 
 pieceAssoc = pieceAt association
 {-# INLINE pieceAssoc #-}
 
+-- | Access a specified element through a wrapper.
 itemAt :: (Wrapper h, Extensible f p t) => Membership xs x -> Optic' p f (t h xs) (Repr h x)
 itemAt m = pieceAt m . _Wrapper
 {-# INLINE itemAt #-}
 
+-- | Access an element through a wrapper.
 item :: (Wrapper h, Extensible f p t, x ∈ xs) => proxy x -> Optic' p f (t h xs) (Repr h x)
 item p = piece . _WrapperAs p
 {-# INLINE item #-}
 
+-- | Access an element specified by the key type through a wrapper.
 itemAssoc :: (Wrapper h, Extensible f p t, Associate k v xs)
   => proxy k -> Optic' p f (t h xs) (Repr h (k ':> v))
 itemAssoc p = pieceAssoc . _WrapperAs (proxyKey p)

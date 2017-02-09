@@ -1,7 +1,7 @@
 {-# LANGUAGE Trustworthy #-}
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.Extensible.Rig
+-- Module      :  Data.Extensible.Internal.Rig
 -- Copyright   :  (c) Fumiaki Kinoshita 2015
 -- License     :  BSD3
 --

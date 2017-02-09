@@ -7,8 +7,8 @@
 #endif
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.Extensible.Record
--- Copyright   :  (c) Fumiaki Kinoshita 2015
+-- Module      :  Data.Extensible.Field
+-- Copyright   :  (c) Fumiaki Kinoshita 2017
 -- License     :  BSD3
 --
 -- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>

@@ -2,6 +2,18 @@
 {-# LANGUAGE ViewPatterns, BangPatterns #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE MagicHash, UnboxedTuples #-}
+------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Extensible.Struct
+-- Copyright   :  (c) Fumiaki Kinoshita 2017
+-- License     :  BSD3
+--
+-- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
+-- Stability   :  experimental
+-- Portability :  non-portable
+--
+-- Mutable structs
+------------------------------------------------------------------------
 module Data.Extensible.Struct (
   -- * Mutable struct
   Struct
@@ -35,12 +47,14 @@ import GHC.Types
 -- | Mutable type-indexed struct.
 data Struct s (h :: k -> *) (xs :: [k]) = Struct (SmallMutableArray# s Any)
 
+-- | Write a value in a 'Struct'.
 set :: PrimMonad m => Struct (PrimState m) h xs -> Membership xs x -> h x -> m ()
 set (Struct m) (getMemberId -> I# i) e = primitive
   $ \s -> case unsafeCoerce# writeSmallArray# m i e s of
     s' -> (# s', () #)
 {-# INLINE set #-}
 
+-- | Read a value from a 'Struct'.
 get :: PrimMonad m => Struct (PrimState m) h xs -> Membership xs x -> m (h x)
 get (Struct m) (getMemberId -> I# i) = primitive $ unsafeCoerce# readSmallArray# m i
 {-# INLINE get #-}
@@ -66,6 +80,7 @@ newFor p k = do
     (# s', a #) -> (# s', Struct a #)
   henumerateFor p (Proxy :: Proxy xs) (\i cont -> set m i (k i) >> cont) $ return m
 
+-- | Create a new 'Struct' from an 'HList'.
 newFromHList :: forall h m xs. PrimMonad m => L.HList h xs -> m (Struct (PrimState m) h xs)
 newFromHList l = do
   let !(I# size) = L.length l
@@ -96,6 +111,7 @@ thaw :: PrimMonad m => h :* xs -> m (Struct (PrimState m) h xs)
 thaw (HProduct ar) = primitive $ \s -> case thawSmallArray# ar 0# (sizeofSmallArray# ar) s of
   (# s', m #) -> (# s', Struct m #)
 
+-- | The size of a product.
 hlength :: h :* xs -> Int
 hlength (HProduct ar) = I# (sizeofSmallArray# ar)
 {-# INLINE hlength #-}
@@ -103,6 +119,7 @@ hlength (HProduct ar) = I# (sizeofSmallArray# ar)
 unsafeMembership :: Int -> Membership xs x
 unsafeMembership = unsafeCoerce#
 
+-- | Right-associative fold of a product.
 hfoldrWithIndex :: (forall x. Membership xs x -> h x -> r -> r) -> r -> h :* xs -> r
 hfoldrWithIndex f r p = foldr
   (\i -> let m = unsafeMembership i in f m (hlookup m p)) r [0..hlength p - 1]

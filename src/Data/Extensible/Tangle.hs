@@ -1,4 +1,16 @@
 {-# LANGUAGE PolyKinds, KindSignatures, TypeOperators, DataKinds, Rank2Types, ScopedTypeVariables, GeneralizedNewtypeDeriving #-}
+------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Extensible.Struct
+-- Copyright   :  (c) Fumiaki Kinoshita 2017
+-- License     :  BSD3
+--
+-- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
+-- Stability   :  experimental
+-- Portability :  non-portable
+--
+-- Extensible tangles
+------------------------------------------------------------------------
 module Data.Extensible.Tangle where
 
 import Control.Monad.Trans.RWS.Strict
