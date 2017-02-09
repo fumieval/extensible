@@ -1,16 +1,15 @@
 0.4
 ---------------------------------------------------
 * Added `Data.Extensible.Struct`
+* Changed the representation of `(:*)` to use `SmallArray`
 * Removed `(<:*)`. `hhead`, `htail`, `huncons`, `(*++*)`, `htrans`
+* Added `hfoldrWithIndex`
 * Added various derived instances for `Field`
 * Added `liftField`, `liftField2`
 * Added a `Wrapper` instance for `Maybe`
 * Added `>:` as a synonym for `:>`
 * `Data.Extensible.Effect`
-  * Added common handlers: `runReaderAs`, `runStateAs`, `runWriterAs`, `runMaybeAs`, `runEitherAs`
-  * Removed `nihility`, `(!-!!)`, `squash`
-  * Renamed `handleWith` to `handleEff`
-  * `decEffects` now produces the type synonym for the declared list of effects.
+  * Refined the API
   * Added `Data.Extensible.Effect.Default`
 * Added `Data.Extensible.Tangle`
 * `IncludeAssoc ys [k :> v, ..]` now implies `Associate k v ys`, ..
