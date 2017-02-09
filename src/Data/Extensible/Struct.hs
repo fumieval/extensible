@@ -137,26 +137,22 @@ newFrom hp@(HProduct ar) k = do
           go (i + 1)
   go 0
 
+-- | Get an element in a product.
 hlookup :: Membership xs x -> h :* xs -> h x
 hlookup (getMemberId -> I# i) (HProduct ar) = case indexSmallArray# ar i of
   (# a #) -> unsafeCoerce# a
 {-# INLINE hlookup #-}
 
+-- | Create a product from an 'ST' action which returns a 'Struct'.
 hfrozen :: (forall s. ST s (Struct s h xs)) -> h :* xs
 hfrozen m = runST $ m >>= unsafeFreeze
 {-# INLINE hfrozen #-}
 
 instance (Corepresentable p, Comonad (Corep p), Functor f) => Extensible f p (:*) where
-  -- | /O(log n)/ A lens for a value in a known position.
-  pieceAt = pieceAt_
+  -- | A lens for a value in a known position.
+  pieceAt i pafb = cotabulate $ \ws -> sbt (extract ws) <$> cosieve pafb (hlookup i <$> ws) where
+    sbt xs x = hfrozen $ do
+      s <- thaw xs
+      set s i x
+      return s
   {-# INLINE pieceAt #-}
-
-pieceAt_ :: forall (xs :: [k]) (x :: k) (h :: k -> *) (f :: * -> *) (p :: * -> * -> *).
-  (Functor f, Corepresentable p, Comonad (Corep p))
-  => Membership xs x -> p (h x) (f (h x)) -> p (h :* xs) (f (h :* xs))
-pieceAt_ i pafb = cotabulate $ \ws -> sbt (extract ws) <$> cosieve pafb (hlookup i <$> ws) where
-  sbt xs x = hfrozen $ do
-    s <- thaw xs
-    set s i x
-    return s
-{-# INLINE pieceAt_ #-}
