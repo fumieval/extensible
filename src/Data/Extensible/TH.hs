@@ -47,6 +47,26 @@ mkField str = fmap concat $ forM (words str) $ \s@(x:xs) -> do
     ]
 
 -- | Generate named effects from a GADT declaration.
+--
+-- @
+-- decEffects [d|
+--  data Blah a b x where
+--    Blah :: Int -> a -> Blah a b b
+--  |]
+-- @
+--
+-- generates
+--
+-- @
+-- type Blah a b = '[\"Blah\" >: Action '[Int, a] b]
+-- blah :: forall xs a b
+--   . Associate \"Blah\" (Action '[Int, a] b) xs
+--   => Int -> a -> Eff xs b
+-- blah a0 a1
+--   = liftEff
+--     (Data.Proxy.Proxy :: Data.Proxy.Proxy \"Blah\")
+--     (AArgument a0 (AArgument a1 AResult))
+-- @
 decEffects :: DecsQ -> DecsQ
 decEffects decs = decs >>= \ds -> fmap concat $ forM ds $ \case
 #if MIN_VERSION_template_haskell(2,11,0)

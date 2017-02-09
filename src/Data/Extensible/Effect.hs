@@ -1,5 +1,17 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Extensible.Effect
+-- Copyright   :  (c) Fumiaki Kinoshita 2017
+-- License     :  BSD3
+--
+-- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
+-- Stability   :  experimental
+-- Portability :  TypeFamilies
+--
+-- Name-based extensible effects
+-----------------------------------------------------------------------------
 module Data.Extensible.Effect (
   -- * Base
   Instruction(..)
@@ -32,18 +44,19 @@ import Data.Extensible.Internal.Rig
 import Data.Extensible.Class
 import Data.Profunctor.Unsafe -- Trustworthy since 7.8
 
--- | A unit of effects
+-- | A unit of named effects.
 data Instruction (xs :: [Assoc k (* -> *)]) a where
   Instruction :: !(Membership xs kv) -> AssocValue kv a -> Instruction xs a
 
 -- | The extensible operational monad
 type Eff xs = Skeleton (Instruction xs)
 
--- | Lift some effect to 'Eff'
+-- | Lift an instruction onto an 'Eff' action.
 liftEff :: forall proxy s t xs a. Associate s t xs => proxy s -> t a -> Eff xs a
 liftEff _ x = bone (Instruction (association :: Membership xs (s ':> t)) x)
 {-# INLINE liftEff #-}
 
+-- | Censor a specific type of effects in an action.
 hoistEff :: forall proxy s t xs a. Associate s t xs => proxy s -> (forall x. t x -> t x) -> Eff xs a -> Eff xs a
 hoistEff _ f = hoistSkeleton $ \(Instruction i t) -> case compareMembership (association :: Membership xs (s ':> t)) i of
   Right Refl -> Instruction i (f t)
@@ -76,6 +89,7 @@ leaveEff m = case unbone m of
   Return a -> a
   _ -> error "Impossible"
 
+-- | Tear down an action using the 'Monad' instance of the instruction.
 retractEff :: Monad m => proxy k -> Eff '[k >: m] a -> m a
 retractEff p m = case unbone m of
   Return a -> return a
@@ -92,7 +106,7 @@ handleEff hs m = case unbone m of
   Instruction i t :>>= k -> views (pieceAt i) (runHandler .# getField) hs t :>>= k
   Return a -> Return a
 
--- | A heterogeneous list of arguments
+-- | Name-agnostic representation of instructions.
 data Action (args :: [*]) a r where
   AResult :: Action '[] a a
   AArgument :: x -> Action xs a r -> Action (x ': xs) a r
