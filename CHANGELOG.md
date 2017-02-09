@@ -14,6 +14,7 @@
   * Added `Data.Extensible.Effect.Default`
 * Added `Data.Extensible.Tangle`
 * `IncludeAssoc ys [k :> v, ..]` now implies `Associate k v ys`, ..
+* Added `record`
 
 0.3.7.1
 ----------------------------------------------------

@@ -11,14 +11,16 @@
 --
 -- Bidirectional conversion from/to records
 ------------------------------------------------------------------------
-module Data.Extensible.Record (IsRecord(..), toRecord, fromRecord, deriveIsRecord) where
+module Data.Extensible.Record (IsRecord(..), toRecord, fromRecord, record, deriveIsRecord) where
 
 import Language.Haskell.TH
 import Data.Extensible.Internal
+import Data.Extensible.Internal.Rig
 import Data.Extensible.HList
 import Data.Extensible.Product
 import Data.Extensible.Field
 import Data.Functor.Identity
+import Data.Profunctor
 import GHC.TypeLits
 
 -- | The class of types that can be converted to/from a 'Record'.
@@ -27,13 +29,26 @@ class IsRecord a where
   recordFromList :: HList (Field Identity) (RecFields a) -> a
   recordToList :: a -> HList (Field Identity) (RecFields a)
 
+instance IsRecord () where
+  type RecFields () = '[]
+  recordFromList _ = ()
+  recordToList _ = HNil
+
 -- | Convert a value into a 'Record'.
 toRecord :: IsRecord a => a -> Record (RecFields a)
 toRecord = fromHList . recordToList
+{-# INLINE toRecord #-}
 
 -- | Convert a 'Record' to a value.
 fromRecord :: IsRecord a => Record (RecFields a) -> a
 fromRecord = recordFromList . toHList
+{-# INLINE fromRecord #-}
+
+-- | @record :: IsRecord a => Iso' a (Record (RecFields a)) @
+record :: (IsRecord a, Functor f, Profunctor p)
+  => Optic' p f a (Record (RecFields a))
+record = dimap toRecord (fmap fromRecord)
+{-# INLINE record #-}
 
 tvName :: TyVarBndr -> Name
 tvName (PlainTV n) = n
