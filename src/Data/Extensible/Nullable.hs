@@ -24,8 +24,8 @@ import Data.Extensible.Sum
 import Data.Extensible.Inclusion
 import Data.Extensible.Internal.Rig
 import Data.Typeable (Typeable)
-import Data.Monoid
 import Data.Extensible.Wrapper
+import qualified Data.Extensible.Struct as S
 import Data.Profunctor.Unsafe
 
 -- | Poly-kinded Maybe
@@ -42,10 +42,10 @@ mapNullable f = Nullable #. fmap f .# getNullable
 
 -- | The inverse of 'inclusion'.
 coinclusion :: (Include ys xs, Generate ys) => Nullable (Membership xs) :* ys
-coinclusion = flip appEndo vacancy
-  $ hfoldMap getConst'
-  $ hmapWithIndex (\src dst -> Const' $ Endo $ pieceAt dst `over` const (Nullable $ Just src))
-  $ inclusion
+coinclusion = S.hfrozen $ do
+  s <- S.new $ const $ Nullable Nothing
+  hfoldrWithIndex
+    (\i m cont -> S.set s m (Nullable $ Just i) >> cont) (return s) inclusion
 
 -- | A product filled with @'Nullable' 'Nothing'@
 vacancy :: Generate xs => Nullable h :* xs
