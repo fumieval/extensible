@@ -90,9 +90,9 @@ proxyKey :: proxy k -> Proxy (k ':> v)
 proxyKey _ = Proxy
 {-# INLINE proxyKey #-}
 
--- | Given a function that maps types to values, we can "collect" entities all you want.
+-- | Every type-level list is an instance of 'Generate'.
 class Generate (xs :: [k]) where
-  -- | /O(n)/ Generate a product with the given function.
+  -- | Enumerate all possible 'Membership's of @xs@.
   henumerate :: (forall x. Membership xs x -> r -> r) -> r -> r
 
 instance Generate '[] where
@@ -103,9 +103,9 @@ instance Generate xs => Generate (x ': xs) where
   henumerate f r = f here $ henumerate (f . navNext) r
   {-# INLINE henumerate #-}
 
--- | Given a function that maps types to values, we can "collect" entities all you want.
+-- | Every element in @xs@ satisfies @c@
 class (ForallF c xs, Generate xs) => Forall (c :: k -> Constraint) (xs :: [k]) where
-  -- | /O(n)/ Generate a product with the given function.
+  -- | Enumerate all possible 'Membership's of @xs@ with an additional context.
   henumerateFor :: proxy c -> proxy' xs -> (forall x. c x => Membership xs x -> r -> r) -> r -> r
 
 instance Forall c '[] where
