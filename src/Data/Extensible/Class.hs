@@ -1,4 +1,7 @@
-{-# LANGUAGE MultiParamTypeClasses, UndecidableInstances, ScopedTypeVariables #-}
+{-# LANGUAGE MultiParamTypeClasses, UndecidableInstances, ScopedTypeVariables, TypeFamilies #-}
+#if __GLASGOW_HASKELL__ >= 800
+{-# LANGUAGE UndecidableSuperClasses #-}
+#endif
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Class
@@ -33,6 +36,7 @@ module Data.Extensible.Class (
   -- * Generation
   , Generate(..)
   , Forall(..)
+  , ForallF
   -- * Association
   , Assoc(..)
 #if __GLASGOW_HASKELL__ >= 800
@@ -46,6 +50,7 @@ module Data.Extensible.Class (
   , Elaborate
   , Elaborated(..)
   ) where
+import Data.Constraint
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig (Optic')
 import Data.Extensible.Wrapper
@@ -99,7 +104,7 @@ instance Generate xs => Generate (x ': xs) where
   {-# INLINE henumerate #-}
 
 -- | Given a function that maps types to values, we can "collect" entities all you want.
-class Generate xs => Forall c (xs :: [k]) where
+class (ForallF c xs, Generate xs) => Forall (c :: k -> Constraint) (xs :: [k]) where
   -- | /O(n)/ Generate a product with the given function.
   henumerateFor :: proxy c -> proxy' xs -> (forall x. c x => Membership xs x -> r -> r) -> r -> r
 
@@ -110,3 +115,7 @@ instance Forall c '[] where
 instance (c x, Forall c xs) => Forall c (x ': xs) where
   henumerateFor p _ f r = f here $ henumerateFor p (Proxy :: Proxy xs) (f . navNext) r
   {-# INLINE henumerateFor #-}
+
+type family ForallF (c :: k -> Constraint) (xs :: [k]) :: Constraint where
+  ForallF c '[] = ()
+  ForallF c (x ': xs) = (c x, Forall c xs)
