@@ -10,7 +10,11 @@
 -- Portability :  non-portable
 --
 ------------------------------------------------------------------------
-module Data.Extensible.TH (mkField, decEffects) where
+module Data.Extensible.TH (mkField
+  , decEffects
+  , decEffectSet
+  , decEffectSuite
+  , customDecEffects) where
 
 import Data.Proxy
 import Data.Extensible.Internal
@@ -58,7 +62,7 @@ mkField str = fmap concat $ forM (words str) $ \s@(x:xs) -> do
 -- generates
 --
 -- @
--- type Blah a b = '[\"Blah\" >: Action '[Int, a] b]
+-- type Blah a b = \"Blah\" >: Action '[Int, a] b
 -- blah :: forall xs a b
 --   . Associate \"Blah\" (Action '[Int, a] b) xs
 --   => Int -> a -> Eff xs b
@@ -68,7 +72,21 @@ mkField str = fmap concat $ forM (words str) $ \s@(x:xs) -> do
 --     (AArgument a0 (AArgument a1 AResult))
 -- @
 decEffects :: DecsQ -> DecsQ
-decEffects decs = decs >>= \ds -> fmap concat $ forM ds $ \case
+decEffects = customDecEffects False True
+
+-- | Instead of making a type synonym for individual actions, it defines a list
+-- of actions.
+decEffectSet :: DecsQ -> DecsQ
+decEffectSet = customDecEffects True False
+
+-- | Generates type synonyms for the set of actions and also individual actions.
+decEffectSuite :: DecsQ -> DecsQ
+decEffectSuite = customDecEffects True True
+
+customDecEffects :: Bool -- ^ generate a synonym of the set of actions
+    -> Bool -- ^ generate synonyms for individual actions
+    -> DecsQ -> DecsQ
+customDecEffects synSet synActions decs = decs >>= \ds -> fmap concat $ forM ds $ \case
 #if MIN_VERSION_template_haskell(2,11,0)
   DataD _ dataName tparams _ cs _
 #else
@@ -78,16 +96,15 @@ decEffects decs = decs >>= \ds -> fmap concat $ forM ds $ \case
       (cxts, dcs) <- fmap unzip $ traverse (con2Eff tparams) cs
 
       let vars = map PlainTV $ nub $ concatMap (varsT . snd) cxts
-
-      return $ TySynD dataName vars (typeListT
-        $ map (\(k, v) -> PromotedT '(:>) `AppT` k `AppT` v) cxts)
-          : concat dcs
+      return $ [TySynD dataName vars (typeListT $ map snd cxts) | synSet]
+          ++ [ TySynD k (map PlainTV $ nub $ varsT t) t | synActions, (k, t) <- cxts]
+          ++ concat dcs
   _ -> fail "mkEffects accepts GADT declaration"
 
-con2Eff :: [TyVarBndr] -> Con -> Q ((Type, Type), [Dec])
+con2Eff :: [TyVarBndr] -> Con -> Q ((Name, Type), [Dec])
 #if MIN_VERSION_template_haskell(2,11,0)
 con2Eff _ (GadtC [name] st (AppT _ resultT))
-  = return $ effectFunD (nameBase name) (map snd st) resultT
+  = return $ effectFunD name (map snd st) resultT
 #endif
 con2Eff tparams (ForallC _ eqs (NormalC name st))
   = return $ fromMangledGADT tparams eqs name st
@@ -96,9 +113,9 @@ con2Eff _ p = do
   runIO (print p)
   fail "Unsupported constructor"
 
-fromMangledGADT :: [TyVarBndr] -> [Type] -> Name -> [(Strict, Type)] -> ((Type, Type), [Dec])
+fromMangledGADT :: [TyVarBndr] -> [Type] -> Name -> [(Strict, Type)] -> ((Name, Type), [Dec])
 fromMangledGADT tyvars_ eqs con fieldTypes
-  = effectFunD (nameBase con) argumentsT result
+  = effectFunD con argumentsT result
   where
     getTV (PlainTV n) = n
     getTV (KindedTV n _) = n
@@ -130,16 +147,16 @@ varsT (VarT v) = [v]
 varsT (AppT s t) = varsT s ++ varsT t
 varsT _ = []
 
-effectFunD :: String
+effectFunD :: Name
   -> [Type]
   -> Type
-  -> ((Type, Type), [Dec])
-effectFunD key argumentsT resultT = ((nameT, actionT)
+  -> ((Name, Type), [Dec])
+effectFunD key argumentsT resultT = ((key, PromotedT '(:>) `AppT` nameT `AppT` actionT)
   , [SigD fName typ, FunD fName [effClause nameT (length argumentsT)]]) where
 
     varList = mkName "xs"
 
-    fName = let (ch : rest) = key in mkName $ toLower ch : rest
+    fName = let (ch : rest) = nameBase key in mkName $ toLower ch : rest
 
     typ = ForallT (map PlainTV $ varList : varsT resultT ++ concatMap varsT argumentsT)
         [associateT nameT actionT varList]
@@ -148,7 +165,7 @@ effectFunD key argumentsT resultT = ((nameT, actionT)
     -- Action [a, B, C] R
     actionT = ConT ''Action `AppT` typeListT argumentsT `AppT` resultT
 
-    nameT = LitT $ StrTyLit key
+    nameT = LitT $ StrTyLit $ nameBase key
 
 effectFunT :: Name
   -> [Type]

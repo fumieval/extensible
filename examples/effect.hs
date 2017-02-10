@@ -3,7 +3,7 @@ import Data.Extensible
 import Control.Monad.Trans.Writer.Strict
 import Control.Monad.Skeleton
 
-decEffects [d|
+decEffectSet [d|
   data Example x where
     Reset :: Int -> Example ()
     PrintString :: String -> Example ()
