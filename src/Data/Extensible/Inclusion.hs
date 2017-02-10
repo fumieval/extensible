@@ -1,6 +1,10 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
+#if __GLASGOW_HASKELL__ >= 800
+{-# LANGUAGE UndecidableSuperClasses #-}
+#endif
 ------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Inclusion
@@ -61,12 +65,14 @@ spread (EmbedAt i h) = views (pieceAt i) EmbedAt inclusion h
 
 ------------------------------------------------------------------
 
-class Associated xs t where
+type family Associated' (xs :: [Assoc k v]) (t :: Assoc k v) :: Constraint where
+  Associated' xs (k ':> v) = Associate k v xs
+
+class Associated' xs t => Associated xs t where
   getAssociation :: Membership xs t
 
-instance (Associate k v xs) => Associated xs (k ':> v) where
+instance (Associated' xs t, t ~ (k ':> v)) => Associated xs t where
   getAssociation = association
-  {-# INLINE getAssociation #-}
 
 -- | Similar to 'Include', but this focuses on keys.
 type IncludeAssoc ys xs = (Forall (Associated ys) xs, IncludeAssoc' ys xs)
