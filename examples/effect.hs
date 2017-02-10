@@ -1,9 +1,11 @@
 {-# LANGUAGE TemplateHaskell, DataKinds, FlexibleContexts #-}
 import Data.Extensible
+import Data.Extensible.Effect.Default ()
+import Control.Monad.IO.Class
 import Control.Monad.Trans.Writer.Strict
 import Control.Monad.Skeleton
 
-decEffectSet [d|
+decEffectSuite [d|
   data Example x where
     Reset :: Int -> Example ()
     PrintString :: String -> Example ()
@@ -41,3 +43,7 @@ example n = Methods
   <: _Hello @!? do WriterT $ ((), example $ n + 1) <$ putStrLn "Hello!"
   <: _Count @!? do writer (n, example n)
   <: nil
+
+takePrintString :: Associate "IO" IO xs => Eff (PrintString ': xs) a -> Eff xs a
+takePrintString = peelAction rebindEff0 return
+  $ \str cont -> liftIO (putStrLn str) >>= cont
