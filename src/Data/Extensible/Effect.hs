@@ -33,11 +33,11 @@ module Data.Extensible.Effect (
   , (@!?)
   , peelAction
   -- * transformers-compatible handlers
-  , runReaderAs
-  , runStateAs
-  , runWriterAs
-  , runMaybeAs
-  , runEitherAs
+  , runReaderEff
+  , runStateEff
+  , runWriterEff
+  , runMaybeEff
+  , runEitherEff
   ) where
 
 import Control.Monad.Skeleton
@@ -70,15 +70,15 @@ hoistEff _ f = hoistSkeleton $ \(Instruction i t) -> case compareMembership (ass
 -- | Build a relay-style handler from a triple of functions.
 --
 -- @
--- runStateAs = peelEff rebindEff1 (\a s -> return (a, s))
+-- runStateEff = peelEff rebindEff1 (\a s -> return (a, s))
 --   (\m k s -> let (a, s') = runState m s in k a s')
 -- @
 --
 peelEff :: (forall x. Instruction xs x -> (x -> r) -> r) -- ^ Re-bind an unrelated action
   -> (a -> r) -- ^ return the result
   -> (forall x. t x -> (x -> r) -> r) -- ^ Handle the foremost type of an action
-  -> proxy k -> Eff (k >: t ': xs) a -> r
-peelEff pass ret wrap _ = go where
+  -> Eff (k >: t ': xs) a -> r
+peelEff pass ret wrap = go where
   go m = case unbone m of
     Return a -> ret a
     Instruction i t :>>= k -> runMembership i
@@ -147,12 +147,12 @@ infix 1 @!?
 -- | Specialised version of 'peelEff' for 'Action's.
 -- You can pass a function @a -> b -> ... -> (q -> r) -> r@ as a handler for
 -- @'Action' '[a, b, ...] q@.
-peelAction :: forall proxy k ps q a r xs
+peelAction :: forall k ps q a r xs
   . (forall x. Instruction xs x -> (x -> r) -> r) -- ^ Re-bind an unrelated action
   -> (a -> r) -- ^ return the result
   -> Function ps ((q -> r) -> r) -- ^ Handle the foremost action
-  -> proxy k -> Eff (k >: Action ps q ': xs) a -> r
-peelAction pass ret wrap _ = go where
+  -> Eff (k >: Action ps q ': xs) a -> r
+peelAction pass ret wrap = go where
   go m = case unbone m of
     Return a -> ret a
     Instruction i t :>>= k -> runMembership i
@@ -165,27 +165,27 @@ peelAction pass ret wrap _ = go where
       (\j -> pass (Instruction j t) (go . k))
 {-# INLINE peelAction #-}
 
-runReaderAs :: proxy k -> Eff (k >: (->) r ': xs) a -> r -> Eff xs a
-runReaderAs = peelEff rebindEff1 (\a _ -> return a)
+runReaderEff :: Eff (k >: (->) r ': xs) a -> r -> Eff xs a
+runReaderEff = peelEff rebindEff1 (\a _ -> return a)
   (\m k r -> k (m r) r)
-{-# INLINE runReaderAs #-}
+{-# INLINE runReaderEff #-}
 
-runStateAs :: proxy k -> Eff (k >: State s ': xs) a -> s -> Eff xs (a, s)
-runStateAs = peelEff rebindEff1 (\a s -> return (a, s))
+runStateEff :: Eff (k >: State s ': xs) a -> s -> Eff xs (a, s)
+runStateEff = peelEff rebindEff1 (\a s -> return (a, s))
   (\m k s -> let (a, s') = runState m s in k a s')
-{-# INLINE runStateAs #-}
+{-# INLINE runStateEff #-}
 
-runWriterAs :: Monoid w => proxy k -> Eff (k >: (,) w ': xs) a -> Eff xs (a, w)
-runWriterAs p m0 = peelEff rebindEff1 (\a w -> return (a, w))
-  (\(w', a) k w -> k a $! mappend w w') p m0 mempty
-{-# INLINE runWriterAs #-}
+runWriterEff :: Monoid w => Eff (k >: (,) w ': xs) a -> Eff xs (a, w)
+runWriterEff = peelEff rebindEff1 (\a w -> return (a, w))
+  (\(w', a) k w -> k a $! mappend w w') `flip` mempty
+{-# INLINE runWriterEff #-}
 
-runMaybeAs :: proxy k -> Eff (k >: Maybe ': xs) a -> Eff xs (Maybe a)
-runMaybeAs = peelEff rebindEff0 (return . Just)
+runMaybeEff :: Eff (k >: Maybe ': xs) a -> Eff xs (Maybe a)
+runMaybeEff = peelEff rebindEff0 (return . Just)
   (\m k -> maybe (return Nothing) k m)
-{-# INLINE runMaybeAs #-}
+{-# INLINE runMaybeEff #-}
 
-runEitherAs :: proxy k -> Eff (k >: Either e ': xs) a -> Eff xs (Either e a)
-runEitherAs = peelEff rebindEff0 (return . Right)
+runEitherEff :: Eff (k >: Either e ': xs) a -> Eff xs (Either e a)
+runEitherEff = peelEff rebindEff0 (return . Right)
   (\m k -> either (return . Left) k m)
-{-# INLINE runEitherAs #-}
+{-# INLINE runEitherEff #-}

@@ -63,21 +63,21 @@ instance (Associate "Either" (Either e) xs) => MonadError e (Eff xs) where
         Right Refl -> either handler (go . k) t
 
 runReaderDef :: Eff ("Reader" >: (->) r ': xs) a -> r -> Eff xs a
-runReaderDef = runReaderAs (Proxy :: Proxy "Reader")
+runReaderDef = runReaderEff
 {-# INLINE runReaderDef #-}
 
 runStateDef :: Eff ("State" >: State s ': xs) a -> s -> Eff xs (a, s)
-runStateDef = runStateAs (Proxy :: Proxy "State")
+runStateDef = runStateEff
 {-# INLINE runStateDef #-}
 
 runWriterDef :: Monoid w => Eff ("Writer" >: (,) w ': xs) a -> Eff xs (a, w)
-runWriterDef = runWriterAs (Proxy :: Proxy "Writer")
+runWriterDef = runWriterEff
 {-# INLINE runWriterDef #-}
 
 runMaybeDef :: Eff ("Maybe" >: Maybe ': xs) a -> Eff xs (Maybe a)
-runMaybeDef = runMaybeAs (Proxy :: Proxy "Maybe")
+runMaybeDef = runMaybeEff
 {-# INLINE runMaybeDef #-}
 
 runEitherDef :: Eff ("Either" >: Either e ': xs) a -> Eff xs (Either e a)
-runEitherDef = runEitherAs (Proxy :: Proxy "Either")
+runEitherDef = runEitherEff
 {-# INLINE runEitherDef #-}
