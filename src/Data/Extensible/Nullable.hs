@@ -11,7 +11,8 @@
 --
 ------------------------------------------------------------------------
 module Data.Extensible.Nullable (
-  coinclusion
+  vacancy
+  , coinclusion
   , wrench
   , retrench
   , Nullable(..)
@@ -41,10 +42,14 @@ mapNullable f = Nullable #. fmap f .# getNullable
 
 -- | The inverse of 'inclusion'.
 coinclusion :: (Include ys xs, Generate ys) => Nullable (Membership xs) :* ys
-coinclusion = flip appEndo (htabulate $ const $ Nullable Nothing)
+coinclusion = flip appEndo vacancy
   $ hfoldMap getConst'
   $ hmapWithIndex (\src dst -> Const' $ Endo $ pieceAt dst `over` const (Nullable $ Just src))
   $ inclusion
+
+-- | A product filled with @'Nullable' 'Nothing'@
+vacancy :: Generate xs => Nullable h :* xs
+vacancy = htabulate $ const $ Nullable Nothing
 
 -- | Extend a product and fill missing fields by 'Null'.
 wrench :: (Generate ys, xs ⊆ ys) => h :* xs -> Nullable h :* ys
