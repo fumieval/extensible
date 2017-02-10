@@ -75,11 +75,7 @@ instance (Associated' xs t, t ~ (k ':> v)) => Associated xs t where
   getAssociation = association
 
 -- | Similar to 'Include', but this focuses on keys.
-type IncludeAssoc ys xs = (Forall (Associated ys) xs, IncludeAssoc' ys xs)
-
-type family IncludeAssoc' ys xs :: Constraint where
-  IncludeAssoc' ys '[] = ()
-  IncludeAssoc' ys ((k ':> v) ': xs) = (Associate k v ys, IncludeAssoc' ys xs)
+type IncludeAssoc ys = Forall (Associated ys)
 
 -- | Reify the inclusion of type level sets.
 inclusionAssoc :: forall xs ys. IncludeAssoc ys xs => Membership ys :* xs
