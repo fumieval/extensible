@@ -56,12 +56,12 @@ data Instruction (xs :: [Assoc k (* -> *)]) a where
 type Eff xs = Skeleton (Instruction xs)
 
 -- | Lift an instruction onto an 'Eff' action.
-liftEff :: forall proxy s t xs a. Associate s t xs => proxy s -> t a -> Eff xs a
+liftEff :: forall s t xs a proxy. Associate s t xs => proxy s -> t a -> Eff xs a
 liftEff _ x = bone (Instruction (association :: Membership xs (s ':> t)) x)
 {-# INLINE liftEff #-}
 
 -- | Censor a specific type of effects in an action.
-hoistEff :: forall proxy s t xs a. Associate s t xs => proxy s -> (forall x. t x -> t x) -> Eff xs a -> Eff xs a
+hoistEff :: forall s t xs a proxy. Associate s t xs => proxy s -> (forall x. t x -> t x) -> Eff xs a -> Eff xs a
 hoistEff _ f = hoistSkeleton $ \(Instruction i t) -> case compareMembership (association :: Membership xs (s ':> t)) i of
   Right Refl -> Instruction i (f t)
   _ -> Instruction i t
@@ -74,7 +74,8 @@ hoistEff _ f = hoistSkeleton $ \(Instruction i t) -> case compareMembership (ass
 --   (\m k s -> let (a, s') = runState m s in k a s')
 -- @
 --
-peelEff :: (forall x. Instruction xs x -> (x -> r) -> r) -- ^ Re-bind an unrelated action
+peelEff :: forall k t xs a r
+  . (forall x. Instruction xs x -> (x -> r) -> r) -- ^ Re-bind an unrelated action
   -> (a -> r) -- ^ return the result
   -> (forall x. t x -> (x -> r) -> r) -- ^ Handle the foremost type of an action
   -> Eff (k >: t ': xs) a -> r
@@ -147,7 +148,7 @@ infix 1 @!?
 -- | Specialised version of 'peelEff' for 'Action's.
 -- You can pass a function @a -> b -> ... -> (q -> r) -> r@ as a handler for
 -- @'Action' '[a, b, ...] q@.
-peelAction :: forall k ps q a r xs
+peelAction :: forall k ps q xs a r
   . (forall x. Instruction xs x -> (x -> r) -> r) -- ^ Re-bind an unrelated action
   -> (a -> r) -- ^ return the result
   -> Function ps ((q -> r) -> r) -- ^ Handle the foremost action
@@ -165,27 +166,27 @@ peelAction pass ret wrap = go where
       (\j -> pass (Instruction j t) (go . k))
 {-# INLINE peelAction #-}
 
-runReaderEff :: Eff (k >: (->) r ': xs) a -> r -> Eff xs a
+runReaderEff :: forall k r xs a. Eff (k >: (->) r ': xs) a -> r -> Eff xs a
 runReaderEff = peelEff rebindEff1 (\a _ -> return a)
   (\m k r -> k (m r) r)
 {-# INLINE runReaderEff #-}
 
-runStateEff :: Eff (k >: State s ': xs) a -> s -> Eff xs (a, s)
+runStateEff :: forall k s xs a. Eff (k >: State s ': xs) a -> s -> Eff xs (a, s)
 runStateEff = peelEff rebindEff1 (\a s -> return (a, s))
   (\m k s -> let (a, s') = runState m s in k a s')
 {-# INLINE runStateEff #-}
 
-runWriterEff :: Monoid w => Eff (k >: (,) w ': xs) a -> Eff xs (a, w)
+runWriterEff :: forall k w xs a. Monoid w => Eff (k >: (,) w ': xs) a -> Eff xs (a, w)
 runWriterEff = peelEff rebindEff1 (\a w -> return (a, w))
   (\(w', a) k w -> k a $! mappend w w') `flip` mempty
 {-# INLINE runWriterEff #-}
 
-runMaybeEff :: Eff (k >: Maybe ': xs) a -> Eff xs (Maybe a)
+runMaybeEff :: forall k xs a. Eff (k >: Maybe ': xs) a -> Eff xs (Maybe a)
 runMaybeEff = peelEff rebindEff0 (return . Just)
   (\m k -> maybe (return Nothing) k m)
 {-# INLINE runMaybeEff #-}
 
-runEitherEff :: Eff (k >: Either e ': xs) a -> Eff xs (Either e a)
+runEitherEff :: forall k e xs a. Eff (k >: Either e ': xs) a -> Eff xs (Either e a)
 runEitherEff = peelEff rebindEff0 (return . Right)
   (\m k -> either (return . Left) k m)
 {-# INLINE runEitherEff #-}
