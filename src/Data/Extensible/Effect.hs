@@ -109,11 +109,11 @@ leaveEff m = case unbone m of
   _ -> error "Impossible"
 
 -- | Tear down an action using the 'Monad' instance of the instruction.
-retractEff :: Monad m => proxy k -> Eff '[k >: m] a -> m a
-retractEff p m = case unbone m of
+retractEff :: forall k m a. Monad m => Eff '[k >: m] a -> m a
+retractEff m = case unbone m of
   Return a -> return a
   Instruction i t :>>= k -> runMembership i
-    (\Refl -> t >>= retractEff p . k)
+    (\Refl -> t >>= retractEff . k)
     (error "Impossible")
 
 -- | Transformation between effects
