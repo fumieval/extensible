@@ -13,7 +13,18 @@
 -- Default monad runners and 'MonadIO', 'MonadReader', 'MonadWriter',
 -- 'MonadState', 'MonadError' instances
 -----------------------------------------------------------------------------
-module Data.Extensible.Effect.Default where
+module Data.Extensible.Effect.Default (
+  ReaderDef
+  , runReaderDef
+  , StateDef
+  , runStateDef
+  , WriterDef
+  , runWriterDef
+  , MaybeDef
+  , runMaybeDef
+  , EitherDef
+  , runEitherDef
+) where
 import Control.Monad.Skeleton
 import Data.Extensible.Effect
 import Data.Extensible.Internal
@@ -60,22 +71,32 @@ instance (Associate "Either" (Either e) xs) => MonadError e (Eff xs) where
         Left _ -> boned $ Instruction i t :>>= go . k
         Right Refl -> either handler (go . k) t
 
-runReaderDef :: Eff ("Reader" >: (->) r ': xs) a -> r -> Eff xs a
+type ReaderDef r = "Reader" >: (->) r
+
+runReaderDef :: Eff (ReaderDef r ': xs) a -> r -> Eff xs a
 runReaderDef = runReaderEff
 {-# INLINE runReaderDef #-}
 
-runStateDef :: Eff ("State" >: State s ': xs) a -> s -> Eff xs (a, s)
+type StateDef s = "State" >: State s
+
+runStateDef :: Eff (StateDef s ': xs) a -> s -> Eff xs (a, s)
 runStateDef = runStateEff
 {-# INLINE runStateDef #-}
 
-runWriterDef :: Monoid w => Eff ("Writer" >: (,) w ': xs) a -> Eff xs (a, w)
+type WriterDef w = "Writer" >: (,) w
+
+runWriterDef :: Monoid w => Eff (WriterDef w ': xs) a -> Eff xs (a, w)
 runWriterDef = runWriterEff
 {-# INLINE runWriterDef #-}
 
-runMaybeDef :: Eff ("Maybe" >: Maybe ': xs) a -> Eff xs (Maybe a)
+type MaybeDef = "Maybe" >: Maybe
+
+runMaybeDef :: Eff (MaybeDef ': xs) a -> Eff xs (Maybe a)
 runMaybeDef = runMaybeEff
 {-# INLINE runMaybeDef #-}
 
-runEitherDef :: Eff ("Either" >: Either e ': xs) a -> Eff xs (Either e a)
+type EitherDef e = "Either" >: Either e
+
+runEitherDef :: Eff (EitherDef e ': xs) a -> Eff xs (Either e a)
 runEitherDef = runEitherEff
 {-# INLINE runEitherDef #-}
