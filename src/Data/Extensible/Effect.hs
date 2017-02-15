@@ -7,8 +7,6 @@
 -- License     :  BSD3
 --
 -- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
--- Stability   :  experimental
--- Portability :  TypeFamilies
 --
 -- Name-based extensible effects
 -----------------------------------------------------------------------------

@@ -11,8 +11,6 @@
 -- License     :  BSD3
 --
 -- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
--- Stability   :  experimental
--- Portability :  non-portable
 --
 -- A bunch of combinators that contains magic
 ------------------------------------------------------------------------

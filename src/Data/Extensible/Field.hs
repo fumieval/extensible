@@ -12,8 +12,6 @@
 -- License     :  BSD3
 --
 -- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
--- Stability   :  experimental
--- Portability :  non-portable
 --
 -- Flexible records and variants
 -- Example: <https://github.com/fumieval/extensible/blob/master/examples/records.hs>

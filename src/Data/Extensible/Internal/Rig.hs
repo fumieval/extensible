@@ -6,8 +6,6 @@
 -- License     :  BSD3
 --
 -- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
--- Stability   :  experimental
--- Portability :  portable
 --
 -- Re-implementation of lens combinators
 ------------------------------------------------------------------------

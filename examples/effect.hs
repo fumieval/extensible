@@ -1,6 +1,5 @@
 {-# LANGUAGE TemplateHaskell, DataKinds, FlexibleContexts #-}
 import Data.Extensible
-import Data.Extensible.Effect.Default ()
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Writer.Strict
 import Control.Monad.Skeleton
@@ -44,6 +43,6 @@ example n = Methods
   <: _Count @!? do writer (n, example n)
   <: nil
 
-takePrintString :: Associate "IO" IO xs => Eff (PrintString ': xs) a -> Eff xs a
+takePrintString :: MonadIO (Eff xs) => Eff (PrintString ': xs) a -> Eff xs a
 takePrintString = peelAction rebindEff0 return
   $ \str cont -> liftIO (putStrLn str) >>= cont

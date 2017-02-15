@@ -12,8 +12,6 @@
 -- License     :  BSD3
 --
 -- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
--- Stability   :  experimental
--- Portability :  non-portable
 --
 -- Reification of constraints using extensible data types.
 -- Also includes orphan instances.

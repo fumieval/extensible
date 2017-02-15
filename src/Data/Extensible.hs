@@ -5,8 +5,6 @@
 -- License     :  BSD3
 --
 -- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
--- Stability   :  experimental
--- Portability :  non-portable
 --
 -- This module just reexports everything.
 -----------------------------------------------------------------------------
