@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Wrapper
--- Copyright   :  (c) Fumiaki Kinoshita 2015
+-- Copyright   :  (c) Fumiaki Kinoshita 2017
 -- License     :  BSD3
 --
 -- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
