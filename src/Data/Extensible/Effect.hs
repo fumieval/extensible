@@ -38,6 +38,7 @@ module Data.Extensible.Effect (
   , runEitherEff
   ) where
 
+import Control.Applicative
 import Control.Monad.Skeleton
 import Control.Monad.Trans.State.Strict
 import Data.Extensible.Field
@@ -179,12 +180,12 @@ runWriterEff = peelEff rebindEff1 (\a w -> return (a, w))
   (\(w', a) k w -> k a $! mappend w w') `flip` mempty
 {-# INLINE runWriterEff #-}
 
-runMaybeEff :: forall k xs a. Eff (k >: Maybe ': xs) a -> Eff xs (Maybe a)
+runMaybeEff :: forall k xs a. Eff (k >: Const () ': xs) a -> Eff xs (Maybe a)
 runMaybeEff = peelEff rebindEff0 (return . Just)
-  (\m k -> maybe (return Nothing) k m)
+  (\_ _ -> return Nothing)
 {-# INLINE runMaybeEff #-}
 
-runEitherEff :: forall k e xs a. Eff (k >: Either e ': xs) a -> Eff xs (Either e a)
+runEitherEff :: forall k e xs a. Eff (k >: Const e ': xs) a -> Eff xs (Either e a)
 runEitherEff = peelEff rebindEff0 (return . Right)
-  (\m k -> either (return . Left) k m)
+  (\(Const e) _ -> return $ Left e)
 {-# INLINE runEitherEff #-}

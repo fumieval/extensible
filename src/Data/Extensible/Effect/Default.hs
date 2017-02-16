@@ -25,6 +25,7 @@ module Data.Extensible.Effect.Default (
   , EitherDef
   , runEitherDef
 ) where
+import Control.Applicative
 import Control.Monad.Skeleton
 import Data.Extensible.Effect
 import Data.Extensible.Internal
@@ -62,14 +63,14 @@ instance (Monoid w, Associate "Writer" ((,) w) xs) => MonadWriter w (Eff xs) whe
         Left _ -> boned $ Instruction i t :>>= go w . k
         Right Refl -> let (w', a) = t in go (mappend w w') (k a)
 
-instance (Associate "Either" (Either e) xs) => MonadError e (Eff xs) where
-  throwError = liftEff (Proxy :: Proxy "Either") . Left
+instance (Associate "Either" (Const e) xs) => MonadError e (Eff xs) where
+  throwError = liftEff (Proxy :: Proxy "Either") . Const
   catchError m0 handler = go m0 where
     go m = case unbone m of
       Return a -> return a
-      Instruction i t :>>= k -> case compareMembership (association :: Membership xs ("Either" ':> Either e)) i of
+      Instruction i t :>>= k -> case compareMembership (association :: Membership xs ("Either" ':> Const e)) i of
         Left _ -> boned $ Instruction i t :>>= go . k
-        Right Refl -> either handler (go . k) t
+        Right Refl -> handler (getConst t)
 
 type ReaderDef r = "Reader" >: (->) r
 
@@ -89,13 +90,13 @@ runWriterDef :: Monoid w => Eff (WriterDef w ': xs) a -> Eff xs (a, w)
 runWriterDef = runWriterEff
 {-# INLINE runWriterDef #-}
 
-type MaybeDef = "Maybe" >: Maybe
+type MaybeDef = "Maybe" >: Const ()
 
 runMaybeDef :: Eff (MaybeDef ': xs) a -> Eff xs (Maybe a)
 runMaybeDef = runMaybeEff
 {-# INLINE runMaybeDef #-}
 
-type EitherDef e = "Either" >: Either e
+type EitherDef e = "Either" >: Const e
 
 runEitherDef :: Eff (EitherDef e ': xs) a -> Eff xs (Either e a)
 runEitherDef = runEitherEff
