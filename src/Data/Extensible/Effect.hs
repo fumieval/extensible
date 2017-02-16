@@ -172,7 +172,7 @@ runReaderEff = peelEff rebindEff1 (\a _ -> return a)
 
 runStateEff :: forall k s xs a. Eff (k >: State s ': xs) a -> s -> Eff xs (a, s)
 runStateEff = peelEff rebindEff1 (\a s -> return (a, s))
-  (\m k s -> let (a, s') = runState m s in k a s')
+  (\m k s -> let (a, s') = runState m s in k a $! s')
 {-# INLINE runStateEff #-}
 
 runWriterEff :: forall k w xs a. Monoid w => Eff (k >: (,) w ': xs) a -> Eff xs (a, w)

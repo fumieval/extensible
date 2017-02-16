@@ -51,17 +51,19 @@ instance (Monoid w, Associate "Writer" ((,) w) xs) => MonadWriter w (Eff xs) whe
   writer (a, w) = liftEff (Proxy :: Proxy "Writer") (w, a)
   tell w = liftEff (Proxy :: Proxy "Writer") (w, ())
   listen = go mempty where
-    go !w m = case unbone m of
+    go w m = case unbone m of
       Return a -> return (a, w)
       Instruction i t :>>= k -> case compareMembership (association :: Membership xs ("Writer" ':> (,) w)) i of
         Left _ -> boned $ Instruction i t :>>= go w . k
-        Right Refl -> let (w', a) = t in go (mappend w w') (k a)
+        Right Refl -> let (w', a) = t
+                          !w'' = mappend w w' in go w'' (k a)
   pass = go mempty where
     go w m = case unbone m of
       Return (a, f) -> writer (a, f w)
       Instruction i t :>>= k -> case compareMembership (association :: Membership xs ("Writer" ':> (,) w)) i of
         Left _ -> boned $ Instruction i t :>>= go w . k
-        Right Refl -> let (w', a) = t in go (mappend w w') (k a)
+        Right Refl -> let (w', a) = t
+                          !w'' = mappend w w' in go w'' (k a)
 
 instance (Associate "Either" (Const e) xs) => MonadError e (Eff xs) where
   throwError = liftEff (Proxy :: Proxy "Either") . Const
