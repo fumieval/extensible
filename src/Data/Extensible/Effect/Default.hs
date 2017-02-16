@@ -72,6 +72,14 @@ instance (Associate "Either" (Const e) xs) => MonadError e (Eff xs) where
         Left _ -> boned $ Instruction i t :>>= go . k
         Right Refl -> handler (getConst t)
 
+instance (Monoid e, Associate "Either" (Const e) xs) => Alternative (Eff xs) where
+  empty = throwError mempty
+  p <|> q = catchError p (const q)
+
+instance (Monoid e, Associate "Either" (Const e) xs) => MonadPlus (Eff xs) where
+  mzero = empty
+  mplus = (<|>)
+
 type ReaderDef r = "Reader" >: (->) r
 
 runReaderDef :: Eff (ReaderDef r ': xs) a -> r -> Eff xs a
