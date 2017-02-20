@@ -37,6 +37,7 @@ module Data.Extensible.Product (
   -- * Generation
   , Generate(..)
   , htabulate
+  , hrepeat
   , Forall(..)
   , htabulateFor
   , hcollect
@@ -147,6 +148,11 @@ htraverseWithIndex :: Applicative f
 htraverseWithIndex f = fmap fromHList . HList.htraverseWithIndex f . toHList
 {-# INLINE htraverseWithIndex #-}
 
+-- | A product filled with the specified value.
+hrepeat :: Generate xs => (forall x. h x) -> h :* xs
+hrepeat x = hfrozen $ newRepeat x
+{-# INLINE hrepeat #-}
+
 -- | Pure version of 'hgenerate'.
 --
 -- @
@@ -179,4 +185,4 @@ haccum :: Foldable f
 haccum = haccumMap id
 
 hpartition :: (Foldable f, Generate xs) => (a -> h :| xs) -> f a -> Comp [] h :* xs
-hpartition f = haccumMap f (\_ x (Comp xs) -> Comp (x:xs)) (htabulate $ const $ Comp [])
+hpartition f = haccumMap f (\_ x (Comp xs) -> Comp (x:xs)) $ hrepeat $ Comp []

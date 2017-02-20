@@ -18,6 +18,7 @@ module Data.Extensible.Struct (
   , set
   , get
   , new
+  , newRepeat
   , newFor
   , newFromHList
   -- * Immutable product
@@ -62,10 +63,18 @@ new :: forall h m xs. (PrimMonad m, Generate xs)
   => (forall x. Membership xs x -> h x)
   -> m (Struct (PrimState m) h xs)
 new k = do
-  let !(I# n) = henumerate (const (+1) :: Membership xs x -> Int -> Int) 0
-  m <- primitive $ \s -> case newSmallArray# n undefined s of
-    (# s', a #) -> (# s', Struct a #)
+  m <- newRepeat undefined
   henumerate (\i cont -> set m i (k i) >> cont) $ return m
+
+-- | Create a 'Struct' full of the specified value.
+newRepeat :: forall h m xs. (PrimMonad m, Generate xs)
+  => (forall x. h x)
+  -> m (Struct (PrimState m) h xs)
+newRepeat x = do
+  let !(I# n) = hcount (Proxy :: Proxy xs)
+  primitive $ \s -> case newSmallArray# n (unsafeCoerce# x) s of
+    (# s', a #) -> (# s', Struct a #)
+{-# INLINE newRepeat #-}
 
 -- | Create a new 'Struct' using the supplied initializer with a context.
 newFor :: forall proxy c h m xs. (PrimMonad m, Forall c xs)
@@ -73,9 +82,7 @@ newFor :: forall proxy c h m xs. (PrimMonad m, Forall c xs)
   -> (forall x. c x => Membership xs x -> h x)
   -> m (Struct (PrimState m) h xs)
 newFor p k = do
-  let !(I# n) = henumerateFor p (Proxy :: Proxy xs) (\_ f m -> f $! m + 1) id 0
-  m <- primitive $ \s -> case newSmallArray# n undefined s of
-    (# s', a #) -> (# s', Struct a #)
+  m <- newRepeat undefined
   henumerateFor p (Proxy :: Proxy xs) (\i cont -> set m i (k i) >> cont) $ return m
 
 -- | Create a new 'Struct' from an 'HList'.

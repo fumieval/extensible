@@ -41,13 +41,13 @@ mapNullable f = Nullable #. fmap f .# getNullable
 -- | The inverse of 'inclusion'.
 coinclusion :: (Include ys xs, Generate ys) => Nullable (Membership xs) :* ys
 coinclusion = S.hfrozen $ do
-  s <- S.new $ const $ Nullable Nothing
+  s <- S.newRepeat $ Nullable Nothing
   hfoldrWithIndex
     (\i m cont -> S.set s m (Nullable $ Just i) >> cont) (return s) inclusion
 
 -- | A product filled with @'Nullable' 'Nothing'@
 vacancy :: Generate xs => Nullable h :* xs
-vacancy = htabulate $ const $ Nullable Nothing
+vacancy = hrepeat $ Nullable Nothing
 
 -- | Extend a product and fill missing fields by 'Null'.
 wrench :: (Generate ys, xs ⊆ ys) => h :* xs -> Nullable h :* ys

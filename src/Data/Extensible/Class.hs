@@ -93,13 +93,22 @@ class Generate (xs :: [k]) where
   -- | Enumerate all possible 'Membership's of @xs@.
   henumerate :: (forall x. Membership xs x -> r -> r) -> r -> r
 
+  -- | Count the number of memberships.
+  hcount :: proxy xs -> Int
+
 instance Generate '[] where
   henumerate _ r = r
   {-# INLINE henumerate #-}
 
+  hcount _ = 0
+  {-# INLINE hcount #-}
+
 instance Generate xs => Generate (x ': xs) where
   henumerate f r = f here $ henumerate (f . navNext) r
   {-# INLINE henumerate #-}
+
+  hcount _ = 1 + hcount (Proxy :: Proxy xs)
+  {-# INLINE hcount #-}
 
 -- | Every element in @xs@ satisfies @c@
 class (ForallF c xs, Generate xs) => Forall (c :: k -> Constraint) (xs :: [k]) where
