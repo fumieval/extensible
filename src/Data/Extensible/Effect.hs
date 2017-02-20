@@ -165,9 +165,9 @@ peelAction pass ret wrap = go where
       (\j -> pass (Instruction j t) (go . k))
 {-# INLINE peelAction #-}
 
-runReaderEff :: forall k r xs a. Eff (k >: (->) r ': xs) a -> r -> Eff xs a
+runReaderEff :: forall k r xs a. Eff (k >: (:~:) r ': xs) a -> r -> Eff xs a
 runReaderEff = peelEff rebindEff1 (\a _ -> return a)
-  (\m k r -> k (m r) r)
+  (\Refl k r -> k r r)
 {-# INLINE runReaderEff #-}
 
 runStateEff :: forall k s xs a. Eff (k >: State s ': xs) a -> s -> Eff xs (a, s)

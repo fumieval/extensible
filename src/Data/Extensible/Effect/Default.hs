@@ -37,10 +37,18 @@ import Control.Monad.Writer.Class
 instance Associate "IO" IO xs => MonadIO (Eff xs) where
   liftIO = liftEff (Proxy :: Proxy "IO")
 
-instance Associate "Reader" ((->) r) xs => MonadReader r (Eff xs) where
-  ask = liftEff (Proxy :: Proxy "Reader") ask
-  local f = hoistEff (Proxy :: Proxy "Reader") (local f)
-  reader f = liftEff (Proxy :: Proxy "Reader") (reader f)
+instance Associate "Reader" ((:~:) r) xs => MonadReader r (Eff xs) where
+  ask = liftEff (Proxy :: Proxy "Reader") Refl
+  local f = go where
+    go m = case unbone m of
+      Return a -> return a
+      Instruction i t :>>= k -> case compareMembership
+        (association :: Membership xs (ReaderDef r)) i of
+          Left _ -> boned $ Instruction i t :>>= go . k
+          Right Refl -> case t of
+            Refl -> boned $ Instruction i t :>>= go . k . f
+  reader f = boned
+    $ Instruction (association :: Membership xs (ReaderDef r)) Refl :>>= return . f
 
 instance Associate "State" (State s) xs => MonadState s (Eff xs) where
   get = liftEff (Proxy :: Proxy "State") get
@@ -82,7 +90,7 @@ instance (Monoid e, Associate "Either" (Const e) xs) => MonadPlus (Eff xs) where
   mzero = empty
   mplus = (<|>)
 
-type ReaderDef r = "Reader" >: (->) r
+type ReaderDef r = "Reader" >: (:~:) r
 
 runReaderDef :: Eff (ReaderDef r ': xs) a -> r -> Eff xs a
 runReaderDef = runReaderEff
