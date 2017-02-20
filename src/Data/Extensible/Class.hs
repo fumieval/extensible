@@ -49,6 +49,7 @@ module Data.Extensible.Class (
   , Elaborated(..)
   ) where
 import Data.Constraint
+import Data.Extensible.HList
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig (Optic')
 import Data.Extensible.Wrapper
@@ -96,12 +97,19 @@ class Generate (xs :: [k]) where
   -- | Count the number of memberships.
   hcount :: proxy xs -> Int
 
+  -- | Enumerate 'Membership's and construct an 'HList'.
+  hgenerateList :: Applicative f
+    => (forall x. Membership xs x -> f (h x)) -> f (HList h xs)
+
 instance Generate '[] where
   henumerate _ r = r
   {-# INLINE henumerate #-}
 
   hcount _ = 0
   {-# INLINE hcount #-}
+
+  hgenerateList _ = pure HNil
+  {-# INLINE hgenerateList #-}
 
 instance Generate xs => Generate (x ': xs) where
   henumerate f r = f here $ henumerate (f . navNext) r
@@ -110,18 +118,31 @@ instance Generate xs => Generate (x ': xs) where
   hcount _ = 1 + hcount (Proxy :: Proxy xs)
   {-# INLINE hcount #-}
 
+  -- | Enumerate 'Membership's and construct an 'HList'.
+  hgenerateList f = HCons <$> f here <*> hgenerateList (f . navNext)
+  {-# INLINE hgenerateList #-}
+
 -- | Every element in @xs@ satisfies @c@
 class (ForallF c xs, Generate xs) => Forall (c :: k -> Constraint) (xs :: [k]) where
   -- | Enumerate all possible 'Membership's of @xs@ with an additional context.
   henumerateFor :: proxy c -> proxy' xs -> (forall x. c x => Membership xs x -> r -> r) -> r -> r
 
+  hgenerateListFor :: Applicative f
+    => proxy c -> (forall x. c x => Membership xs x -> f (h x)) -> f (HList h xs)
+
 instance Forall c '[] where
   henumerateFor _ _ _ r = r
   {-# INLINE henumerateFor #-}
 
+  hgenerateListFor _ _ = pure HNil
+  {-# INLINE hgenerateListFor #-}
+
 instance (c x, Forall c xs) => Forall c (x ': xs) where
   henumerateFor p _ f r = f here $ henumerateFor p (Proxy :: Proxy xs) (f . navNext) r
   {-# INLINE henumerateFor #-}
+
+  hgenerateListFor p f = HCons <$> f here <*> hgenerateListFor p (f . navNext)
+  {-# INLINE hgenerateListFor #-}
 
 type family ForallF (c :: k -> Constraint) (xs :: [k]) :: Constraint where
   ForallF c '[] = ()

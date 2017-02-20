@@ -36,9 +36,11 @@ module Data.Extensible.Product (
   , hindex
   -- * Generation
   , Generate(..)
+  , hgenerate
   , htabulate
   , hrepeat
   , Forall(..)
+  , hgenerateFor
   , htabulateFor
   , hrepeatFor
   , hcollect
@@ -154,7 +156,7 @@ hrepeat :: Generate xs => (forall x. h x) -> h :* xs
 hrepeat x = hfrozen $ newRepeat x
 {-# INLINE hrepeat #-}
 
--- | Pure version of 'hgenerate'.
+-- | Construct a product using a function which takes a 'Membership'.
 --
 -- @
 -- 'hmap' f ('htabulate' g) ≡ 'htabulate' (f . g)
@@ -165,6 +167,12 @@ htabulate :: Generate xs => (forall x. Membership xs x -> h x) -> h :* xs
 htabulate f = hfrozen $ new f
 {-# INLINE htabulate #-}
 
+-- | 'Applicative' version of 'htabulate'.
+hgenerate :: (Generate xs, Applicative f)
+  => (forall x. Membership xs x -> f (h x)) -> f (h :* xs)
+hgenerate f = fmap fromHList $ hgenerateList f
+{-# INLINE hgenerate #-}
+
 -- | Pure version of 'hgenerateFor'.
 htabulateFor :: Forall c xs => proxy c -> (forall x. c x => Membership xs x -> h x) -> h :* xs
 htabulateFor p f = hfrozen $ newFor p f
@@ -174,6 +182,12 @@ htabulateFor p f = hfrozen $ newFor p f
 hrepeatFor :: Forall c xs => proxy c -> (forall x. c x => h x) -> h :* xs
 hrepeatFor p f = htabulateFor p (const f)
 {-# INLINE hrepeatFor #-}
+
+-- | 'Applicative' version of 'htabulateFor'.
+hgenerateFor :: (Forall c xs, Applicative f)
+  => proxy c -> (forall x. c x => Membership xs x -> f (h x)) -> f (h :* xs)
+hgenerateFor p f = fmap fromHList $ hgenerateListFor p f
+{-# INLINE hgenerateFor #-}
 
 -- | Accumulate sums on a product.
 haccumMap :: Foldable f
