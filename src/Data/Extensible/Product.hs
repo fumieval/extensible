@@ -40,6 +40,7 @@ module Data.Extensible.Product (
   , hrepeat
   , Forall(..)
   , htabulateFor
+  , hrepeatFor
   , hcollect
   , hdistribute
   , fromHList
@@ -168,6 +169,11 @@ htabulate f = hfrozen $ new f
 htabulateFor :: Forall c xs => proxy c -> (forall x. c x => Membership xs x -> h x) -> h :* xs
 htabulateFor p f = hfrozen $ newFor p f
 {-# INLINE htabulateFor #-}
+
+-- | A product filled with the specified value.
+hrepeatFor :: Forall c xs => proxy c -> (forall x. c x => h x) -> h :* xs
+hrepeatFor p f = htabulateFor p (const f)
+{-# INLINE hrepeatFor #-}
 
 -- | Accumulate sums on a product.
 haccumMap :: Foldable f

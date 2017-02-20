@@ -27,7 +27,7 @@ import Data.Extensible.Wrapper
 
 -- | Reify a collection of dictionaries, as you wish.
 library :: forall c xs. Forall c xs => Comp Dict c :* xs
-library = htabulateFor (Proxy :: Proxy c) $ const (Comp Dict)
+library = hrepeatFor (Proxy :: Proxy c) $ Comp Dict
 {-# INLINE library #-}
 
 instance WrapForall Show h xs => Show (h :* xs) where
@@ -47,7 +47,7 @@ instance (Eq (h :* xs), WrapForall Ord h xs) => Ord (h :* xs) where
   {-# INLINE compare #-}
 
 instance WrapForall Monoid h xs => Monoid (h :* xs) where
-  mempty = htabulateFor (Proxy :: Proxy (Instance1 Monoid h)) $ const mempty
+  mempty = hrepeatFor (Proxy :: Proxy (Instance1 Monoid h)) mempty
   {-# INLINE mempty #-}
   mappend = hzipWith3 (\(Comp Dict) -> mappend)
     (library :: Comp Dict (Instance1 Monoid h) :* xs)

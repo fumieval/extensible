@@ -48,7 +48,7 @@ type Include ys = Forall (Member ys)
 
 -- | Reify the inclusion of type level sets.
 inclusion :: forall xs ys. Include ys xs => Membership ys :* xs
-inclusion = htabulateFor (Proxy :: Proxy (Member ys)) (const membership)
+inclusion = hrepeatFor (Proxy :: Proxy (Member ys)) membership
 {-# INLINABLE inclusion #-}
 
 -- | /O(m log n)/ Select some elements.
@@ -77,7 +77,7 @@ type IncludeAssoc ys = Forall (Associated ys)
 
 -- | Reify the inclusion of type level sets.
 inclusionAssoc :: forall xs ys. IncludeAssoc ys xs => Membership ys :* xs
-inclusionAssoc = htabulateFor (Proxy :: Proxy (Associated ys)) (const getAssociation)
+inclusionAssoc = hrepeatFor (Proxy :: Proxy (Associated ys)) getAssociation
 {-# INLINABLE inclusionAssoc #-}
 
 -- | /O(m log n)/ Select some elements.
