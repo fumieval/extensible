@@ -56,6 +56,9 @@ module Data.Extensible.Effect (
   , throwEff
   , catchEff
   , runEitherEff
+  , Identity
+  , tickEff
+  , runIterEff
   ) where
 
 import Control.Applicative
@@ -65,6 +68,7 @@ import Data.Extensible.Field
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
 import Data.Extensible.Class
+import Data.Functor.Identity
 import Data.Profunctor.Unsafe -- Trustworthy since 7.8
 
 -- | A unit of named effects.
@@ -313,3 +317,15 @@ runEitherEff :: forall k e xs a. Eff (k >: EitherEff e ': xs) a -> Eff xs (Eithe
 runEitherEff = peelEff rebindEff0 (return . Right)
   (\(Const e) _ -> return $ Left e)
 {-# INLINE runEitherEff #-}
+
+tickEff :: Associate k Identity xs => proxy k -> Eff xs ()
+tickEff k = liftEff k (Identity ())
+{-# INLINE tickEff #-}
+
+runIterEff :: Eff (k >: Identity ': xs) a
+  -> Eff xs (Either a (Eff (k >: Identity ': xs) a))
+runIterEff m = case unbone m of
+  Return a -> return (Left a)
+  Instruction i t :>>= k -> runMembership i
+    (\Refl -> return $ Right $ k $ runIdentity t)
+    (\j -> boned $ Instruction j t :>>= runIterEff . k)
