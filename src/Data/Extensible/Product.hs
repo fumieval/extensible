@@ -203,6 +203,8 @@ haccum :: Foldable f
   => (forall x. Membership xs x -> g x -> h x -> h x)
   -> h :* xs -> f (g :| xs) -> h :* xs
 haccum = haccumMap id
+{-# INLINE haccum #-}
 
 hpartition :: (Foldable f, Generate xs) => (a -> h :| xs) -> f a -> Comp [] h :* xs
 hpartition f = haccumMap f (\_ x (Comp xs) -> Comp (x:xs)) $ hrepeat $ Comp []
+{-# INLINE hpartition #-}
