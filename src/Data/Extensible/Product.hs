@@ -27,8 +27,10 @@ module Data.Extensible.Product (
   , htraverse
   , htraverseWithIndex
   , hsequence
-  , hcollect
-  , hdistribute
+  -- * Update
+  , haccumMap
+  , haccum
+  , hpartition
   -- * Lookup
   , hlookup
   , hindex
@@ -37,11 +39,14 @@ module Data.Extensible.Product (
   , htabulate
   , Forall(..)
   , htabulateFor
+  , hcollect
+  , hdistribute
   , fromHList
   , toHList) where
 
 import Data.Extensible.Internal
 import Data.Extensible.Struct
+import Data.Extensible.Sum
 #if !MIN_VERSION_base(4,8,0)
 import Control.Applicative
 #endif
@@ -157,3 +162,21 @@ htabulate f = hfrozen $ new f
 htabulateFor :: Forall c xs => proxy c -> (forall x. c x => Membership xs x -> h x) -> h :* xs
 htabulateFor p f = hfrozen $ newFor p f
 {-# INLINE htabulateFor #-}
+
+-- | Accumulate sums on a product.
+haccumMap :: Foldable f
+  => (a -> g :| xs)
+  -> (forall x. Membership xs x -> g x -> h x -> h x)
+  -> h :* xs -> f a -> h :* xs
+haccumMap f g p0 xs = hfrozen $ do
+  s <- thaw p0
+  mapM_ (\x -> case f x of EmbedAt i v -> get s i >>= set s i . g i v) xs
+  return s
+
+haccum :: Foldable f
+  => (forall x. Membership xs x -> g x -> h x -> h x)
+  -> h :* xs -> f (g :| xs) -> h :* xs
+haccum = haccumMap id
+
+hpartition :: (Foldable f, Generate xs) => (a -> h :| xs) -> f a -> Comp [] h :* xs
+hpartition f = haccumMap f (\_ x (Comp xs) -> Comp (x:xs)) (htabulate $ const $ Comp [])
