@@ -26,7 +26,6 @@ module Data.Extensible.Effect.Default (
   , runEitherDef
 ) where
 import Control.Applicative
-import Control.Monad.Skeleton
 import Data.Extensible.Effect
 import Data.Extensible.Internal
 import Control.Monad.Except
@@ -37,50 +36,37 @@ import Control.Monad.Writer.Class
 instance Associate "IO" IO xs => MonadIO (Eff xs) where
   liftIO = liftEff (Proxy :: Proxy "IO")
 
+pReader :: Proxy "Reader"
+pReader = Proxy
+
 instance Associate "Reader" ((:~:) r) xs => MonadReader r (Eff xs) where
-  ask = liftEff (Proxy :: Proxy "Reader") Refl
-  local f = go where
-    go m = case unbone m of
-      Return a -> return a
-      Instruction i t :>>= k -> case compareMembership
-        (association :: Membership xs (ReaderDef r)) i of
-          Left _ -> boned $ Instruction i t :>>= go . k
-          Right Refl -> case t of
-            Refl -> boned $ Instruction i t :>>= go . k . f
-  reader f = boned
-    $ Instruction (association :: Membership xs (ReaderDef r)) Refl :>>= return . f
+  ask = askEff pReader
+  local = localEff pReader
+  reader = asksEff pReader
+
+pState :: Proxy "State"
+pState = Proxy
 
 instance Associate "State" (State s) xs => MonadState s (Eff xs) where
-  get = liftEff (Proxy :: Proxy "State") get
-  put = liftEff (Proxy :: Proxy "State") . put
-  state = liftEff (Proxy :: Proxy "State") . state
+  get = getEff pState
+  put = putEff pState
+  state = stateEff pState
+
+pWriter :: Proxy "Writer"
+pWriter = Proxy
 
 instance (Monoid w, Associate "Writer" ((,) w) xs) => MonadWriter w (Eff xs) where
-  writer (a, w) = liftEff (Proxy :: Proxy "Writer") (w, a)
-  tell w = liftEff (Proxy :: Proxy "Writer") (w, ())
-  listen = go mempty where
-    go w m = case unbone m of
-      Return a -> return (a, w)
-      Instruction i t :>>= k -> case compareMembership (association :: Membership xs ("Writer" ':> (,) w)) i of
-        Left _ -> boned $ Instruction i t :>>= go w . k
-        Right Refl -> let (w', a) = t
-                          !w'' = mappend w w' in go w'' (k a)
-  pass = go mempty where
-    go w m = case unbone m of
-      Return (a, f) -> writer (a, f w)
-      Instruction i t :>>= k -> case compareMembership (association :: Membership xs ("Writer" ':> (,) w)) i of
-        Left _ -> boned $ Instruction i t :>>= go w . k
-        Right Refl -> let (w', a) = t
-                          !w'' = mappend w w' in go w'' (k a)
+  writer = writerEff pWriter
+  tell = tellEff pWriter
+  listen = listenEff pWriter
+  pass = passEff pWriter
+
+pEither :: Proxy "Either"
+pEither = Proxy
 
 instance (Associate "Either" (Const e) xs) => MonadError e (Eff xs) where
-  throwError = liftEff (Proxy :: Proxy "Either") . Const
-  catchError m0 handler = go m0 where
-    go m = case unbone m of
-      Return a -> return a
-      Instruction i t :>>= k -> case compareMembership (association :: Membership xs ("Either" ':> Const e)) i of
-        Left _ -> boned $ Instruction i t :>>= go . k
-        Right Refl -> handler (getConst t)
+  throwError = throwEff pEither
+  catchError = catchEff pEither
 
 instance (Monoid e, Associate "Either" (Const e) xs) => Alternative (Eff xs) where
   empty = throwError mempty
@@ -90,7 +76,7 @@ instance (Monoid e, Associate "Either" (Const e) xs) => MonadPlus (Eff xs) where
   mzero = empty
   mplus = (<|>)
 
-type ReaderDef r = "Reader" >: (:~:) r
+type ReaderDef r = "Reader" >: ReaderEff r
 
 runReaderDef :: Eff (ReaderDef r ': xs) a -> r -> Eff xs a
 runReaderDef = runReaderEff
@@ -102,19 +88,19 @@ runStateDef :: Eff (StateDef s ': xs) a -> s -> Eff xs (a, s)
 runStateDef = runStateEff
 {-# INLINE runStateDef #-}
 
-type WriterDef w = "Writer" >: (,) w
+type WriterDef w = "Writer" >: WriterEff w
 
 runWriterDef :: Monoid w => Eff (WriterDef w ': xs) a -> Eff xs (a, w)
 runWriterDef = runWriterEff
 {-# INLINE runWriterDef #-}
 
-type MaybeDef = "Maybe" >: Const ()
+type MaybeDef = "Maybe" >: EitherEff ()
 
 runMaybeDef :: Eff (MaybeDef ': xs) a -> Eff xs (Maybe a)
 runMaybeDef = runMaybeEff
 {-# INLINE runMaybeDef #-}
 
-type EitherDef e = "Either" >: Const e
+type EitherDef e = "Either" >: EitherEff e
 
 runEitherDef :: Eff (EitherDef e ': xs) a -> Eff xs (Either e a)
 runEitherDef = runEitherEff

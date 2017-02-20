@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 -----------------------------------------------------------------------------
@@ -15,6 +16,7 @@ module Data.Extensible.Effect (
   Instruction(..)
   , Eff
   , liftEff
+  , liftsEff
   , hoistEff
   , handleEff
   , peelEff
@@ -30,11 +32,29 @@ module Data.Extensible.Effect (
   , runAction
   , (@!?)
   , peelAction
-  -- * transformers-compatible handlers
+  -- * transformers-compatible actions and handlers
+  , ReaderEff
+  , askEff
+  , asksEff
+  , localEff
   , runReaderEff
+  , State
+  , getEff
+  , getsEff
+  , putEff
+  , stateEff
   , runStateEff
+  , WriterEff
+  , writerEff
+  , tellEff
+  , listenEff
+  , passEff
   , runWriterEff
+  , MaybeEff
   , runMaybeEff
+  , EitherEff
+  , throwEff
+  , catchEff
   , runEitherEff
   ) where
 
@@ -56,8 +76,15 @@ type Eff xs = Skeleton (Instruction xs)
 
 -- | Lift an instruction onto an 'Eff' action.
 liftEff :: forall s t xs a proxy. Associate s t xs => proxy s -> t a -> Eff xs a
-liftEff _ x = bone (Instruction (association :: Membership xs (s ':> t)) x)
+liftEff p x = liftsEff p x id
 {-# INLINE liftEff #-}
+
+-- | Lift an instruction onto an 'Eff' action and apply a function to the result.
+liftsEff :: forall s t xs a r proxy. Associate s t xs
+  => proxy s -> t a -> (a -> r) -> Eff xs r
+liftsEff _ x k = boned
+  $ Instruction (association :: Membership xs (s ':> t)) x :>>= return . k
+{-# INLINE liftsEff #-}
 
 -- | Censor a specific type of effects in an action.
 hoistEff :: forall s t xs a proxy. Associate s t xs => proxy s -> (forall x. t x -> t x) -> Eff xs a -> Eff xs a
@@ -165,27 +192,124 @@ peelAction pass ret wrap = go where
       (\j -> pass (Instruction j t) (go . k))
 {-# INLINE peelAction #-}
 
-runReaderEff :: forall k r xs a. Eff (k >: (:~:) r ': xs) a -> r -> Eff xs a
+type ReaderEff r = (:~:) r
+
+askEff :: forall k r xs proxy. Associate k (ReaderEff r) xs
+  => proxy k -> Eff xs r
+askEff p = liftEff p Refl
+{-# INLINE askEff #-}
+
+asksEff :: forall k r xs a proxy. Associate k (ReaderEff r) xs
+  => proxy k -> (r -> a) -> Eff xs a
+asksEff p = liftsEff p Refl
+{-# INLINE asksEff #-}
+
+localEff :: forall k r xs a proxy. Associate k (ReaderEff r) xs
+  => proxy k -> (r -> r) -> Eff xs a -> Eff xs a
+localEff _ f = go where
+  go m = case unbone m of
+    Return a -> return a
+    Instruction i t :>>= k -> case compareMembership
+      (association :: Membership xs (k >: ReaderEff r)) i of
+        Left _ -> boned $ Instruction i t :>>= go . k
+        Right Refl -> case t of
+          Refl -> boned $ Instruction i t :>>= go . k . f
+{-# INLINE localEff #-}
+
+runReaderEff :: forall k r xs a. Eff (k >: ReaderEff r ': xs) a -> r -> Eff xs a
 runReaderEff = peelEff rebindEff1 (\a _ -> return a)
   (\Refl k r -> k r r)
 {-# INLINE runReaderEff #-}
+
+getEff :: forall k s xs proxy. Associate k (State s) xs
+  => proxy k -> Eff xs s
+getEff k = liftEff k get
+{-# INLINE getEff #-}
+
+getsEff :: forall k s a xs proxy. Associate k (State s) xs
+  => proxy k -> (s -> a) -> Eff xs a
+getsEff k = liftsEff k get
+{-# INLINE getsEff #-}
+
+putEff :: forall k s xs proxy. Associate k (State s) xs
+  => proxy k -> s -> Eff xs ()
+putEff k = liftEff k . put
+{-# INLINE putEff #-}
+
+stateEff :: forall k s xs a proxy. Associate k (State s) xs
+  => proxy k -> (s -> (a, s)) -> Eff xs a
+stateEff k = liftEff k . state
+{-# INLINE stateEff #-}
 
 runStateEff :: forall k s xs a. Eff (k >: State s ': xs) a -> s -> Eff xs (a, s)
 runStateEff = peelEff rebindEff1 (\a s -> return (a, s))
   (\m k s -> let (a, s') = runState m s in k a $! s')
 {-# INLINE runStateEff #-}
 
-runWriterEff :: forall k w xs a. Monoid w => Eff (k >: (,) w ': xs) a -> Eff xs (a, w)
+type WriterEff w = (,) w
+
+writerEff :: forall k w xs a proxy. (Associate k (WriterEff w) xs)
+  => proxy k -> (a, w) -> Eff xs a
+writerEff k (a, w) = liftEff k (w, a)
+{-# INLINE writerEff #-}
+
+tellEff :: forall k w xs proxy. (Associate k (WriterEff w) xs)
+  => proxy k -> w -> Eff xs ()
+tellEff k w = liftEff k (w, ())
+{-# INLINE tellEff #-}
+
+listenEff :: forall k w xs a proxy. (Associate k (WriterEff w) xs, Monoid w)
+  => proxy k -> Eff xs a -> Eff xs (a, w)
+listenEff _ = go mempty where
+  go w m = case unbone m of
+    Return a -> return (a, w)
+    Instruction i t :>>= k -> case compareMembership (association :: Membership xs (k ':> (,) w)) i of
+      Left _ -> boned $ Instruction i t :>>= go w . k
+      Right Refl -> let (w', a) = t
+                        !w'' = mappend w w' in go w'' (k a)
+{-# INLINE listenEff #-}
+
+passEff :: forall k w xs a proxy. (Associate k (WriterEff w) xs, Monoid w)
+  => proxy k -> Eff xs (a, w -> w) -> Eff xs a
+passEff p = go mempty where
+  go w m = case unbone m of
+    Return (a, f) -> writerEff p (a, f w)
+    Instruction i t :>>= k -> case compareMembership (association :: Membership xs (k ':> (,) w)) i of
+      Left _ -> boned $ Instruction i t :>>= go w . k
+      Right Refl -> let (w', a) = t
+                        !w'' = mappend w w' in go w'' (k a)
+{-# INLINE passEff #-}
+
+runWriterEff :: forall k w xs a. Monoid w => Eff (k >: WriterEff w ': xs) a -> Eff xs (a, w)
 runWriterEff = peelEff rebindEff1 (\a w -> return (a, w))
   (\(w', a) k w -> k a $! mappend w w') `flip` mempty
 {-# INLINE runWriterEff #-}
 
-runMaybeEff :: forall k xs a. Eff (k >: Const () ': xs) a -> Eff xs (Maybe a)
+type MaybeEff = Const ()
+
+runMaybeEff :: forall k xs a. Eff (k >: MaybeEff ': xs) a -> Eff xs (Maybe a)
 runMaybeEff = peelEff rebindEff0 (return . Just)
   (\_ _ -> return Nothing)
 {-# INLINE runMaybeEff #-}
 
-runEitherEff :: forall k e xs a. Eff (k >: Const e ': xs) a -> Eff xs (Either e a)
+type EitherEff = Const
+
+throwEff :: forall k e xs a proxy. (Associate k (EitherEff e) xs)
+  => proxy k -> e -> Eff xs a
+throwEff k = liftEff k . Const
+{-# INLINE throwEff #-}
+
+catchEff :: forall k e xs a proxy. (Associate k (EitherEff e) xs)
+  => proxy k -> Eff xs a -> (e -> Eff xs a) -> Eff xs a
+catchEff _ m0 handler = go m0 where
+  go m = case unbone m of
+    Return a -> return a
+    Instruction i t :>>= k -> case compareMembership (association :: Membership xs (k ':> Const e)) i of
+      Left _ -> boned $ Instruction i t :>>= go . k
+      Right Refl -> handler (getConst t)
+{-# INLINE catchEff #-}
+
+runEitherEff :: forall k e xs a. Eff (k >: EitherEff e ': xs) a -> Eff xs (Either e a)
 runEitherEff = peelEff rebindEff0 (return . Right)
   (\(Const e) _ -> return $ Left e)
 {-# INLINE runEitherEff #-}
