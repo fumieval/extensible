@@ -25,6 +25,7 @@ import Data.Typeable (Typeable)
 import Data.Extensible.Wrapper
 import qualified Data.Extensible.Struct as S
 import Data.Profunctor.Unsafe
+import Data.Semigroup
 
 -- | Poly-kinded Maybe
 newtype Nullable h x = Nullable { getNullable :: Maybe (h x) } deriving (Show, Eq, Ord, Typeable)
@@ -32,6 +33,12 @@ newtype Nullable h x = Nullable { getNullable :: Maybe (h x) } deriving (Show, E
 instance Wrapper h => Wrapper (Nullable h) where
   type Repr (Nullable h) x = Maybe (Repr h x)
   _Wrapper = withIso _Wrapper $ \f g -> dimap (fmap f . getNullable) (fmap (Nullable . fmap g))
+
+instance Semigroup (h x) => Monoid (Nullable h x) where
+  mempty = Nullable Nothing
+  mappend (Nullable (Just a)) (Nullable (Just b)) = Nullable (Just (a <> b))
+  mappend a@(Nullable (Just _)) _ = a
+  mappend _ b = b
 
 -- | Apply a function to its content.
 mapNullable :: (g x -> h y) -> Nullable g x -> Nullable h y
