@@ -26,7 +26,7 @@ test = do
 
 -- | Object-like stateful handler
 newtype Methods xs m = Methods
-  { getMethods :: RecordOf (Handler (WriterT (Methods xs m) m)) xs }
+  { getMethods :: RecordOf (Interpreter (WriterT (Methods xs m) m)) xs }
 
 runMethods :: Monad m => Methods xs m -> Eff xs a -> m (a, Methods xs m)
 runMethods rec eff = case handleEff (getMethods rec) eff of

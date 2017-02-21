@@ -19,7 +19,7 @@ module Data.Extensible.Effect (
   , liftsEff
   , hoistEff
   -- * Step-wise handling
-  , Handler(..)
+  , Interpreter(..)
   , handleEff
   -- * Peeling
   , peelEff
@@ -156,12 +156,12 @@ retractEff m = case unbone m of
     (error "Impossible")
 
 -- | Transformation between effects
-newtype Handler f g = Handler { runHandler :: forall a. g a -> f a }
+newtype Interpreter f g = Interpreter { runInterpreter :: forall a. g a -> f a }
 
--- | Process an 'Eff' action using a record of 'Handler's.
-handleEff :: RecordOf (Handler m) xs -> Eff xs a -> MonadView m (Eff xs) a
+-- | Process an 'Eff' action using a record of 'Interpreter's.
+handleEff :: RecordOf (Interpreter m) xs -> Eff xs a -> MonadView m (Eff xs) a
 handleEff hs m = case unbone m of
-  Instruction i t :>>= k -> views (pieceAt i) (runHandler .# getField) hs t :>>= k
+  Instruction i t :>>= k -> views (pieceAt i) (runInterpreter .# getField) hs t :>>= k
   Return a -> Return a
 
 -- | Name-agnostic representation of instructions.
@@ -179,9 +179,9 @@ runAction :: Function xs (f a) -> Action xs a r -> f r
 runAction r AResult = r
 runAction f (AArgument x a) = runAction (f x) a
 
--- | Create a 'Field' of a 'Handler' for an 'Action'.
-(@!?) :: FieldName k -> Function xs (f a) -> Field (Handler f) (k ':> Action xs a)
-_ @!? f = Field $ Handler (runAction f)
+-- | Create a 'Field' of a 'Interpreter' for an 'Action'.
+(@!?) :: FieldName k -> Function xs (f a) -> Field (Interpreter f) (k ':> Action xs a)
+_ @!? f = Field $ Interpreter (runAction f)
 infix 1 @!?
 
 -- | Specialised version of 'peelEff' for 'Action's.
