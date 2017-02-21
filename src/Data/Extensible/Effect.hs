@@ -18,14 +18,16 @@ module Data.Extensible.Effect (
   , liftEff
   , liftsEff
   , hoistEff
+  -- * Step-wise handling
+  , Handler(..)
   , handleEff
+  -- * Peeling
   , peelEff
   , rebindEff0
   , rebindEff1
   , rebindEff2
   , leaveEff
   , retractEff
-  , Handler(..)
   -- * Anonymous actions
   , Action(..)
   , Function
@@ -33,29 +35,36 @@ module Data.Extensible.Effect (
   , (@!?)
   , peelAction
   -- * transformers-compatible actions and handlers
+  -- ** Reader
   , ReaderEff
   , askEff
   , asksEff
   , localEff
   , runReaderEff
+  -- ** State
   , State
   , getEff
   , getsEff
   , putEff
+  , modifyEff
   , stateEff
   , runStateEff
+  -- ** Writer
   , WriterEff
   , writerEff
   , tellEff
   , listenEff
   , passEff
   , runWriterEff
+  -- ** Maybe
   , MaybeEff
   , runMaybeEff
+  -- ** Either
   , EitherEff
   , throwEff
   , catchEff
   , runEitherEff
+  -- ** Iter
   , Identity
   , tickEff
   , runIterEff
@@ -196,18 +205,23 @@ peelAction pass ret wrap = go where
       (\j -> pass (Instruction j t) (go . k))
 {-# INLINE peelAction #-}
 
+-- | The reader monad is characterised by an action with a type equality between
+-- the result type and the enviroment type.
 type ReaderEff r = (:~:) r
 
+-- | Fetch the environment.
 askEff :: forall k r xs proxy. Associate k (ReaderEff r) xs
   => proxy k -> Eff xs r
 askEff p = liftEff p Refl
 {-# INLINE askEff #-}
 
+-- | Pass the environment to a function.
 asksEff :: forall k r xs a proxy. Associate k (ReaderEff r) xs
   => proxy k -> (r -> a) -> Eff xs a
 asksEff p = liftsEff p Refl
 {-# INLINE asksEff #-}
 
+-- | Modify the enviroment locally.
 localEff :: forall k r xs a proxy. Associate k (ReaderEff r) xs
   => proxy k -> (r -> r) -> Eff xs a -> Eff xs a
 localEff _ f = go where
@@ -220,53 +234,64 @@ localEff _ f = go where
           Refl -> boned $ Instruction i t :>>= go . k . f
 {-# INLINE localEff #-}
 
+-- | Run the frontal reader effect.
 runReaderEff :: forall k r xs a. Eff (k >: ReaderEff r ': xs) a -> r -> Eff xs a
 runReaderEff = peelEff rebindEff1 (\a _ -> return a)
   (\Refl k r -> k r r)
 {-# INLINE runReaderEff #-}
 
+-- | Get the current state.
 getEff :: forall k s xs proxy. Associate k (State s) xs
   => proxy k -> Eff xs s
 getEff k = liftEff k get
 {-# INLINE getEff #-}
 
+-- | Pass the current state to a function.
 getsEff :: forall k s a xs proxy. Associate k (State s) xs
   => proxy k -> (s -> a) -> Eff xs a
 getsEff k = liftsEff k get
 {-# INLINE getsEff #-}
 
+-- | Replace the state with a new value.
 putEff :: forall k s xs proxy. Associate k (State s) xs
   => proxy k -> s -> Eff xs ()
 putEff k = liftEff k . put
 {-# INLINE putEff #-}
 
+-- | Modify the state.
 modifyEff :: forall k s xs proxy. Associate k (State s) xs
   => proxy k -> (s -> s) -> Eff xs ()
 modifyEff k f = liftEff k $ state $ \s -> ((), f s)
 {-# INLINE modifyEff #-}
 
+-- | Lift a state modification function.
 stateEff :: forall k s xs a proxy. Associate k (State s) xs
   => proxy k -> (s -> (a, s)) -> Eff xs a
 stateEff k = liftEff k . state
 {-# INLINE stateEff #-}
 
+-- | Run the frontal state effect.
 runStateEff :: forall k s xs a. Eff (k >: State s ': xs) a -> s -> Eff xs (a, s)
 runStateEff = peelEff rebindEff1 (\a s -> return (a, s))
   (\m k s -> let (a, s') = runState m s in k a $! s')
 {-# INLINE runStateEff #-}
 
+-- | Writer
 type WriterEff w = (,) w
 
+-- | Write the second element and return the first element.
 writerEff :: forall k w xs a proxy. (Associate k (WriterEff w) xs)
   => proxy k -> (a, w) -> Eff xs a
 writerEff k (a, w) = liftEff k (w, a)
 {-# INLINE writerEff #-}
 
+-- | Write a value.
 tellEff :: forall k w xs proxy. (Associate k (WriterEff w) xs)
   => proxy k -> w -> Eff xs ()
 tellEff k w = liftEff k (w, ())
 {-# INLINE tellEff #-}
 
+-- | Squash the outputs into one step and return it.
 listenEff :: forall k w xs a proxy. (Associate k (WriterEff w) xs, Monoid w)
   => proxy k -> Eff xs a -> Eff xs (a, w)
 listenEff p = go mempty where
@@ -278,6 +303,7 @@ listenEff p = go mempty where
                         !w'' = mappend w w' in go w'' (k a)
 {-# INLINE listenEff #-}
 
+-- | Modify the output using the function in the result.
 passEff :: forall k w xs a proxy. (Associate k (WriterEff w) xs, Monoid w)
   => proxy k -> Eff xs (a, w -> w) -> Eff xs a
 passEff p = go mempty where
@@ -289,25 +315,31 @@ passEff p = go mempty where
                         !w'' = mappend w w' in go w'' (k a)
 {-# INLINE passEff #-}
 
+-- | Run the frontal writer effect.
 runWriterEff :: forall k w xs a. Monoid w => Eff (k >: WriterEff w ': xs) a -> Eff xs (a, w)
 runWriterEff = peelEff rebindEff1 (\a w -> return (a, w))
   (\(w', a) k w -> k a $! mappend w w') `flip` mempty
 {-# INLINE runWriterEff #-}
 
+-- | An effect with no result
 type MaybeEff = Const ()
 
+-- | Run an effect which may fail in the name of @k@.
 runMaybeEff :: forall k xs a. Eff (k >: MaybeEff ': xs) a -> Eff xs (Maybe a)
 runMaybeEff = peelEff rebindEff0 (return . Just)
   (\_ _ -> return Nothing)
 {-# INLINE runMaybeEff #-}
 
+-- | Throwing an exception
 type EitherEff = Const
 
+-- | Throw an exception @e@, throwing the rest of the computation away.
 throwEff :: forall k e xs a proxy. (Associate k (EitherEff e) xs)
   => proxy k -> e -> Eff xs a
 throwEff k = liftEff k . Const
 {-# INLINE throwEff #-}
 
+-- | Attach a handler for an exception.
 catchEff :: forall k e xs a proxy. (Associate k (EitherEff e) xs)
   => proxy k -> Eff xs a -> (e -> Eff xs a) -> Eff xs a
 catchEff _ m0 handler = go m0 where
@@ -318,15 +350,18 @@ catchEff _ m0 handler = go m0 where
       Right Refl -> handler (getConst t)
 {-# INLINE catchEff #-}
 
+-- | Attach the frontal Either effect.
 runEitherEff :: forall k e xs a. Eff (k >: EitherEff e ': xs) a -> Eff xs (Either e a)
 runEitherEff = peelEff rebindEff0 (return . Right)
   (\(Const e) _ -> return $ Left e)
 {-# INLINE runEitherEff #-}
 
+-- | Put a milestone on a computation.
 tickEff :: Associate k Identity xs => proxy k -> Eff xs ()
 tickEff k = liftEff k (Identity ())
 {-# INLINE tickEff #-}
 
+-- | Run a computation until 'tickEff'.
 runIterEff :: Eff (k >: Identity ': xs) a
   -> Eff xs (Either a (Eff (k >: Identity ': xs) a))
 runIterEff m = case unbone m of
