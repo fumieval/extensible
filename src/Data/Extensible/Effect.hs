@@ -264,9 +264,9 @@ tellEff k w = liftEff k (w, ())
 
 listenEff :: forall k w xs a proxy. (Associate k (WriterEff w) xs, Monoid w)
   => proxy k -> Eff xs a -> Eff xs (a, w)
-listenEff _ = go mempty where
+listenEff p = go mempty where
   go w m = case unbone m of
-    Return a -> return (a, w)
+    Return a -> writerEff p ((a, w), w)
     Instruction i t :>>= k -> case compareMembership (association :: Membership xs (k ':> (,) w)) i of
       Left _ -> boned $ Instruction i t :>>= go w . k
       Right Refl -> let (w', a) = t
