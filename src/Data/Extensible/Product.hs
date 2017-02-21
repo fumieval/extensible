@@ -199,12 +199,14 @@ haccumMap f g p0 xs = hfrozen $ do
   mapM_ (\x -> case f x of EmbedAt i v -> get s i >>= set s i . g i v) xs
   return s
 
+-- | @haccum = 'haccumMap' 'id'@
 haccum :: Foldable f
   => (forall x. Membership xs x -> g x -> h x -> h x)
   -> h :* xs -> f (g :| xs) -> h :* xs
 haccum = haccumMap id
 {-# INLINE haccum #-}
 
+-- | Group sums by type.
 hpartition :: (Foldable f, Generate xs) => (a -> h :| xs) -> f a -> Comp [] h :* xs
 hpartition f = haccumMap f (\_ x (Comp xs) -> Comp (x:xs)) $ hrepeat $ Comp []
 {-# INLINE hpartition #-}
