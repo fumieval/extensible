@@ -240,6 +240,11 @@ putEff :: forall k s xs proxy. Associate k (State s) xs
 putEff k = liftEff k . put
 {-# INLINE putEff #-}
 
+modifyEff :: forall k s xs proxy. Associate k (State s) xs
+  => proxy k -> (s -> s) -> Eff xs ()
+modifyEff k f = liftEff k $ state $ \s -> ((), f s)
+{-# INLINE modifyEff #-}
+
 stateEff :: forall k s xs a proxy. Associate k (State s) xs
   => proxy k -> (s -> (a, s)) -> Eff xs a
 stateEff k = liftEff k . state
