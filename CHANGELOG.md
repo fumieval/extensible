@@ -3,17 +3,18 @@
 * Added `Data.Extensible.Struct`
 * Changed the representation of `(:*)` to use `SmallArray`
 * Removed `(<:*)`. `hhead`, `htail`, `huncons`, `(*++*)`, `htrans`
-* Added `hfoldrWithIndex`
+* New functions: `hfoldrWithIndex`, `hrepeat`, `hrepeatFor`, `haccumMap`,
+  `haccum`, `hpartition`, `henumerate`, `hlength`, `hcount`
 * Added various derived instances for `Field`
 * Added `liftField`, `liftField2`
-* Added a `Wrapper` instance for `Maybe`
+* Added `Wrapper` instances for `Maybe` and `[]`
 * Added `>:` as a synonym for `:>`
 * `Data.Extensible.Effect`
   * Refined the API
   * Added `Data.Extensible.Effect.Default`
 * Added `Data.Extensible.Tangle`
-* `IncludeAssoc ys [k :> v, ..]` now implies `Associate k v ys`, ..
 * Added `record`
+* Type inference aids
 
 0.3.7.1
 ----------------------------------------------------
