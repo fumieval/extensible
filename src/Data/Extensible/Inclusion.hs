@@ -51,12 +51,12 @@ inclusion :: forall xs ys. Include ys xs => Membership ys :* xs
 inclusion = hrepeatFor (Proxy :: Proxy (Member ys)) membership
 {-# INLINABLE inclusion #-}
 
--- | /O(m log n)/ Select some elements.
+-- | /O(n)/ Select some elements.
 shrink :: (xs ⊆ ys) => h :* ys -> h :* xs
 shrink h = hmap (hindex h) inclusion
 {-# INLINE shrink #-}
 
--- | /O(log n)/ Embed to a larger union.
+-- | /O(1)/ Embed to a larger union.
 spread :: (xs ⊆ ys) => h :| xs -> h :| ys
 spread (EmbedAt i h) = views (pieceAt i) EmbedAt inclusion h
 {-# INLINE spread #-}
@@ -80,12 +80,12 @@ inclusionAssoc :: forall xs ys. IncludeAssoc ys xs => Membership ys :* xs
 inclusionAssoc = hrepeatFor (Proxy :: Proxy (Associated ys)) getAssociation
 {-# INLINABLE inclusionAssoc #-}
 
--- | /O(m log n)/ Select some elements.
+-- | /O(n)/ Select some elements.
 shrinkAssoc :: (IncludeAssoc ys xs) => h :* ys -> h :* xs
 shrinkAssoc h = hmap (hindex h) inclusionAssoc
 {-# INLINE shrinkAssoc #-}
 
--- | /O(log n)/ Embed to a larger union.
+-- | /O(1)/ Embed to a larger union.
 spreadAssoc :: (IncludeAssoc ys xs) => h :| xs -> h :| ys
 spreadAssoc (EmbedAt i h) = views (pieceAt i) EmbedAt inclusionAssoc h
 {-# INLINE spreadAssoc #-}

@@ -34,7 +34,7 @@ mapMatch :: (a -> b) -> Match h a x -> Match h b x
 mapMatch f = Match #. (f.) .# runMatch
 {-# INLINE mapMatch #-}
 
--- | /O(log n)/ Perform pattern matching.
+-- | /O(1)/ Perform pattern matching.
 match :: Match h a :* xs -> h :| xs -> a
 match = matchWith runMatch
 {-# INLINE match #-}
