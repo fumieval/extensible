@@ -14,7 +14,6 @@
 -- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
 --
 -- Flexible records and variants
--- Example: <https://github.com/fumieval/extensible/blob/master/examples/records.hs>
 ------------------------------------------------------------------------
 module Data.Extensible.Field (
   Field(..)
@@ -72,6 +71,7 @@ proxyAssocKey _ = Proxy
 type family AssocValue (kv :: Assoc k v) :: v where
   AssocValue (k ':> v) = v
 
+-- | Combined constraint for 'Assoc'
 class (pk (AssocKey kv), pv (AssocValue kv)) => KeyValue pk pv kv where
 
 instance (pk k, pv v) => KeyValue pk pv (k ':> v)
@@ -100,10 +100,12 @@ ND_Field(Enum)
 ND_Field(Bounded)
 ND_Field(NFData)
 
+-- | Lift a function for the content.
 liftField :: (g (AssocValue kv) -> h (AssocValue kv)) -> Field g kv -> Field h kv
 liftField = coerce
 {-# INLINE liftField #-}
 
+-- | Lift a function for the content.
 liftField2 :: (f (AssocValue kv) -> g (AssocValue kv) -> h (AssocValue kv))
     -> Field f kv -> Field g kv -> Field h kv
 liftField2 = coerce
@@ -148,6 +150,7 @@ matchWithField :: (forall x. f x -> g x -> r) -> RecordOf f xs -> VariantOf g xs
 matchWithField h = matchWith (\(Field x) (Field y) -> h x y)
 {-# INLINE matchWithField #-}
 
+-- | Pattern matching on a 'Variant'
 matchField :: RecordOf (Match h r) xs -> VariantOf h xs -> r
 matchField = matchWithField runMatch
 {-# INLINE matchField #-}
@@ -188,6 +191,7 @@ instance (Functor f, Profunctor p) => Extensible f p Inextensible where
 -- This type is used to resolve the name of the field internally.
 type FieldName k = Optic' (LabelPhantom k) Proxy (Inextensible (Field Proxy) '[k ':> ()]) ()
 
+-- | Signifies a field name internally
 type family Labelling s p :: Constraint where
   Labelling s (LabelPhantom t) = s ~ t
   Labelling s p = ()
@@ -206,7 +210,7 @@ infix 1 @=
 
 -- | Lifted ('@=')
 (<@=>) :: (Functor f, Wrapper h) => FieldName k -> f (Repr h v) -> Comp f (Field h) (k ':> v)
-(<@=>) k = Comp #. fmap (k @=)
+(<@=>) k = comp (k @=)
 {-# INLINE (<@=>) #-}
 infix 1 <@=>
 

@@ -164,7 +164,7 @@ handleEff hs m = case unbone m of
   Instruction i t :>>= k -> views (pieceAt i) (runInterpreter .# getField) hs t :>>= k
   Return a -> Return a
 
--- | Name-agnostic representation of instructions.
+-- | Anonymous representation of instructions.
 data Action (args :: [*]) a r where
   AResult :: Action '[] a a
   AArgument :: x -> Action xs a r -> Action (x ': xs) a r

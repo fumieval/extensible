@@ -57,13 +57,14 @@ instance Wrapper [] where
 -- | Poly-kinded composition
 newtype Comp (f :: j -> *) (g :: i -> j) (a :: i) = Comp { getComp :: f (g a) } deriving (Show, Eq, Ord, Typeable)
 
+-- | Wrap a result of 'fmap'
 comp :: Functor f => (a -> g b) -> f a -> Comp f g b
 comp f = Comp #. fmap f
 {-# INLINE comp #-}
 
 instance (Functor f, Wrapper g) => Wrapper (Comp f g) where
   type Repr (Comp f g) x = f (Repr g x)
-  _Wrapper = withIso _Wrapper $ \f g -> dimap (fmap f .# getComp) (fmap (Comp #. fmap g))
+  _Wrapper = withIso _Wrapper $ \f g -> dimap (fmap f .# getComp) (fmap (comp g))
   {-# INLINE _Wrapper #-}
 
 -- | Poly-kinded Const

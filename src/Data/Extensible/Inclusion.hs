@@ -66,6 +66,7 @@ spread (EmbedAt i h) = views (pieceAt i) EmbedAt inclusion h
 type family Associated' (xs :: [Assoc k v]) (t :: Assoc k v) :: Constraint where
   Associated' xs (k ':> v) = Associate k v xs
 
+-- | @'Associated' xs (k ':> v)@ is equivalent to @'Associate' k v xs@
 class Associated' xs t => Associated xs t where
   getAssociation :: Membership xs t
 

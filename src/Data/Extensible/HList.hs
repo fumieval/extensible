@@ -1,5 +1,15 @@
 {-# LANGUAGE ScopedTypeVariables, BangPatterns #-}
 {-# LANGUAGE Trustworthy #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Extensible.HList
+-- Copyright   :  (c) Fumiaki Kinoshita 2017
+-- License     :  BSD3
+--
+-- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
+--
+-- Heterogeneous list
+------------------------------------------------------------------------
 module Data.Extensible.HList where
 
 import Data.Extensible.Internal
