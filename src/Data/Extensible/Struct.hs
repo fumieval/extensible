@@ -158,6 +158,11 @@ newFrom hp@(HProduct ar) k = do
           set st m $ k m (hlookup m hp)
           go (i + 1)
   go 0
+{-# NOINLINE newFrom #-}
+
+{-# RULES "newFrom/newFrom" forall p (f :: forall x. Membership xs x -> f x -> g x)
+ (g :: forall x. Membership xs x -> g x -> h x)
+  . newFrom (hfrozen (newFrom p f)) g = newFrom p (\i x -> g i (f i x)) #-}
 
 -- | Get an element in a product.
 hlookup :: Membership xs x -> h :* xs -> h x
@@ -168,7 +173,7 @@ hlookup (getMemberId -> I# i) (HProduct ar) = case indexSmallArray# ar i of
 -- | Create a product from an 'ST' action which returns a 'Struct'.
 hfrozen :: (forall s. ST s (Struct s h xs)) -> h :* xs
 hfrozen m = runST $ m >>= unsafeFreeze
-{-# INLINE hfrozen #-}
+{-# NOINLINE[0] hfrozen #-}
 
 instance (Corepresentable p, Comonad (Corep p), Functor f) => Extensible f p (:*) where
   -- | A lens for a value in a known position.
