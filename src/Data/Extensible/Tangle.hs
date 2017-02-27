@@ -46,19 +46,29 @@ hitchAt k = TangleT $ do
       modify $ over (pieceAt k) $ const $ Nullable $ Just a
       return a
 
--- | Run a 'TangleT' action.
+-- | Run a 'TangleT' action and return the result and the calculated values.
 runTangleT :: Monad m
   => Comp (TangleT h xs m) h :* xs -- ^ tangle matrix
   -> Nullable h :* xs -- ^ pre-calculated values
   -> TangleT h xs m a
-  -> m a
-runTangleT tangles rec0 (TangleT m) = fst <$> evalRWST m tangles rec0
+  -> m (a, Nullable h :* xs)
+runTangleT tangles rec0 (TangleT m) = (\(a, s, _) -> (a, s))
+  <$> runRWST m tangles rec0
 {-# INLINE runTangleT #-}
+
+-- | Run a 'TangleT' action.
+evalTangleT :: Monad m
+  => Comp (TangleT h xs m) h :* xs -- ^ tangle matrix
+  -> Nullable h :* xs -- ^ pre-calculated values
+  -> TangleT h xs m a
+  -> m a
+evalTangleT tangles rec0 (TangleT m) = fst <$> evalRWST m tangles rec0
+{-# INLINE evalTangleT #-}
 
 -- | Run tangles and collect all the results as a 'Record'.
 runTangles :: Monad m
   => Comp (TangleT h xs m) h :* xs -- ^ tangle matrix
   -> Nullable h :* xs -- ^ pre-calculated values
   -> m (h :* xs)
-runTangles ts vs = runTangleT ts vs $ htraverseWithIndex (const . hitchAt) vs
+runTangles ts vs = evalTangleT ts vs $ htraverseWithIndex (const . hitchAt) vs
 {-# INLINE runTangles #-}
