@@ -350,7 +350,7 @@ catchEff _ m0 handler = go m0 where
       Right Refl -> handler (getConst t)
 {-# INLINE catchEff #-}
 
--- | Attach the frontal Either effect.
+-- | Run the frontal Either effect.
 runEitherEff :: forall k e xs a. Eff (k >: EitherEff e ': xs) a -> Eff xs (Either e a)
 runEitherEff = peelEff rebindEff0 (return . Right)
   (\(Const e) _ -> return $ Left e)
