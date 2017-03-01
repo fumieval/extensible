@@ -88,19 +88,19 @@ data Instruction (xs :: [Assoc k (* -> *)]) a where
 type Eff xs = Skeleton (Instruction xs)
 
 -- | Lift an instruction onto an 'Eff' action.
-liftEff :: forall s t xs a proxy. Associate s t xs => proxy s -> t a -> Eff xs a
+liftEff :: forall s t xs a. Associate s t xs => Proxy s -> t a -> Eff xs a
 liftEff p x = liftsEff p x id
 {-# INLINE liftEff #-}
 
 -- | Lift an instruction onto an 'Eff' action and apply a function to the result.
-liftsEff :: forall s t xs a r proxy. Associate s t xs
-  => proxy s -> t a -> (a -> r) -> Eff xs r
+liftsEff :: forall s t xs a r. Associate s t xs
+  => Proxy s -> t a -> (a -> r) -> Eff xs r
 liftsEff _ x k = boned
   $ Instruction (association :: Membership xs (s ':> t)) x :>>= return . k
 {-# INLINE liftsEff #-}
 
 -- | Censor a specific type of effects in an action.
-hoistEff :: forall s t xs a proxy. Associate s t xs => proxy s -> (forall x. t x -> t x) -> Eff xs a -> Eff xs a
+hoistEff :: forall s t xs a. Associate s t xs => Proxy s -> (forall x. t x -> t x) -> Eff xs a -> Eff xs a
 hoistEff _ f = hoistSkeleton $ \(Instruction i t) -> case compareMembership (association :: Membership xs (s ':> t)) i of
   Right Refl -> Instruction i (f t)
   _ -> Instruction i t
@@ -210,20 +210,20 @@ peelAction pass ret wrap = go where
 type ReaderEff r = (:~:) r
 
 -- | Fetch the environment.
-askEff :: forall k r xs proxy. Associate k (ReaderEff r) xs
-  => proxy k -> Eff xs r
+askEff :: forall k r xs. Associate k (ReaderEff r) xs
+  => Proxy k -> Eff xs r
 askEff p = liftEff p Refl
 {-# INLINE askEff #-}
 
 -- | Pass the environment to a function.
-asksEff :: forall k r xs a proxy. Associate k (ReaderEff r) xs
-  => proxy k -> (r -> a) -> Eff xs a
+asksEff :: forall k r xs a. Associate k (ReaderEff r) xs
+  => Proxy k -> (r -> a) -> Eff xs a
 asksEff p = liftsEff p Refl
 {-# INLINE asksEff #-}
 
 -- | Modify the enviroment locally.
-localEff :: forall k r xs a proxy. Associate k (ReaderEff r) xs
-  => proxy k -> (r -> r) -> Eff xs a -> Eff xs a
+localEff :: forall k r xs a. Associate k (ReaderEff r) xs
+  => Proxy k -> (r -> r) -> Eff xs a -> Eff xs a
 localEff _ f = go where
   go m = case unbone m of
     Return a -> return a
@@ -241,32 +241,32 @@ runReaderEff = peelEff rebindEff1 (\a _ -> return a)
 {-# INLINE runReaderEff #-}
 
 -- | Get the current state.
-getEff :: forall k s xs proxy. Associate k (State s) xs
-  => proxy k -> Eff xs s
+getEff :: forall k s xs. Associate k (State s) xs
+  => Proxy k -> Eff xs s
 getEff k = liftEff k get
 {-# INLINE getEff #-}
 
 -- | Pass the current state to a function.
-getsEff :: forall k s a xs proxy. Associate k (State s) xs
-  => proxy k -> (s -> a) -> Eff xs a
+getsEff :: forall k s a xs. Associate k (State s) xs
+  => Proxy k -> (s -> a) -> Eff xs a
 getsEff k = liftsEff k get
 {-# INLINE getsEff #-}
 
 -- | Replace the state with a new value.
-putEff :: forall k s xs proxy. Associate k (State s) xs
-  => proxy k -> s -> Eff xs ()
+putEff :: forall k s xs. Associate k (State s) xs
+  => Proxy k -> s -> Eff xs ()
 putEff k = liftEff k . put
 {-# INLINE putEff #-}
 
 -- | Modify the state.
-modifyEff :: forall k s xs proxy. Associate k (State s) xs
-  => proxy k -> (s -> s) -> Eff xs ()
+modifyEff :: forall k s xs. Associate k (State s) xs
+  => Proxy k -> (s -> s) -> Eff xs ()
 modifyEff k f = liftEff k $ state $ \s -> ((), f s)
 {-# INLINE modifyEff #-}
 
 -- | Lift a state modification function.
-stateEff :: forall k s xs a proxy. Associate k (State s) xs
-  => proxy k -> (s -> (a, s)) -> Eff xs a
+stateEff :: forall k s xs a. Associate k (State s) xs
+  => Proxy k -> (s -> (a, s)) -> Eff xs a
 stateEff k = liftEff k . state
 {-# INLINE stateEff #-}
 
@@ -280,20 +280,20 @@ runStateEff = peelEff rebindEff1 (\a s -> return (a, s))
 type WriterEff w = (,) w
 
 -- | Write the second element and return the first element.
-writerEff :: forall k w xs a proxy. (Associate k (WriterEff w) xs)
-  => proxy k -> (a, w) -> Eff xs a
+writerEff :: forall k w xs a. (Associate k (WriterEff w) xs)
+  => Proxy k -> (a, w) -> Eff xs a
 writerEff k (a, w) = liftEff k (w, a)
 {-# INLINE writerEff #-}
 
 -- | Write a value.
-tellEff :: forall k w xs proxy. (Associate k (WriterEff w) xs)
-  => proxy k -> w -> Eff xs ()
+tellEff :: forall k w xs. (Associate k (WriterEff w) xs)
+  => Proxy k -> w -> Eff xs ()
 tellEff k w = liftEff k (w, ())
 {-# INLINE tellEff #-}
 
 -- | Squash the outputs into one step and return it.
-listenEff :: forall k w xs a proxy. (Associate k (WriterEff w) xs, Monoid w)
-  => proxy k -> Eff xs a -> Eff xs (a, w)
+listenEff :: forall k w xs a. (Associate k (WriterEff w) xs, Monoid w)
+  => Proxy k -> Eff xs a -> Eff xs (a, w)
 listenEff p = go mempty where
   go w m = case unbone m of
     Return a -> writerEff p ((a, w), w)
@@ -304,8 +304,8 @@ listenEff p = go mempty where
 {-# INLINE listenEff #-}
 
 -- | Modify the output using the function in the result.
-passEff :: forall k w xs a proxy. (Associate k (WriterEff w) xs, Monoid w)
-  => proxy k -> Eff xs (a, w -> w) -> Eff xs a
+passEff :: forall k w xs a. (Associate k (WriterEff w) xs, Monoid w)
+  => Proxy k -> Eff xs (a, w -> w) -> Eff xs a
 passEff p = go mempty where
   go w m = case unbone m of
     Return (a, f) -> writerEff p (a, f w)
@@ -334,14 +334,13 @@ runMaybeEff = peelEff rebindEff0 (return . Just)
 type EitherEff = Const
 
 -- | Throw an exception @e@, throwing the rest of the computation away.
-throwEff :: forall k e xs a proxy. (Associate k (EitherEff e) xs)
-  => proxy k -> e -> Eff xs a
+throwEff :: Associate k (EitherEff e) xs => Proxy k -> e -> Eff xs a
 throwEff k = liftEff k . Const
 {-# INLINE throwEff #-}
 
 -- | Attach a handler for an exception.
-catchEff :: forall k e xs a proxy. (Associate k (EitherEff e) xs)
-  => proxy k -> Eff xs a -> (e -> Eff xs a) -> Eff xs a
+catchEff :: forall k e xs a. (Associate k (EitherEff e) xs)
+  => Proxy k -> Eff xs a -> (e -> Eff xs a) -> Eff xs a
 catchEff _ m0 handler = go m0 where
   go m = case unbone m of
     Return a -> return a
@@ -357,7 +356,7 @@ runEitherEff = peelEff rebindEff0 (return . Right)
 {-# INLINE runEitherEff #-}
 
 -- | Put a milestone on a computation.
-tickEff :: Associate k Identity xs => proxy k -> Eff xs ()
+tickEff :: Associate k Identity xs => Proxy k -> Eff xs ()
 tickEff k = liftEff k (Identity ())
 {-# INLINE tickEff #-}
 
