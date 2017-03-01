@@ -35,6 +35,7 @@ module Data.Extensible.Struct (
 import GHC.Prim
 import Control.Monad.Primitive
 import Control.Monad.ST
+import Data.Constraint
 import Data.Extensible.Class
 import Data.Extensible.Internal
 import Control.Comonad
@@ -62,9 +63,17 @@ get (Struct m) (getMemberId -> I# i) = primitive $ unsafeCoerce# readSmallArray#
 new :: forall h m xs. (PrimMonad m, Generate xs)
   => (forall x. Membership xs x -> h x)
   -> m (Struct (PrimState m) h xs)
-new k = do
+new = newDict Dict
+{-# INLINE new #-}
+
+newDict :: PrimMonad m
+  => Dict (Generate xs)
+  -> (forall x. Membership xs x -> h x)
+  -> m (Struct (PrimState m) h xs)
+newDict Dict k = do
   m <- newRepeat undefined
   henumerate (\i cont -> set m i (k i) >> cont) $ return m
+{-# NOINLINE[0] newDict #-}
 
 -- | Create a 'Struct' full of the specified value.
 newRepeat :: forall h m xs. (PrimMonad m, Generate xs)
@@ -81,9 +90,18 @@ newFor :: forall proxy c h m xs. (PrimMonad m, Forall c xs)
   => proxy c
   -> (forall x. c x => Membership xs x -> h x)
   -> m (Struct (PrimState m) h xs)
-newFor p k = do
+newFor = newForDict Dict
+{-# INLINE newFor #-}
+
+newForDict :: forall proxy c h m xs. (PrimMonad m)
+  => Dict (Forall c xs)
+  -> proxy c
+  -> (forall x. c x => Membership xs x -> h x)
+  -> m (Struct (PrimState m) h xs)
+newForDict Dict p k = do
   m <- newRepeat undefined
   henumerateFor p (Proxy :: Proxy xs) (\i cont -> set m i (k i) >> cont) $ return m
+{-# NOINLINE[0] newForDict #-}
 
 -- | Create a new 'Struct' from an 'HList'.
 newFromHList :: forall h m xs. PrimMonad m => L.HList h xs -> m (Struct (PrimState m) h xs)
@@ -163,6 +181,14 @@ newFrom hp@(HProduct ar) k = do
 {-# RULES "newFrom/newFrom" forall p (f :: forall x. Membership xs x -> f x -> g x)
  (g :: forall x. Membership xs x -> g x -> h x)
   . newFrom (hfrozen (newFrom p f)) g = newFrom p (\i x -> g i (f i x)) #-}
+
+{-# RULES "newFrom/newDict" forall d (f :: forall x. Membership xs x -> g x)
+ (g :: forall x. Membership xs x -> g x -> h x)
+  . newFrom (hfrozen (newDict d f)) g = newDict d (\i -> g i (f i)) #-}
+
+{-# RULES "newFrom/newForDict" forall d p (f :: forall x. Membership xs x -> g x)
+ (g :: forall x. Membership xs x -> g x -> h x)
+  . newFrom (hfrozen (newForDict d p f)) g = newForDict d p (\i -> g i (f i)) #-}
 
 -- | Get an element in a product.
 hlookup :: Membership xs x -> h :* xs -> h x
