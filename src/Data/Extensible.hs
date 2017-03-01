@@ -14,6 +14,7 @@ module Data.Extensible (
   , module Data.Extensible.Effect
   , module Data.Extensible.Field
   , module Data.Extensible.Inclusion
+  , module Data.Extensible.Label
   , module Data.Extensible.Match
   , module Data.Extensible.Nullable
   , module Data.Extensible.Plain
@@ -30,6 +31,7 @@ import Data.Extensible.Dictionary
 import Data.Extensible.Field
 import Data.Extensible.Effect
 import Data.Extensible.Inclusion
+import Data.Extensible.Label
 import Data.Extensible.Match
 import Data.Extensible.Nullable
 import Data.Extensible.Plain

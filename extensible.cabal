@@ -38,6 +38,7 @@ library
     Data.Extensible.Inclusion
     Data.Extensible.Internal
     Data.Extensible.Internal.Rig
+    Data.Extensible.Label
     Data.Extensible.Match
     Data.Extensible.Nullable
     Data.Extensible.Plain
