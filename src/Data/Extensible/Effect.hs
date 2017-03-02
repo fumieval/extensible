@@ -23,6 +23,7 @@ module Data.Extensible.Effect (
   , handleEff
   -- * Peeling
   , peelEff
+  , Rebinder
   , rebindEff0
   , rebindEff1
   , rebindEff2
@@ -114,7 +115,7 @@ hoistEff _ f = hoistSkeleton $ \(Instruction i t) -> case compareMembership (ass
 -- @
 --
 peelEff :: forall k t xs a r
-  . (forall x. Instruction xs x -> (x -> r) -> r) -- ^ Re-bind an unrelated action
+  . Rebinder xs r -- ^ Re-bind an unrelated action
   -> (a -> r) -- ^ return the result
   -> (forall x. t x -> (x -> r) -> r) -- ^ Handle the foremost type of an action
   -> Eff (k >: t ': xs) a -> r
@@ -126,20 +127,23 @@ peelEff pass ret wrap = go where
       (\j -> pass (Instruction j t) (go . k))
 {-# INLINE peelEff #-}
 
+-- | A function to bind an 'Instruction' in 'peelEff'.
+type Rebinder xs r = forall x. Instruction xs x -> (x -> r) -> r
+
 -- | A common value for the second argument of 'peelEff'. Binds an instruction
 -- directly.
-rebindEff0 :: Instruction xs x -> (x -> Eff xs a) -> Eff xs a
+rebindEff0 :: Rebinder xs (Eff xs r)
 rebindEff0 i k = boned (i :>>= k)
 
 -- | A pre-defined value for the second argument of 'peelEff'.
 -- Preserves the argument of the continuation.
-rebindEff1 :: Instruction xs x -> (x -> r -> Eff xs a) -> r -> Eff xs a
-rebindEff1 i k r = boned (i :>>= flip k r)
+rebindEff1 :: Rebinder xs (a -> Eff xs r)
+rebindEff1 i k a = boned (i :>>= flip k a)
 
 -- | A pre-defined value for the second argument of 'peelEff'.
 -- Preserves two arguments of the continuation.
-rebindEff2 :: Instruction xs x -> (x -> r -> s -> Eff xs a) -> r -> s -> Eff xs a
-rebindEff2 i k r s = boned (i :>>= \x -> k x r s)
+rebindEff2 :: Rebinder xs (a -> b -> Eff xs r)
+rebindEff2 i k a b = boned (i :>>= \x -> k x a b)
 
 -- | Reveal the final result of 'Eff'.
 leaveEff :: Eff '[] a -> a
