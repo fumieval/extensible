@@ -120,7 +120,7 @@ peelEff :: forall k t xs a r
   -> (forall x. t x -> (x -> r) -> r) -- ^ Handle the foremost type of an action
   -> Eff (k >: t ': xs) a -> r
 peelEff pass ret wrap = go where
-  go m = case unbone m of
+  go m = case debone m of
     Return a -> ret a
     Instruction i t :>>= k -> runMembership i
       (\Refl -> wrap t (go . k))
@@ -147,13 +147,13 @@ rebindEff2 i k a b = boned (i :>>= \x -> k x a b)
 
 -- | Reveal the final result of 'Eff'.
 leaveEff :: Eff '[] a -> a
-leaveEff m = case unbone m of
+leaveEff m = case debone m of
   Return a -> a
   _ -> error "Impossible"
 
 -- | Tear down an action using the 'Monad' instance of the instruction.
 retractEff :: forall k m a. Monad m => Eff '[k >: m] a -> m a
-retractEff m = case unbone m of
+retractEff m = case debone m of
   Return a -> return a
   Instruction i t :>>= k -> runMembership i
     (\Refl -> t >>= retractEff . k)
@@ -164,7 +164,7 @@ newtype Interpreter f g = Interpreter { runInterpreter :: forall a. g a -> f a }
 
 -- | Process an 'Eff' action using a record of 'Interpreter's.
 handleEff :: RecordOf (Interpreter m) xs -> Eff xs a -> MonadView m (Eff xs) a
-handleEff hs m = case unbone m of
+handleEff hs m = case debone m of
   Instruction i t :>>= k -> views (pieceAt i) (runInterpreter .# getField) hs t :>>= k
   Return a -> Return a
 
@@ -197,7 +197,7 @@ peelAction :: forall k ps q xs a r
   -> Function ps ((q -> r) -> r) -- ^ Handle the foremost action
   -> Eff (k >: Action ps q ': xs) a -> r
 peelAction pass ret wrap = go where
-  go m = case unbone m of
+  go m = case debone m of
     Return a -> ret a
     Instruction i t :>>= k -> runMembership i
       (\Refl -> case t of
@@ -229,7 +229,7 @@ asksEff p = liftsEff p Refl
 localEff :: forall k r xs a. Associate k (ReaderEff r) xs
   => Proxy k -> (r -> r) -> Eff xs a -> Eff xs a
 localEff _ f = go where
-  go m = case unbone m of
+  go m = case debone m of
     Return a -> return a
     Instruction i t :>>= k -> case compareMembership
       (association :: Membership xs (k >: ReaderEff r)) i of
@@ -298,7 +298,7 @@ tellEff k w = liftEff k (w, ())
 listenEff :: forall k w xs a. (Associate k (WriterEff w) xs, Monoid w)
   => Proxy k -> Eff xs a -> Eff xs (a, w)
 listenEff p = go mempty where
-  go w m = case unbone m of
+  go w m = case debone m of
     Return a -> writerEff p ((a, w), w)
     Instruction i t :>>= k -> case compareMembership (association :: Membership xs (k ':> (,) w)) i of
       Left _ -> boned $ Instruction i t :>>= go w . k
@@ -310,7 +310,7 @@ listenEff p = go mempty where
 passEff :: forall k w xs a. (Associate k (WriterEff w) xs, Monoid w)
   => Proxy k -> Eff xs (a, w -> w) -> Eff xs a
 passEff p = go mempty where
-  go w m = case unbone m of
+  go w m = case debone m of
     Return (a, f) -> writerEff p (a, f w)
     Instruction i t :>>= k -> case compareMembership (association :: Membership xs (k ':> (,) w)) i of
       Left _ -> boned $ Instruction i t :>>= go w . k
@@ -345,7 +345,7 @@ throwEff k = liftEff k . Const
 catchEff :: forall k e xs a. (Associate k (EitherEff e) xs)
   => Proxy k -> Eff xs a -> (e -> Eff xs a) -> Eff xs a
 catchEff _ m0 handler = go m0 where
-  go m = case unbone m of
+  go m = case debone m of
     Return a -> return a
     Instruction i t :>>= k -> case compareMembership (association :: Membership xs (k ':> Const e)) i of
       Left _ -> boned $ Instruction i t :>>= go . k
@@ -366,7 +366,7 @@ tickEff k = liftEff k (Identity ())
 -- | Run a computation until 'tickEff'.
 runIterEff :: Eff (k >: Identity ': xs) a
   -> Eff xs (Either a (Eff (k >: Identity ': xs) a))
-runIterEff m = case unbone m of
+runIterEff m = case debone m of
   Return a -> return (Left a)
   Instruction i t :>>= k -> runMembership i
     (\Refl -> return $ Right $ k $ runIdentity t)
