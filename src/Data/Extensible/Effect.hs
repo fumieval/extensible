@@ -240,8 +240,7 @@ localEff _ f = go where
 
 -- | Run the frontal reader effect.
 runReaderEff :: forall k r xs a. Eff (k >: ReaderEff r ': xs) a -> r -> Eff xs a
-runReaderEff = peelEff rebindEff1 (\a _ -> return a)
-  (\Refl k r -> k r r)
+runReaderEff m r = peelEff rebindEff0 return (\Refl k -> k r) m
 {-# INLINE runReaderEff #-}
 
 -- | Get the current state.
