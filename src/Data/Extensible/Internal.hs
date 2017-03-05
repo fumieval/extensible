@@ -116,6 +116,7 @@ class Associate k v xs | k xs -> v where
 instance (Elaborate k (FindAssoc k xs) ~ 'Expecting (n ':> v), KnownPosition n) => Associate k v xs where
   association = Membership (theInt (Proxy :: Proxy n))
 
+-- | A readable type search result
 data Elaborated k v = Expecting v | Missing k | Duplicate k
 
 type family Elaborate (key :: k) (xs :: [v]) :: Elaborated k v where
@@ -154,6 +155,7 @@ compareMembership (Membership m) (Membership n) = case compare m n of
   x -> Left x
 {-# INLINE compareMembership #-}
 
+-- | There is no 'Membership' of an empty list.
 impossibleMembership :: Membership '[] x -> r
 impossibleMembership _ = error "Impossible"
 

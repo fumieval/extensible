@@ -39,14 +39,14 @@ module Data.Extensible.Product (
   , hgenerate
   , htabulate
   , hrepeat
-  , Forall(..)
-  , hgenerateFor
-  , htabulateFor
-  , hrepeatFor
   , hcollect
   , hdistribute
   , fromHList
-  , toHList) where
+  , toHList
+  , Forall(..)
+  , hgenerateFor
+  , htabulateFor
+  , hrepeatFor) where
 
 import Data.Extensible.Internal
 import Data.Extensible.Struct

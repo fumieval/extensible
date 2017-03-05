@@ -209,9 +209,9 @@ peelAction pass ret wrap = go where
       (\j -> pass (Instruction j t) (go . k))
 {-# INLINE peelAction #-}
 
--- | The reader monad is characterised by an action with a type equality between
--- the result type and the enviroment type.
-type ReaderEff r = (:~:) r
+-- | The reader monad is characterised by a type equality between the result
+-- type and the enviroment type.
+type ReaderEff = (:~:)
 
 -- | Fetch the environment.
 askEff :: forall k r xs. Associate k (ReaderEff r) xs
@@ -279,7 +279,7 @@ runStateEff = peelEff rebindEff1 (\a s -> return (a, s))
   (\m k s -> let (a, s') = runState m s in k a $! s')
 {-# INLINE runStateEff #-}
 
--- | Writer
+-- | @(,)@ already is a writer monad.
 type WriterEff w = (,) w
 
 -- | Write the second element and return the first element.
