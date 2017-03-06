@@ -17,6 +17,7 @@
 -- Also includes orphan instances.
 -----------------------------------------------------------------------
 module Data.Extensible.Dictionary (library, WrapForall, Instance1) where
+import Control.DeepSeq
 import Data.Extensible.Class
 import Data.Extensible.Product
 import Data.Extensible.Sum
@@ -53,6 +54,11 @@ instance WrapForall Monoid h xs => Monoid (h :* xs) where
     (library :: Comp Dict (Instance1 Monoid h) :* xs)
   {-# INLINE mappend #-}
 
+instance WrapForall NFData h xs => NFData (h :* xs) where
+  rnf xs = henumerateFor (Proxy :: Proxy (Instance1 NFData h)) (Proxy :: Proxy xs)
+    (\i -> deepseq (hlookup i xs)) ()
+  {-# INLINE rnf #-}
+
 instance WrapForall Show h xs => Show (h :| xs) where
   showsPrec d (EmbedAt i h) = showParen (d > 10) $ showString "EmbedAt "
     . showsPrec 11 i
@@ -70,6 +76,10 @@ instance (Eq (h :| xs), WrapForall Ord h xs) => Ord (h :| xs) where
     Left x -> x
     Right Refl -> views (pieceAt p) (\(Comp Dict) -> compare g h) (library :: Comp Dict (Instance1 Ord h) :* xs)
   {-# INLINE compare #-}
+
+instance WrapForall NFData h xs => NFData (h :| xs) where
+  rnf (EmbedAt i h) = views (pieceAt i) (\(Comp Dict) -> rnf h) (library :: Comp Dict (Instance1 NFData h) :* xs)
+  {-# INLINE rnf #-}
 
 -- | Forall upon a wrapper
 type WrapForall c h = Forall (Instance1 c h)
