@@ -194,10 +194,10 @@ haccumMap :: Foldable f
   => (a -> g :| xs)
   -> (forall x. Membership xs x -> g x -> h x -> h x)
   -> h :* xs -> f a -> h :* xs
-haccumMap f g p0 xs = hfrozen $ do
-  s <- thaw p0
-  mapM_ (\x -> case f x of EmbedAt i v -> get s i >>= set s i . g i v) xs
-  return s
+haccumMap f g p0 xs = hmodify
+  (\s -> mapM_ (\x -> case f x of EmbedAt i v -> get s i >>= set s i . g i v) xs)
+  p0
+{-# INLINE haccumMap #-}
 
 -- | @haccum = 'haccumMap' 'id'@
 haccum :: Foldable f
