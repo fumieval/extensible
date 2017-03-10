@@ -27,6 +27,8 @@ module Data.Extensible.Product (
   , htraverse
   , htraverseWithIndex
   , hsequence
+  -- * Evaluating
+  , hforce
   -- * Update
   , haccumMap
   , haccum
@@ -210,3 +212,8 @@ haccum = haccumMap id
 hpartition :: (Foldable f, Generate xs) => (a -> h :| xs) -> f a -> Comp [] h :* xs
 hpartition f = haccumMap f (\_ x (Comp xs) -> Comp (x:xs)) $ hrepeat $ Comp []
 {-# INLINE hpartition #-}
+
+-- | Evaluate every element in a product.
+hforce :: h :* xs -> h :* xs
+hforce p = hfoldrWithIndex (const seq) p p
+{-# INLINE hforce #-}
