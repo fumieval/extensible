@@ -161,6 +161,8 @@ toHList p = go 0 where
   unknownHList = unsafeCoerce#
 {-# NOINLINE toHList #-}
 
+{-# RULES "toHList/fromHList" forall x. toHList (hfrozen (newFromHList x)) = x #-}
+
 -- | Create a new 'Struct' using the contents of a product.
 newFrom :: forall g h m xs. (PrimMonad m)
   => g :* xs

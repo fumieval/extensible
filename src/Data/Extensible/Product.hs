@@ -76,8 +76,7 @@ nil = hfrozen $ new $ error "Impossible"
 -- | Convert 'L.HList' into a product.
 fromHList :: HList.HList h xs -> h :* xs
 fromHList xs = hfrozen (newFromHList xs)
-{-# NOINLINE fromHList #-}
-{-# RULES "toHList/fromHList" forall x. toHList (fromHList x) = x #-}
+{-# INLINE fromHList #-}
 
 -- | Flipped 'hlookup'
 hindex :: h :* xs -> Membership xs x ->  h x
