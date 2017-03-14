@@ -27,6 +27,8 @@ module Data.Extensible.Product (
   , htraverse
   , htraverseWithIndex
   , hsequence
+  -- * Evaluating
+  , hforce
   -- * Update
   , haccumMap
   , haccum
@@ -194,10 +196,10 @@ haccumMap :: Foldable f
   => (a -> g :| xs)
   -> (forall x. Membership xs x -> g x -> h x -> h x)
   -> h :* xs -> f a -> h :* xs
-haccumMap f g p0 xs = hfrozen $ do
-  s <- thaw p0
-  mapM_ (\x -> case f x of EmbedAt i v -> get s i >>= set s i . g i v) xs
-  return s
+haccumMap f g p0 xs = hmodify
+  (\s -> mapM_ (\x -> case f x of EmbedAt i v -> get s i >>= set s i . g i v) xs)
+  p0
+{-# INLINE haccumMap #-}
 
 -- | @haccum = 'haccumMap' 'id'@
 haccum :: Foldable f
@@ -210,3 +212,8 @@ haccum = haccumMap id
 hpartition :: (Foldable f, Generate xs) => (a -> h :| xs) -> f a -> Comp [] h :* xs
 hpartition f = haccumMap f (\_ x (Comp xs) -> Comp (x:xs)) $ hrepeat $ Comp []
 {-# INLINE hpartition #-}
+
+-- | Evaluate every element in a product.
+hforce :: h :* xs -> h :* xs
+hforce p = hfoldrWithIndex (const seq) p p
+{-# INLINE hforce #-}

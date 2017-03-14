@@ -30,6 +30,7 @@ module Data.Extensible.Struct (
   , hfoldrWithIndex
   , thaw
   , hfrozen
+  , hmodify
   , toHList) where
 
 import GHC.Prim
@@ -199,13 +200,22 @@ hlookup (getMemberId -> I# i) (HProduct ar) = case indexSmallArray# ar i of
 -- | Create a product from an 'ST' action which returns a 'Struct'.
 hfrozen :: (forall s. ST s (Struct s h xs)) -> h :* xs
 hfrozen m = runST $ m >>= unsafeFreeze
-{-# NOINLINE[0] hfrozen #-}
+{-# INLINE[0] hfrozen #-}
+
+hmodify :: (forall s. Struct s h xs -> ST s ()) -> h :* xs -> h :* xs
+hmodify f m = runST $ do
+  s <- thaw m
+  f s
+  unsafeFreeze s
+{-# INLINE[0] hmodify #-}
+
+{-# RULES "hmodify/batch" forall
+  (a :: forall s. Struct s h xs -> ST s ())
+  (b :: forall s. Struct s h xs -> ST s ())
+  (x :: h :* xs). hmodify b (hmodify a x) = hmodify (\s -> a s >> b s) x  #-}
 
 instance (Corepresentable p, Comonad (Corep p), Functor f) => Extensible f p (:*) where
   -- | A lens for a value in a known position.
   pieceAt i pafb = cotabulate $ \ws -> sbt (extract ws) <$> cosieve pafb (hlookup i <$> ws) where
-    sbt xs x = hfrozen $ do
-      s <- thaw xs
-      set s i x
-      return s
+    sbt xs x = hmodify (\s -> set s i x) xs
   {-# INLINE pieceAt #-}

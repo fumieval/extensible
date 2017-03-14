@@ -1,3 +1,5 @@
+* Added `hforce`
+
 0.4
 ---------------------------------------------------
 * Added `Data.Extensible.Struct`
