@@ -39,14 +39,14 @@ recB = foo @= Sum 2 <: bar @= "barB" <: baz @= pure 42 <: qux @= "qux"
   <: nil
 {-# NOINLINE recB #-}
 
-data HsRec = HsRec { _hsFoo :: !(Sum Int), _hsBar :: !String, _hsBaz :: !(First Int)
-  , _hsQux :: !String
-  , _hsFooBar :: !(Sum Int, String)
-  , _hsFooBaz :: !(Sum Int, First Int)
-  , _hsFooQux :: !(Sum Int, String)
-  , _hsBarFoo :: !(String, Sum Int)
-  , _hsBarBaz :: !(String, First Int)
-  , _hsBarQux :: !(String, String)
+data HsRec = HsRec { _hsFoo :: Sum Int, _hsBar :: String, _hsBaz :: First Int
+  , _hsQux :: String
+  , _hsFooBar :: (Sum Int, String)
+  , _hsFooBaz :: (Sum Int, First Int)
+  , _hsFooQux :: (Sum Int, String)
+  , _hsBarFoo :: (String, Sum Int)
+  , _hsBarBaz :: (String, First Int)
+  , _hsBarQux :: (String, String)
   }
 makeLenses ''HsRec
 
