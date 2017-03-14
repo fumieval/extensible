@@ -62,10 +62,10 @@ hsRec = HsRec { _hsFoo = Sum 1, _hsBar = "hsBar"
 
 main = defaultMain
   [ bgroup "basic"
-    [ bench "view" $ whnf (view foo) recA
-    , bench "hsview" $ whnf (view hsFoo) hsRec
-    , bench "set" $ whnf (set foo 3) recB
-    , bench "hsset" $ whnf (set hsFoo 3) hsRec
+    [ bench "view" $ whnf (view foo) $! recA
+    , bench "hsview" $ whnf (view hsFoo) $! hsRec
+    , bench "set" $ whnf (set foo 3) $! recB
+    , bench "hsset" $ whnf (set hsFoo 3) $! hsRec
     ]
   , bgroup "instances"
     [ bench "mappend" $ whnf (uncurry mappend) (recA, recB)
