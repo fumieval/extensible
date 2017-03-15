@@ -20,6 +20,7 @@ module Data.Extensible.Field (
   , (@=)
   , (<@=>)
   , (@:>)
+  , (@==)
   , FieldOptic
   , FieldName
   , liftField
@@ -218,3 +219,9 @@ infix 1 <@=>
 (@:>) :: FieldName k -> h v -> Field h (k ':> v)
 (@:>) _ = Field
 infix 1 @:>
+
+-- | Kind-monomorphic, unwrapped version of @('@=')@
+(@==) :: FieldName (k :: Symbol) -> v -> Field Identity (k ':> v)
+(@==) = (@=)
+{-# INLINE (@==) #-}
+infix 1 @==
