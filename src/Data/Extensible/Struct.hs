@@ -117,6 +117,7 @@ newFromHList l = do
 
   go 0 l
   return m
+{-# NOINLINE newFromHList #-}
 
 -- | The type of extensible products.
 --
