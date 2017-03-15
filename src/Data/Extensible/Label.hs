@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, MultiParamTypeClasses #-}
+{-# LANGUAGE CPP, TypeFamilies, MultiParamTypeClasses, UndecidableInstances, ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 -----------------------------------------------------------------------------
 -- |
@@ -18,6 +18,8 @@ import Data.Extensible.Class
 import Data.Extensible.Field
 import Data.Proxy
 import GHC.OverloadedLabels
+import Data.Extensible.Wrapper
+import Data.Extensible.Internal.Rig
 
 instance k ~ l => IsLabel k (Proxy l) where
   fromLabel _ = Proxy
@@ -25,5 +27,13 @@ instance k ~ l => IsLabel k (Proxy l) where
 -- | Specialised version of 'itemAssoc'.
 訊 :: Proxy k -> FieldOptic k
 訊 = itemAssoc
+
+instance (Extensible f p t
+  , Associate k v xs
+  , Labelling k p
+  , Wrapper h
+  , rep ~ Repr h v)
+  => IsLabel k (Optic' p f (t (Field h) xs) rep) where
+  fromLabel _ = itemAssoc (Proxy :: Proxy k)
 
 #endif
