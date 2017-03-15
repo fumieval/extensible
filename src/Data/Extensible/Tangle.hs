@@ -11,6 +11,7 @@
 ------------------------------------------------------------------------
 module Data.Extensible.Tangle where
 
+import Control.Applicative
 import Control.Monad.Trans.RWS.Strict
 import Control.Monad.Trans.Class
 import Data.Extensible.Class
@@ -27,6 +28,10 @@ newtype TangleT h xs m a = TangleT
 
 instance MonadTrans (TangleT h xs) where
   lift = TangleT . lift
+
+instance (Monad m, Monoid a) => Monoid (TangleT h xs m a) where
+    mempty = pure mempty
+    mappend = liftA2 mappend
 
 -- | Hitch an element associated to the 'FieldName' through a wrapper.
 lasso :: forall k v m h xs. (Monad m, Associate k v xs, Wrapper h)
