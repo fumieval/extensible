@@ -1,4 +1,11 @@
+0.4.1
+--------------------------------------------------
 * Added `hforce`
+* Added an `NFData` instance for `(:*)` and `:|`
+* Added a rule to fuse a chain of product updates
+* Added a `Monoid` instance for `TangleT`
+* Added `(@==)`
+* `#foo` can now be overloaded as `FieldOptic "foo"`
 
 0.4
 ---------------------------------------------------
