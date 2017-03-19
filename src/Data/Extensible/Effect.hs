@@ -26,6 +26,7 @@ module Data.Extensible.Effect (
   , Rebinder
   , rebindEff0
   , rebindEff1
+  , peelEff1
   , rebindEff2
   , leaveEff
   , retractEff
@@ -112,7 +113,7 @@ hoistEff _ f = hoistSkeleton $ \(Instruction i t) -> case compareMembership (ass
 -- | Build a relay-style handler from a triple of functions.
 --
 -- @
--- runStateEff = peelEff rebindEff1 (\a s -> return (a, s))
+-- runStateEff = peelEff1 (\a s -> return (a, s))
 --   (\m k s -> let (a, s') = runState m s in k a s')
 -- @
 --
@@ -128,6 +129,13 @@ peelEff pass ret wrap = go where
       (\Refl -> wrap t (go . k))
       (\j -> pass (Instruction j t) (go . k))
 {-# INLINE peelEff #-}
+
+-- | 'peelEff' specialised for 1-argument continuation
+peelEff1 :: (a -> b -> Eff xs r) -- ^ return the result
+  -> (forall x. t x -> (x -> b -> Eff xs r) -> b -> Eff xs r) -- ^ Handle the foremost type of an action
+  -> Eff (k >: t ': xs) a -> b -> Eff xs r
+peelEff1 = peelEff rebindEff1
+{-# INLINE peelEff1 #-}
 
 -- | A function to bind an 'Instruction' in 'peelEff'.
 type Rebinder xs r = forall x. Instruction xs x -> (x -> r) -> r
@@ -280,12 +288,12 @@ contState m k s = let (a, s') = runState m s in k a $! s'
 
 -- | Run the frontal state effect.
 runStateEff :: forall k s xs a. Eff (k >: State s ': xs) a -> s -> Eff xs (a, s)
-runStateEff = peelEff rebindEff1 (\a s -> return (a, s)) contState
+runStateEff = peelEff1 (\a s -> return (a, s)) contState
 {-# INLINE runStateEff #-}
 
 -- | Run the frontal state effect.
 execStateEff :: forall k s xs a. Eff (k >: State s ': xs) a -> s -> Eff xs s
-execStateEff = peelEff rebindEff1 (const return) contState
+execStateEff = peelEff1 (const return) contState
 {-# INLINE execStateEff #-}
 
 -- | @(,)@ already is a writer monad.
@@ -332,12 +340,12 @@ contWriter (w', a) k w = k a $! mappend w w'
 
 -- | Run the frontal writer effect.
 runWriterEff :: forall k w xs a. Monoid w => Eff (k >: WriterEff w ': xs) a -> Eff xs (a, w)
-runWriterEff = peelEff rebindEff1 (\a w -> return (a, w)) contWriter `flip` mempty
+runWriterEff = peelEff1 (\a w -> return (a, w)) contWriter `flip` mempty
 {-# INLINE runWriterEff #-}
 
 -- | Run the frontal state effect.
 execWriterEff :: forall k w xs a. Monoid w => Eff (k >: WriterEff w ': xs) a -> Eff xs w
-execWriterEff = peelEff rebindEff1 (const return) contWriter `flip` mempty
+execWriterEff = peelEff1 (const return) contWriter `flip` mempty
 {-# INLINE execWriterEff #-}
 
 -- | An effect with no result
