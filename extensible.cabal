@@ -1,5 +1,5 @@
 name:                extensible
-version:             0.4
+version:             0.4.1
 synopsis:            Extensible, efficient, optics-friendly data types and effects
 homepage:            https://github.com/fumieval/extensible
 bug-reports:         http://github.com/fumieval/extensible/issues
@@ -60,7 +60,7 @@ library
     , FlexibleInstances
     , PolyKinds
     , CPP
-  build-depends:       base >= 4.7 && <5
+  build-depends:       base >= 4.8 && <5
     , template-haskell
     , constraints
     , ghc-prim
