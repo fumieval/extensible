@@ -50,6 +50,7 @@ module Data.Extensible.Effect (
   , modifyEff
   , stateEff
   , runStateEff
+  , execStateEff
   -- ** Writer
   , WriterEff
   , writerEff
@@ -57,6 +58,7 @@ module Data.Extensible.Effect (
   , listenEff
   , passEff
   , runWriterEff
+  , execWriterEff
   -- ** Maybe
   , MaybeEff
   , runMaybeEff
@@ -273,11 +275,18 @@ stateEff :: forall k s xs a. Associate k (State s) xs
 stateEff k = liftEff k . state
 {-# INLINE stateEff #-}
 
+contState :: State s a -> (a -> s -> r) -> s -> r
+contState m k s = let (a, s') = runState m s in k a $! s'
+
 -- | Run the frontal state effect.
 runStateEff :: forall k s xs a. Eff (k >: State s ': xs) a -> s -> Eff xs (a, s)
-runStateEff = peelEff rebindEff1 (\a s -> return (a, s))
-  (\m k s -> let (a, s') = runState m s in k a $! s')
+runStateEff = peelEff rebindEff1 (\a s -> return (a, s)) contState
 {-# INLINE runStateEff #-}
+
+-- | Run the frontal state effect.
+execStateEff :: forall k s xs a. Eff (k >: State s ': xs) a -> s -> Eff xs s
+execStateEff = peelEff rebindEff1 (const return) contState
+{-# INLINE execStateEff #-}
 
 -- | @(,)@ already is a writer monad.
 type WriterEff w = (,) w
@@ -318,11 +327,18 @@ passEff p = go mempty where
                         !w'' = mappend w w' in go w'' (k a)
 {-# INLINE passEff #-}
 
+contWriter :: Monoid w => (w, a) -> (a -> w -> r) -> w -> r
+contWriter (w', a) k w = k a $! mappend w w'
+
 -- | Run the frontal writer effect.
 runWriterEff :: forall k w xs a. Monoid w => Eff (k >: WriterEff w ': xs) a -> Eff xs (a, w)
-runWriterEff = peelEff rebindEff1 (\a w -> return (a, w))
-  (\(w', a) k w -> k a $! mappend w w') `flip` mempty
+runWriterEff = peelEff rebindEff1 (\a w -> return (a, w)) contWriter `flip` mempty
 {-# INLINE runWriterEff #-}
+
+-- | Run the frontal state effect.
+execWriterEff :: forall k w xs a. Monoid w => Eff (k >: WriterEff w ': xs) a -> Eff xs w
+execWriterEff = peelEff rebindEff1 (const return) contWriter `flip` mempty
+{-# INLINE execWriterEff #-}
 
 -- | An effect with no result
 type MaybeEff = Const ()
