@@ -36,6 +36,7 @@ module Data.Extensible.Effect (
   , runAction
   , (@!?)
   , peelAction
+  , peelAction0
   -- * transformers-compatible actions and handlers
   -- ** Reader
   , ReaderEff
@@ -218,6 +219,22 @@ peelAction pass ret wrap = go where
           in run wrap t)
       (\j -> pass (Instruction j t) (go . k))
 {-# INLINE peelAction #-}
+
+-- | Non continuation-passing variant of 'peelAction'.
+peelAction0 :: forall k ps q xs a. Function ps (Eff xs q) -- ^ Handle the foremost action
+  -> Eff (k >: Action ps q ': xs) a -> Eff xs a
+peelAction0 wrap = go where
+  go m = case debone m of
+    Return a -> return a
+    Instruction i t :>>= k -> runMembership i
+      (\Refl -> case t of
+        (_ :: Action ps q x) ->
+          let run :: forall t. Function t (Eff xs q) -> Action t q x -> Eff xs a
+              run f AResult = f >>= go . k
+              run f (AArgument x a) = run (f x) a
+          in run wrap t)
+      (\j -> rebindEff0 (Instruction j t) (go . k))
+{-# INLINE peelAction0 #-}
 
 -- | The reader monad is characterised by a type equality between the result
 -- type and the enviroment type.

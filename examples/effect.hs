@@ -44,5 +44,4 @@ example n = Methods
   <: nil
 
 takePrintString :: MonadIO (Eff xs) => Eff (PrintString ': xs) a -> Eff xs a
-takePrintString = peelAction rebindEff0 return
-  $ \str cont -> liftIO (putStrLn str) >>= cont
+takePrintString = peelAction0 $ liftIO . putStrLn
