@@ -27,6 +27,10 @@ module Data.Extensible.Product (
   , htraverse
   , htraverseWithIndex
   , hsequence
+  -- * Constrained fold
+  , hfoldMapFor
+  , hfoldMapWithIndexFor
+  , hfoldrWithIndexFor
   -- * Evaluating
   , hforce
   -- * Update
@@ -120,6 +124,23 @@ hfoldMapWithIndex :: Monoid a
   => (forall x. Membership xs x -> g x -> a) -> g :* xs -> a
 hfoldMapWithIndex f = hfoldrWithIndex (\i -> mappend . f i) mempty
 {-# INLINE hfoldMapWithIndex #-}
+
+-- | 'hfoldrWithIndex' with a constraint for each element.
+hfoldrWithIndexFor :: (Forall c xs) => proxy c
+  -> (forall x. c x => Membership xs x -> h x -> r -> r) -> r -> h :* xs -> r
+hfoldrWithIndexFor p f r xs = henumerateFor p xs (\i -> f i (hlookup i xs)) r
+{-# INLINE hfoldrWithIndexFor #-}
+
+-- | 'hfoldMapWithIndex' with a constraint for each element.
+hfoldMapWithIndexFor :: (Forall c xs, Monoid a) => proxy c
+  -> (forall x. c x => Membership xs x -> h x -> a) -> h :* xs -> a
+hfoldMapWithIndexFor p f = hfoldrWithIndexFor p (\i -> mappend . f i) mempty
+{-# INLINE hfoldMapWithIndexFor #-}
+
+hfoldMapFor :: (Forall c xs, Monoid a) => proxy c
+  -> (forall x. c x => h x -> a) -> h :* xs -> a
+hfoldMapFor p f = hfoldMapWithIndexFor p (const f)
+{-# INLINE hfoldMapFor #-}
 
 -- | Traverse all elements and combine the result sequentially.
 -- @
