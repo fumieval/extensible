@@ -177,7 +177,7 @@ newFrom hp@(HProduct ar) k = do
         | i == I# n = return st
         | otherwise = do
           let !m = unsafeMembership i
-          set st m $ k m (hlookup m hp)
+          set st m $! k m (hlookup m hp)
           go (i + 1)
   go 0
 {-# NOINLINE newFrom #-}
