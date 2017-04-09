@@ -1,5 +1,6 @@
 * Make `newFrom` strict
 * `pieceAt` for `(:*)` is now strict
+* Add `(<!)`
 
 0.4.1
 --------------------------------------------------

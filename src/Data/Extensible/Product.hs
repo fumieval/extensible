@@ -16,6 +16,7 @@ module Data.Extensible.Product (
   (:*)
   , nil
   , (<:)
+  , (<!)
   , hlength
   , hmap
   , hmapWithIndex
@@ -70,6 +71,12 @@ import Data.Extensible.Wrapper
 (<:) x = fromHList . HList.HCons x . toHList
 {-# INLINE (<:) #-}
 infixr 0 <:
+
+-- | Strict version of ('<:').
+(<!) :: h x -> h :* xs -> h :* (x ': xs)
+(<!) x = fromHList . (HList.HCons $! x) . toHList
+{-# INLINE (<!) #-}
+infixr 0 <!
 
 -- | An empty product.
 nil :: h :* '[]
