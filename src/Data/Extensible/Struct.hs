@@ -220,5 +220,5 @@ hmodify f m = runST $ do
 instance (Corepresentable p, Comonad (Corep p), Functor f) => Extensible f p (:*) where
   -- | A lens for a value in a known position.
   pieceAt i pafb = cotabulate $ \ws -> sbt (extract ws) <$> cosieve pafb (hlookup i <$> ws) where
-    sbt xs x = hmodify (\s -> set s i x) xs
+    sbt xs !x = hmodify (\s -> set s i x) xs
   {-# INLINE pieceAt #-}

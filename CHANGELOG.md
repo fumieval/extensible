@@ -1,4 +1,5 @@
 * Make `newFrom` strict
+* `pieceAt` for `(:*)` is now strict
 
 0.4.1
 --------------------------------------------------
