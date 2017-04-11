@@ -21,6 +21,11 @@ module Data.Extensible.Struct (
   , newRepeat
   , newFor
   , newFromHList
+  -- ** Atomic operations
+  , atomicModify
+  , atomicModify'
+  , atomicModify_
+  , atomicModify'_
   -- * Immutable product
   , (:*)
   , unsafeFreeze
@@ -59,6 +64,43 @@ set (Struct m) (getMemberId -> I# i) e = primitive
 get :: PrimMonad m => Struct (PrimState m) h xs -> Membership xs x -> m (h x)
 get (Struct m) (getMemberId -> I# i) = primitive $ unsafeCoerce# readSmallArray# m i
 {-# INLINE get #-}
+
+atomicModify :: PrimMonad m
+  => Struct (PrimState m) h xs -> Membership xs x -> (h x -> (h x, a)) -> m a
+atomicModify (Struct m) (getMemberId -> I# i) f = primitive
+  $ \s0 -> case readSmallArray# m i s0 of
+    (# s, x #) -> retry x s
+  where
+    retry x s = let p = unsafeCoerce# f x in
+      case casSmallArray# m i x (fst p) s of
+        (# s', b, y #) -> case b of
+          0# -> (# s', snd p #)
+          _ -> retry y s'
+{-# INLINE atomicModify #-}
+
+atomicModify' :: PrimMonad m
+  => Struct (PrimState m) h xs -> Membership xs x -> (h x -> (h x, a)) -> m a
+atomicModify' s i f = atomicModify s i
+  (\x -> let (y, a) = f x in (y, y `seq` a))
+  >>= (return $!)
+{-# INLINE atomicModify' #-}
+
+atomicModify_ :: PrimMonad m
+  => Struct (PrimState m) h xs -> Membership xs x -> (h x -> h x) -> m (h x)
+atomicModify_ (Struct m) (getMemberId -> I# i) f = primitive
+  $ \s0 -> case readSmallArray# m i s0 of
+    (# s, x #) -> retry x s
+  where
+    retry x s = case casSmallArray# m i x (unsafeCoerce# f x) s of
+      (# s', b, y #) -> case b of
+        0# -> (# s', unsafeCoerce# y #)
+        _ -> retry y s'
+{-# INLINE atomicModify_ #-}
+
+atomicModify'_ :: PrimMonad m
+  => Struct (PrimState m) h xs -> Membership xs x -> (h x -> h x) -> m (h x)
+atomicModify'_ s i f = atomicModify_ s i f >>= (return $!)
+{-# INLINE atomicModify'_ #-}
 
 -- | Create a new 'Struct' using the supplied initializer.
 new :: forall h m xs. (PrimMonad m, Generate xs)
