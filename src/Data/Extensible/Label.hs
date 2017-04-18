@@ -22,7 +22,11 @@ import Data.Extensible.Wrapper
 import Data.Extensible.Internal.Rig
 
 instance k ~ l => IsLabel k (Proxy l) where
+#if __GLASGOW_HASKELL__ >= 802
+  fromLabel = Proxy
+#else
   fromLabel _ = Proxy
+#endif
 
 -- | Specialised version of 'itemAssoc'.
 訊 :: Proxy k -> FieldOptic k
@@ -34,6 +38,9 @@ instance (Extensible f p t
   , Wrapper h
   , rep ~ Repr h v)
   => IsLabel k (Optic' p f (t (Field h) xs) rep) where
+#if __GLASGOW_HASKELL__ >= 802
+  fromLabel = itemAssoc (Proxy :: Proxy k)
+#else
   fromLabel _ = itemAssoc (Proxy :: Proxy k)
-
+#endif
 #endif
