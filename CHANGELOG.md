@@ -1,6 +1,11 @@
-* Make `newFrom` strict
+0.4.2
+-------------------------------------------------
+* Made `newFrom` strict
 * `pieceAt` for `(:*)` is now strict
-* Add `(<!)`
+* Added `(<!)`
+* Added `peelEff1`, `peelAction0`, `execStateEff`, `execWriterEff`
+* Added atomic operations for `Struct`
+* Added constrained variants of folds
 
 0.4.1
 --------------------------------------------------
