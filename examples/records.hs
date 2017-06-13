@@ -1,4 +1,4 @@
-{-# LANGUAGE DataKinds, TypeOperators, TypeFamilies, FlexibleContexts #-}
+{-# LANGUAGE DataKinds, TypeOperators, TypeFamilies, FlexibleContexts, OverloadedLabels #-}
 import Data.Extensible
 import Control.Lens
 
