@@ -25,6 +25,7 @@ module Data.Extensible.Effect (
   , peelEff
   , Rebinder
   , rebindEff0
+  , peelEff0
   , rebindEff1
   , peelEff1
   , rebindEff2
@@ -130,6 +131,13 @@ peelEff pass ret wrap = go where
       (\Refl -> wrap t (go . k))
       (\j -> pass (Instruction j t) (go . k))
 {-# INLINE peelEff #-}
+
+-- | 'peelEff' specialised for continuations with no argument
+peelEff0 :: (a -> Eff xs r) -- ^ return the result
+  -> (forall x. t x -> (x -> Eff xs r) -> Eff xs r) -- ^ Handle the foremost type of an action
+  -> Eff (k >: t ': xs) a -> Eff xs r
+peelEff0 = peelEff rebindEff0
+{-# INLINE peelEff0 #-}
 
 -- | 'peelEff' specialised for 1-argument continuation
 peelEff1 :: (a -> b -> Eff xs r) -- ^ return the result
