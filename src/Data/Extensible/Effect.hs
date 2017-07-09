@@ -133,14 +133,14 @@ peelEff pass ret wrap = go where
 {-# INLINE peelEff #-}
 
 -- | 'peelEff' specialised for continuations with no argument
-peelEff0 :: (a -> Eff xs r) -- ^ return the result
+peelEff0 :: forall k t xs a r. (a -> Eff xs r) -- ^ return the result
   -> (forall x. t x -> (x -> Eff xs r) -> Eff xs r) -- ^ Handle the foremost type of an action
   -> Eff (k >: t ': xs) a -> Eff xs r
 peelEff0 = peelEff rebindEff0
 {-# INLINE peelEff0 #-}
 
 -- | 'peelEff' specialised for 1-argument continuation
-peelEff1 :: (a -> b -> Eff xs r) -- ^ return the result
+peelEff1 :: forall k t xs a b r. (a -> b -> Eff xs r) -- ^ return the result
   -> (forall x. t x -> (x -> b -> Eff xs r) -> b -> Eff xs r) -- ^ Handle the foremost type of an action
   -> Eff (k >: t ': xs) a -> b -> Eff xs r
 peelEff1 = peelEff rebindEff1
