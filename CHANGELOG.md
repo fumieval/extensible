@@ -1,3 +1,5 @@
+* Added `WrappedPointer`
+
 0.4.2
 -------------------------------------------------
 * Made `newFrom` strict

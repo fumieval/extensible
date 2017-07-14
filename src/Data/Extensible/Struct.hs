@@ -21,6 +21,8 @@ module Data.Extensible.Struct (
   , newRepeat
   , newFor
   , newFromHList
+  , WrappedPointer(..)
+  , (-$>)
   -- ** Atomic operations
   , atomicModify
   , atomicModify'
@@ -39,14 +41,19 @@ module Data.Extensible.Struct (
   , toHList) where
 
 import GHC.Prim
+import Control.Monad
+import Control.Monad.IO.Class
 import Control.Monad.Primitive
 import Control.Monad.ST
 import Data.Constraint
 import Data.Extensible.Class
 import Data.Extensible.Internal
+import Data.Extensible.Internal.Rig
+import Data.Extensible.Wrapper
 import Control.Comonad
 import Data.Profunctor.Rep
 import Data.Profunctor.Sieve
+import qualified Data.StateVar as V
 import qualified Data.Extensible.HList as L
 import GHC.Types
 
@@ -101,6 +108,27 @@ atomicModify'_ :: PrimMonad m
   => Struct (PrimState m) h xs -> Membership xs x -> (h x -> h x) -> m (h x)
 atomicModify'_ s i f = atomicModify_ s i f >>= (return $!)
 {-# INLINE atomicModify'_ #-}
+
+-- | A pointer to an element in a 'Struct'.
+data WrappedPointer s h a where
+  WrappedPointer :: !(Struct s h xs)
+    -> !(Membership xs x)
+    -> WrappedPointer s h (Repr h x)
+
+instance (s ~ RealWorld, Wrapper h) => V.HasGetter (WrappedPointer s h a) a where
+  get (WrappedPointer s i) = liftIO $ view _Wrapper <$> get s i
+
+instance (s ~ RealWorld, Wrapper h) => V.HasSetter (WrappedPointer s h a) a where
+  WrappedPointer s i $= v = liftIO $ set s i $ review _Wrapper v
+
+instance (s ~ RealWorld, Wrapper h) => V.HasUpdate (WrappedPointer s h a) a a where
+  WrappedPointer s i $~ f = liftIO $ void $ atomicModify_ s i $ over _Wrapper f
+  WrappedPointer s i $~! f = liftIO $ void $ atomicModify'_ s i $ over _Wrapper f
+
+-- | Get a 'WrappedPointer' from a name.
+(-$>) :: forall k h xs v s. (Associate k v xs) => Struct s h xs -> Proxy k -> WrappedPointer s h (Repr h (k ':> v))
+s -$> _ = WrappedPointer s (association :: Membership xs (k ':> v))
+{-# INLINE (-$>) #-}
 
 -- | Create a new 'Struct' using the supplied initializer.
 new :: forall h m xs. (PrimMonad m, Generate xs)
