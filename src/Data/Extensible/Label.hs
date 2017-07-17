@@ -32,12 +32,16 @@ instance k ~ l => IsLabel k (Proxy l) where
 訊 :: Proxy k -> FieldOptic k
 訊 = itemAssoc
 
-instance (Extensible f p t
+instance (Extensible f p e
   , Associate k v xs
   , Labelling k p
   , Wrapper h
-  , rep ~ Repr h v)
-  => IsLabel k (Optic' p f (t (Field h) xs) rep) where
+  , rep ~ Repr h v
+  , s ~ e (Field h) xs
+  , s ~ t
+  , rep ~ rep'
+  )
+  => IsLabel k (p rep (f rep') -> p s (f t)) where
 #if __GLASGOW_HASKELL__ >= 802
   fromLabel = itemAssoc (Proxy :: Proxy k)
 #else
