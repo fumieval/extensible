@@ -19,7 +19,6 @@ import Data.Extensible.Field
 import Data.Proxy
 import GHC.OverloadedLabels
 import Data.Extensible.Wrapper
-import Data.Extensible.Internal.Rig
 
 instance k ~ l => IsLabel k (Proxy l) where
 #if __GLASGOW_HASKELL__ >= 802
