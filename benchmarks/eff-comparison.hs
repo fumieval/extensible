@@ -111,6 +111,6 @@ main = defaultMain
     , bench "mtl-RWS" $ nf (\m -> runRWS m 0 1) testMTL
     , bench "exteff" $ nf runExtEff testExtEff
     , bench "effin" $ nf runEffin testEffin
-    , bench "freer" $ nf runFreer testFreer
+    , bench "freer-effects" $ nf runFreer testFreer
     ]
   ]

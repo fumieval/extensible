@@ -96,4 +96,4 @@ benchmark eff-comparison
   main-is:        eff-comparison.hs
   ghc-options:    -O2
   hs-source-dirs: benchmarks
-  build-depends: base, criterion, extensible, extensible-effects, effin, freer, mtl
+  build-depends: base, criterion, extensible, extensible-effects, effin, freer-effects, mtl
