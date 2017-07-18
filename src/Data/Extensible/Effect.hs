@@ -127,7 +127,7 @@ peelEff :: forall k t xs a r
 peelEff pass ret wrap = go where
   go m = case debone m of
     Return a -> ret a
-    Instruction i t :>>= k -> runMembership i
+    Instruction i t :>>= k -> leadership i
       (\Refl -> wrap t (go . k))
       (\j -> pass (Instruction j t) (go . k))
 {-# INLINE peelEff #-}
@@ -174,7 +174,7 @@ leaveEff m = case debone m of
 retractEff :: forall k m a. Monad m => Eff '[k >: m] a -> m a
 retractEff m = case debone m of
   Return a -> return a
-  Instruction i t :>>= k -> runMembership i
+  Instruction i t :>>= k -> leadership i
     (\Refl -> t >>= retractEff . k)
     (error "Impossible")
 
@@ -218,7 +218,7 @@ peelAction :: forall k ps q xs a r
 peelAction pass ret wrap = go where
   go m = case debone m of
     Return a -> ret a
-    Instruction i t :>>= k -> runMembership i
+    Instruction i t :>>= k -> leadership i
       (\Refl -> case t of
         (_ :: Action ps q x) ->
           let run :: forall t. Function t ((q -> r) -> r) -> Action t q x -> r
@@ -234,7 +234,7 @@ peelAction0 :: forall k ps q xs a. Function ps (Eff xs q) -- ^ Handle the foremo
 peelAction0 wrap = go where
   go m = case debone m of
     Return a -> return a
-    Instruction i t :>>= k -> runMembership i
+    Instruction i t :>>= k -> leadership i
       (\Refl -> case t of
         (_ :: Action ps q x) ->
           let run :: forall t. Function t (Eff xs q) -> Action t q x -> Eff xs a
@@ -417,6 +417,6 @@ runIterEff :: Eff (k >: Identity ': xs) a
   -> Eff xs (Either a (Eff (k >: Identity ': xs) a))
 runIterEff m = case debone m of
   Return a -> return (Left a)
-  Instruction i t :>>= k -> runMembership i
+  Instruction i t :>>= k -> leadership i
     (\Refl -> return $ Right $ k $ runIdentity t)
     (\j -> boned $ Instruction j t :>>= runIterEff . k)

@@ -70,8 +70,11 @@ strikeAt q (EmbedAt p h) = case compareMembership p q of
 {-# INLINE strikeAt #-}
 
 -- | /O(1)/ Naive pattern match
-(<:|) :: (h x -> r) -> (h :| xs -> r) -> h :| (x ': xs) -> r
-(<:|) r c = \(EmbedAt i h) -> runMembership i
+(<:|) :: (h x -> r)
+    -> (h :| xs -> r)
+    -> h :| (x ': xs)
+    -> r
+(<:|) r c = \(EmbedAt i h) -> leadership i
   (\Refl -> r h)
   (\j -> c (EmbedAt j h))
 infixr 1 <:|
