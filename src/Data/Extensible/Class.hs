@@ -22,6 +22,7 @@ module Data.Extensible.Class (
   -- * Membership
   , Membership
   , mkMembership
+  , compareMembership
   -- * Member
   , Member(..)
   , remember
