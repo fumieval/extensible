@@ -1,4 +1,5 @@
 * Added `WrappedPointer`
+* Added `NFData` and `Generic` instances for `Comp`
 
 0.4.2
 -------------------------------------------------

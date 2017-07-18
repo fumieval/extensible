@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
+{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable, GeneralizedNewtypeDeriving, DeriveGeneric #-}
 {-# LANGUAGE TypeFamilies #-}
 -----------------------------------------------------------------------------
 -- |
@@ -17,11 +17,13 @@ module Data.Extensible.Wrapper (
   , comp
   ) where
 
+import Control.DeepSeq
 import Data.Typeable (Typeable)
 import Data.Proxy (Proxy(..))
 import Data.Profunctor.Unsafe (Profunctor(..))
 import Data.Functor.Identity (Identity(..))
 import Data.Extensible.Internal.Rig (Optic', withIso)
+import GHC.Generics (Generic)
 
 -- | The extensible data types should take @k -> *@ as a parameter.
 -- This class allows us to take a shortcut for direct representation.
@@ -55,7 +57,8 @@ instance Wrapper [] where
     _Wrapper = id
 
 -- | Poly-kinded composition
-newtype Comp (f :: j -> *) (g :: i -> j) (a :: i) = Comp { getComp :: f (g a) } deriving (Show, Eq, Ord, Typeable)
+newtype Comp (f :: j -> *) (g :: i -> j) (a :: i) = Comp { getComp :: f (g a) }
+  deriving (Show, Eq, Ord, Typeable, NFData, Generic)
 
 -- | Wrap a result of 'fmap'
 comp :: Functor f => (a -> g b) -> f a -> Comp f g b
