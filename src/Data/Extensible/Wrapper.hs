@@ -15,6 +15,7 @@ module Data.Extensible.Wrapper (
   , Const'(..)
   , Comp(..)
   , comp
+  , Prod(..)
   ) where
 
 import Control.DeepSeq
@@ -22,7 +23,7 @@ import Data.Typeable (Typeable)
 import Data.Proxy (Proxy(..))
 import Data.Profunctor.Unsafe (Profunctor(..))
 import Data.Functor.Identity (Identity(..))
-import Data.Extensible.Internal.Rig (Optic', withIso)
+import Data.Extensible.Internal.Rig
 import GHC.Generics (Generic)
 
 -- | The extensible data types should take @k -> *@ as a parameter.
@@ -82,3 +83,14 @@ instance Wrapper Proxy where
   type Repr Proxy x = ()
   _Wrapper = dimap (const ()) (fmap (const Proxy))
   {-# INLINE _Wrapper #-}
+
+-- | Poly-kinded product
+data Prod f g a = Prod (f a) (g a)
+  deriving (Show, Eq, Ord, Typeable, Generic)
+
+instance (NFData (f a), NFData (g a)) => NFData (Prod f g a)
+
+instance (Wrapper f, Wrapper g) => Wrapper (Prod f g) where
+  type Repr (Prod f g) a = (Repr f a, Repr g a)
+  _Wrapper = dimap (\(Prod f g) -> (view _Wrapper f, view _Wrapper g))
+    $ fmap (\(a, b) -> review _Wrapper a `Prod` review _Wrapper b)

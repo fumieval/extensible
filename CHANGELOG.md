@@ -1,5 +1,6 @@
 * Added `WrappedPointer`
 * Added `NFData` and `Generic` instances for `Comp`
+* Added `Prod`
 
 0.4.2
 -------------------------------------------------
