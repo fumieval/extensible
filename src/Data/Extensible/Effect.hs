@@ -275,7 +275,7 @@ localEff _ f = go where
 
 -- | Run the frontal reader effect.
 runReaderEff :: forall k r xs a. Eff (k >: ReaderEff r ': xs) a -> r -> Eff xs a
-runReaderEff m r = peelEff rebindEff0 return (\Refl k -> k r) m
+runReaderEff m r = peelEff0 return (\Refl k -> k r) m
 {-# INLINE runReaderEff #-}
 
 -- | Get the current state.
@@ -378,7 +378,7 @@ type MaybeEff = Const ()
 
 -- | Run an effect which may fail in the name of @k@.
 runMaybeEff :: forall k xs a. Eff (k >: MaybeEff ': xs) a -> Eff xs (Maybe a)
-runMaybeEff = peelEff rebindEff0 (return . Just)
+runMaybeEff = peelEff0 (return . Just)
   (\_ _ -> return Nothing)
 {-# INLINE runMaybeEff #-}
 
@@ -403,7 +403,7 @@ catchEff _ m0 handler = go m0 where
 
 -- | Run the frontal Either effect.
 runEitherEff :: forall k e xs a. Eff (k >: EitherEff e ': xs) a -> Eff xs (Either e a)
-runEitherEff = peelEff rebindEff0 (return . Right)
+runEitherEff = peelEff0 (return . Right)
   (\(Const e) _ -> return $ Left e)
 {-# INLINE runEitherEff #-}
 
