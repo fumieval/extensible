@@ -20,7 +20,7 @@ module Data.Extensible.Internal (
   , getMemberId
   , mkMembership
   , reifyMembership
-  , runMembership
+  , leadership
   , compareMembership
   , impossibleMembership
   -- * Member class
@@ -143,10 +143,10 @@ instance Ord (Membership xs x) where
   compare _ _ = EQ
 
 -- | Embodies a type equivalence to ensure that the 'Membership' points the first element.
-runMembership :: Membership (y ': xs) x -> (x :~: y -> r) -> (Membership xs x -> r) -> r
-runMembership (Membership 0) l _ = l (unsafeCoerce Refl)
-runMembership (Membership n) _ r = r (Membership (n - 1))
-{-# INLINE runMembership #-}
+leadership :: Membership (y ': xs) x -> (x :~: y -> r) -> (Membership xs x -> r) -> r
+leadership (Membership 0) l _ = l (unsafeCoerce Refl)
+leadership (Membership n) _ r = r (Membership (n - 1))
+{-# INLINE leadership #-}
 
 -- | Compare two 'Membership's.
 compareMembership :: Membership xs x -> Membership xs y -> Either Ordering (x :~: y)

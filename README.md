@@ -6,4 +6,6 @@ extensible
 
 This package provides extensible poly-kinded records, variants and effects.
 
+Several tutorials can be found at [School of Haskell](https://www.schoolofhaskell.com/user/fumieval/extensible).
+
 Bug reports and contributions are welcome!

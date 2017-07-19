@@ -1,4 +1,8 @@
 * Added `WrappedPointer`
+* Added `NFData` and `Generic` instances for `Comp`
+* Added `Prod`
+* `Data.Extensible.Class` now exports `compareMembership`
+* Renamed `runMembership` to `leadership`
 
 0.4.2
 -------------------------------------------------

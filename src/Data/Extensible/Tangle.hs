@@ -30,12 +30,12 @@ instance MonadTrans (TangleT h xs) where
   lift = TangleT . lift
 
 instance (Monad m, Monoid a) => Monoid (TangleT h xs m a) where
-    mempty = pure mempty
-    mappend = liftA2 mappend
+  mempty = pure mempty
+  mappend = liftA2 mappend
 
 -- | Hitch an element associated to the 'FieldName' through a wrapper.
 lasso :: forall k v m h xs. (Monad m, Associate k v xs, Wrapper h)
-    => FieldName k -> TangleT h xs m (Repr h (k ':> v))
+  => FieldName k -> TangleT h xs m (Repr h (k ':> v))
 lasso _ = view _Wrapper <$> hitchAt (association :: Membership xs (k ':> v))
 {-# INLINE lasso #-}
 

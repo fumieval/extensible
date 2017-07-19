@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
+{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable, GeneralizedNewtypeDeriving, DeriveGeneric #-}
 {-# LANGUAGE TypeFamilies #-}
 -----------------------------------------------------------------------------
 -- |
@@ -15,13 +15,16 @@ module Data.Extensible.Wrapper (
   , Const'(..)
   , Comp(..)
   , comp
+  , Prod(..)
   ) where
 
+import Control.DeepSeq
 import Data.Typeable (Typeable)
 import Data.Proxy (Proxy(..))
 import Data.Profunctor.Unsafe (Profunctor(..))
 import Data.Functor.Identity (Identity(..))
-import Data.Extensible.Internal.Rig (Optic', withIso)
+import Data.Extensible.Internal.Rig
+import GHC.Generics (Generic)
 
 -- | The extensible data types should take @k -> *@ as a parameter.
 -- This class allows us to take a shortcut for direct representation.
@@ -47,15 +50,16 @@ instance Wrapper Identity where
   {-# INLINE _Wrapper #-}
 
 instance Wrapper Maybe where
-    type Repr Maybe a = Maybe a
-    _Wrapper = id
+  type Repr Maybe a = Maybe a
+  _Wrapper = id
 
 instance Wrapper [] where
-    type Repr [] a = [a]
-    _Wrapper = id
+  type Repr [] a = [a]
+  _Wrapper = id
 
 -- | Poly-kinded composition
-newtype Comp (f :: j -> *) (g :: i -> j) (a :: i) = Comp { getComp :: f (g a) } deriving (Show, Eq, Ord, Typeable)
+newtype Comp (f :: j -> *) (g :: i -> j) (a :: i) = Comp { getComp :: f (g a) }
+  deriving (Show, Eq, Ord, Typeable, NFData, Generic)
 
 -- | Wrap a result of 'fmap'
 comp :: Functor f => (a -> g b) -> f a -> Comp f g b
@@ -79,3 +83,14 @@ instance Wrapper Proxy where
   type Repr Proxy x = ()
   _Wrapper = dimap (const ()) (fmap (const Proxy))
   {-# INLINE _Wrapper #-}
+
+-- | Poly-kinded product
+data Prod f g a = Prod (f a) (g a)
+  deriving (Show, Eq, Ord, Typeable, Generic)
+
+instance (NFData (f a), NFData (g a)) => NFData (Prod f g a)
+
+instance (Wrapper f, Wrapper g) => Wrapper (Prod f g) where
+  type Repr (Prod f g) a = (Repr f a, Repr g a)
+  _Wrapper = dimap (\(Prod f g) -> (view _Wrapper f, view _Wrapper g))
+    $ fmap (\(a, b) -> review _Wrapper a `Prod` review _Wrapper b)
