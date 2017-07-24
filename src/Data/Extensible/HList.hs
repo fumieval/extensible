@@ -44,5 +44,5 @@ hlength :: HList h xs -> Int
 hlength = go 0 where
   go :: Int -> HList h xs -> Int
   go n HNil = n
-  go n (HCons _ xs) = let n' = n + 1 in go n' xs
+  go n (HCons _ xs) = let !n' = n + 1 in go n' xs
 {-# INLINE hlength #-}
