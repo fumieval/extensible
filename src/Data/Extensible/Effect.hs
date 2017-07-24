@@ -86,7 +86,8 @@ import Data.Extensible.Class
 import Data.Functor.Identity
 import Data.Profunctor.Unsafe -- Trustworthy since 7.8
 
--- | A unit of named effects.
+-- | A unit of named effects. This is a variant of @(':|')@ specialised for
+-- 'Type -> Type'.
 data Instruction (xs :: [Assoc k (* -> *)]) a where
   Instruction :: !(Membership xs kv) -> AssocValue kv a -> Instruction xs a
 
@@ -152,17 +153,17 @@ type Rebinder xs r = forall x. Instruction xs x -> (x -> r) -> r
 -- | A common value for the second argument of 'peelEff'. Binds an instruction
 -- directly.
 rebindEff0 :: Rebinder xs (Eff xs r)
-rebindEff0 i k = boned (i :>>= k)
+rebindEff0 i k = boned $ i :>>= k
 
 -- | A pre-defined value for the second argument of 'peelEff'.
 -- Preserves the argument of the continuation.
 rebindEff1 :: Rebinder xs (a -> Eff xs r)
-rebindEff1 i k a = boned (i :>>= flip k a)
+rebindEff1 i k a = boned $ i :>>= flip k a
 
 -- | A pre-defined value for the second argument of 'peelEff'.
 -- Preserves two arguments of the continuation.
 rebindEff2 :: Rebinder xs (a -> b -> Eff xs r)
-rebindEff2 i k a b = boned (i :>>= \x -> k x a b)
+rebindEff2 i k a b = boned $ i :>>= \x -> k x a b
 
 -- | Reveal the final result of 'Eff'.
 leaveEff :: Eff '[] a -> a
@@ -176,7 +177,7 @@ retractEff m = case debone m of
   Return a -> return a
   Instruction i t :>>= k -> leadership i
     (\Refl -> t >>= retractEff . k)
-    (error "Impossible")
+    $ error "Impossible"
 
 -- | Transformation between effects
 newtype Interpreter f g = Interpreter { runInterpreter :: forall a. g a -> f a }
@@ -204,7 +205,7 @@ runAction f (AArgument x a) = runAction (f x) a
 
 -- | Create a 'Field' of a 'Interpreter' for an 'Action'.
 (@!?) :: FieldName k -> Function xs (f a) -> Field (Interpreter f) (k ':> Action xs a)
-_ @!? f = Field $ Interpreter (runAction f)
+_ @!? f = Field $ Interpreter $ runAction f
 infix 1 @!?
 
 -- | Specialised version of 'peelEff' for 'Action's.
@@ -225,7 +226,7 @@ peelAction pass ret wrap = go where
               run f AResult = f (go . k)
               run f (AArgument x a) = run (f x) a
           in run wrap t)
-      (\j -> pass (Instruction j t) (go . k))
+      $ \j -> pass (Instruction j t) (go . k)
 {-# INLINE peelAction #-}
 
 -- | Non continuation-passing variant of 'peelAction'.
@@ -241,7 +242,7 @@ peelAction0 wrap = go where
               run f AResult = f >>= go . k
               run f (AArgument x a) = run (f x) a
           in run wrap t)
-      (\j -> rebindEff0 (Instruction j t) (go . k))
+      $ \j -> rebindEff0 (Instruction j t) (go . k)
 {-# INLINE peelAction0 #-}
 
 -- | The reader monad is characterised by a type equality between the result
@@ -378,8 +379,7 @@ type MaybeEff = Const ()
 
 -- | Run an effect which may fail in the name of @k@.
 runMaybeEff :: forall k xs a. Eff (k >: MaybeEff ': xs) a -> Eff xs (Maybe a)
-runMaybeEff = peelEff0 (return . Just)
-  (\_ _ -> return Nothing)
+runMaybeEff = peelEff0 (return . Just) $ \_ _ -> return Nothing
 {-# INLINE runMaybeEff #-}
 
 -- | Throwing an exception
@@ -403,13 +403,12 @@ catchEff _ m0 handler = go m0 where
 
 -- | Run the frontal Either effect.
 runEitherEff :: forall k e xs a. Eff (k >: EitherEff e ': xs) a -> Eff xs (Either e a)
-runEitherEff = peelEff0 (return . Right)
-  (\(Const e) _ -> return $ Left e)
+runEitherEff = peelEff0 (return . Right) $ \(Const e) _ -> return $ Left e
 {-# INLINE runEitherEff #-}
 
 -- | Put a milestone on a computation.
 tickEff :: Associate k Identity xs => Proxy k -> Eff xs ()
-tickEff k = liftEff k (Identity ())
+tickEff k = liftEff k $ Identity ()
 {-# INLINE tickEff #-}
 
 -- | Run a computation until 'tickEff'.
@@ -419,4 +418,4 @@ runIterEff m = case debone m of
   Return a -> return (Left a)
   Instruction i t :>>= k -> leadership i
     (\Refl -> return $ Right $ k $ runIdentity t)
-    (\j -> boned $ Instruction j t :>>= runIterEff . k)
+    $ \j -> boned $ Instruction j t :>>= runIterEff . k
