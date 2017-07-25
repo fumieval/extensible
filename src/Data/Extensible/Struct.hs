@@ -1,6 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns, BangPatterns #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE MagicHash, UnboxedTuples #-}
 ------------------------------------------------------------------------
 -- |
@@ -54,11 +55,13 @@ import Control.Comonad
 import Data.Profunctor.Rep
 import Data.Profunctor.Sieve
 import qualified Data.StateVar as V
+import Data.Typeable (Typeable)
 import qualified Data.Extensible.HList as L
 import GHC.Types
 
 -- | Mutable type-indexed struct.
 data Struct s (h :: k -> *) (xs :: [k]) = Struct (SmallMutableArray# s Any)
+  deriving Typeable
 
 -- | Write a value in a 'Struct'.
 set :: PrimMonad m => Struct (PrimState m) h xs -> Membership xs x -> h x -> m ()

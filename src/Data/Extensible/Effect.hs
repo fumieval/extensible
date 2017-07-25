@@ -1,6 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Effect
@@ -85,11 +86,13 @@ import Data.Extensible.Internal.Rig
 import Data.Extensible.Class
 import Data.Functor.Identity
 import Data.Profunctor.Unsafe -- Trustworthy since 7.8
+import Data.Typeable (Typeable)
 
 -- | A unit of named effects. This is a variant of @(':|')@ specialised for
 -- 'Type -> Type'.
 data Instruction (xs :: [Assoc k (* -> *)]) a where
   Instruction :: !(Membership xs kv) -> AssocValue kv a -> Instruction xs a
+  deriving Typeable
 
 -- | The extensible operational monad
 type Eff xs = Skeleton (Instruction xs)
@@ -181,6 +184,7 @@ retractEff m = case debone m of
 
 -- | Transformation between effects
 newtype Interpreter f g = Interpreter { runInterpreter :: forall a. g a -> f a }
+  deriving Typeable
 
 -- | Process an 'Eff' action using a record of 'Interpreter's.
 handleEff :: RecordOf (Interpreter m) xs -> Eff xs a -> MonadView m (Eff xs) a

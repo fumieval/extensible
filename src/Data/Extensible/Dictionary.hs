@@ -25,6 +25,7 @@ import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
 import Data.Constraint
 import Data.Extensible.Wrapper
+import Data.Semigroup
 
 -- | Reify a collection of dictionaries, as you wish.
 library :: forall c xs. Forall c xs => Comp Dict c :* xs
@@ -46,6 +47,11 @@ instance (Eq (h :* xs), WrapForall Ord h xs) => Ord (h :* xs) where
   compare xs ys = henumerateFor (Proxy :: Proxy (Instance1 Ord h)) xs
     (\i r -> (hlookup i xs `compare` hlookup i ys) `mappend` r) mempty
   {-# INLINE compare #-}
+
+instance WrapForall Semigroup h xs => Semigroup (h :* xs) where
+  (<>) = hzipWith3 (\(Comp Dict) -> (<>))
+    (library :: Comp Dict (Instance1 Semigroup h) :* xs)
+  {-# INLINE (<>) #-}
 
 instance WrapForall Monoid h xs => Monoid (h :* xs) where
   mempty = hrepeatFor (Proxy :: Proxy (Instance1 Monoid h)) mempty

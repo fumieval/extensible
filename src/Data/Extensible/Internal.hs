@@ -68,6 +68,7 @@ import Unsafe.Coerce
 import Data.Typeable
 import Language.Haskell.TH hiding (Pred)
 import Data.Bits
+import Data.Semigroup (Semigroup(..))
 
 -- | Generates a 'Membership' that corresponds to the given ordinal (0-origin).
 mkMembership :: Int -> Q Exp
@@ -141,6 +142,9 @@ instance Eq (Membership xs x) where
 
 instance Ord (Membership xs x) where
   compare _ _ = EQ
+
+instance Semigroup (Membership xs x) where
+  x <> _ = x
 
 -- | Embodies a type equivalence to ensure that the 'Membership' points the first element.
 leadership :: Membership (y ': xs) x -> (x :~: y -> r) -> (Membership xs x -> r) -> r

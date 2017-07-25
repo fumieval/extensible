@@ -1,6 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses, UndecidableInstances #-}
 {-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables, TypeFamilies #-}
+{-# LANGUAGE DeriveDataTypeable, DeriveGeneric #-}
 {-# LANGUAGE CPP #-}
 #if __GLASGOW_HASKELL__ >= 800
 {-# LANGUAGE UndecidableSuperClasses #-}
@@ -57,7 +58,9 @@ import Data.Constraint
 import Data.Extensible.Wrapper
 import Data.Functor.Identity
 import Data.Semigroup
+import Data.Typeable (Typeable)
 import Foreign.Storable (Storable)
+import GHC.Generics (Generic)
 import GHC.TypeLits hiding (Nat)
 
 -- | Take the type of the key
@@ -82,7 +85,7 @@ instance (pk k, pv v) => KeyValue pk pv (k ':> v)
 -- @'Field' :: (v -> *) -> Assoc k v -> *@
 --
 newtype Field (h :: v -> *) (kv :: Assoc k v) = Field { getField :: h (AssocValue kv) }
-
+  deriving (Typeable, Generic)
 #define ND_Field(c) deriving instance c (h (AssocValue kv)) => c (Field h kv)
 
 ND_Field(Eq)
