@@ -1,6 +1,9 @@
 * Added `WrappedPointer`
 * Added `NFData` and `Generic` instances for `Comp`
+* Added a `Semigroup` instance for `h :* xs` and `Membership xs x`
 * Added `Prod`
+* Added `peelEff0`
+* Changed the `IsLabel` instance so that a function is always inferred as an optic
 * `Data.Extensible.Class` now exports `compareMembership`
 * Renamed `runMembership` to `leadership`
 
