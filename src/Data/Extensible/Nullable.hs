@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase, TypeFamilies, DeriveGeneric, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase, TypeFamilies #-}
 ------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Nullable

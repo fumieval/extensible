@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies, DeriveGeneric #-}
+{-# LANGUAGE TypeFamilies #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.League

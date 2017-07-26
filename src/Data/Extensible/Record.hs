@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase, TemplateHaskell, TypeFamilies, DeriveFunctor #-}
+{-# LANGUAGE LambdaCase, TemplateHaskell, TypeFamilies #-}
 ------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Record

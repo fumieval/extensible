@@ -51,6 +51,8 @@ library
     Data.Extensible.TH
   default-extensions: TypeOperators
     , DeriveDataTypeable
+    , DeriveGeneric
+    , GeneralizedNewtypeDeriving
     , KindSignatures
     , ConstraintKinds
     , DataKinds

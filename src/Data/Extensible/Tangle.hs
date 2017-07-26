@@ -1,4 +1,4 @@
-{-# LANGUAGE PolyKinds, KindSignatures, TypeOperators, DataKinds, Rank2Types, ScopedTypeVariables, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 ------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Struct
