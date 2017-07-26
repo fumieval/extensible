@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE DeriveTraversable, StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 -----------------------------------------------------------------------------
 -- |
@@ -59,7 +59,9 @@ instance Wrapper [] where
 
 -- | Poly-kinded composition
 newtype Comp (f :: j -> *) (g :: i -> j) (a :: i) = Comp { getComp :: f (g a) }
-  deriving (Show, Eq, Ord, Typeable, NFData, Generic)
+  deriving (Show, Eq, Ord, Typeable, NFData, Generic, Functor, Foldable)
+
+deriving instance (Traversable f, Traversable g) => Traversable (Comp f g)
 
 -- | Wrap a result of 'fmap'
 comp :: Functor f => (a -> g b) -> f a -> Comp f g b
@@ -73,7 +75,7 @@ instance (Functor f, Wrapper g) => Wrapper (Comp f g) where
 
 -- | Poly-kinded Const
 newtype Const' a x = Const' { getConst' :: a }
-  deriving (Show, Eq, Ord, Typeable, Generic, NFData)
+  deriving (Show, Eq, Ord, Typeable, Generic, NFData, Functor, Foldable, Traversable)
 
 instance Wrapper (Const' a) where
   type Repr (Const' a) b = a
@@ -87,7 +89,7 @@ instance Wrapper Proxy where
 
 -- | Poly-kinded product
 data Prod f g a = Prod (f a) (g a)
-  deriving (Show, Eq, Ord, Typeable, Generic)
+  deriving (Show, Eq, Ord, Typeable, Generic, Functor, Foldable, Traversable)
 
 instance (NFData (f a), NFData (g a)) => NFData (Prod f g a)
 
