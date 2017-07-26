@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase, TypeFamilies, DeriveGeneric #-}
+{-# LANGUAGE LambdaCase, TypeFamilies, DeriveGeneric, GeneralizedNewtypeDeriving #-}
 ------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Nullable
@@ -16,6 +16,7 @@ module Data.Extensible.Nullable (
   , Nullable(..)
   , mapNullable) where
 
+import Control.DeepSeq (NFData)
 import Data.Extensible.Class
 import Data.Extensible.Product
 import Data.Extensible.Sum
@@ -29,7 +30,8 @@ import Data.Semigroup
 import GHC.Generics (Generic)
 
 -- | Wrapped Maybe
-newtype Nullable h x = Nullable { getNullable :: Maybe (h x) } deriving (Show, Eq, Ord, Typeable, Generic)
+newtype Nullable h x = Nullable { getNullable :: Maybe (h x) }
+  deriving (Show, Eq, Ord, Typeable, Generic, NFData)
 
 instance Wrapper h => Wrapper (Nullable h) where
   type Repr (Nullable h) x = Maybe (Repr h x)

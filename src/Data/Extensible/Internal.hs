@@ -2,7 +2,8 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses, UndecidableInstances, FunctionalDependencies #-}
-{-# LANGUAGE ScopedTypeVariables, BangPatterns, StandaloneDeriving #-}
+{-# LANGUAGE ScopedTypeVariables, BangPatterns #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 -----------------------------------------------------------------------------
 -- |
@@ -57,6 +58,7 @@ module Data.Extensible.Internal (
   , module Data.Type.Equality
   , module Data.Proxy
   ) where
+import Control.DeepSeq (NFData)
 import Data.Type.Equality
 import Data.Proxy
 #if !MIN_VERSION_base(4,8,0)
@@ -82,7 +84,7 @@ mkMembership n = do
     $ conT ''Membership `appT` pure t `appT` varT (names !! n)
 
 -- | The position of @x@ in the type level set @xs@.
-newtype Membership (xs :: [k]) (x :: k) = Membership { getMemberId :: Int } deriving Typeable
+newtype Membership (xs :: [k]) (x :: k) = Membership { getMemberId :: Int } deriving (Typeable, NFData)
 
 newtype Remembrance xs x r = Remembrance (Member xs x => r)
 
