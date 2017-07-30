@@ -59,8 +59,10 @@ instance Wrapper [] where
 
 -- | Poly-kinded composition
 newtype Comp (f :: j -> *) (g :: i -> j) (a :: i) = Comp { getComp :: f (g a) }
-  deriving (Show, Eq, Ord, Typeable, NFData, Generic, Functor, Foldable)
+  deriving (Show, Eq, Ord, Typeable, NFData, Generic)
 
+deriving instance (Functor f, Functor g) => Functor (Comp f g)
+deriving instance (Foldable f, Foldable g) => Foldable (Comp f g)
 deriving instance (Traversable f, Traversable g) => Traversable (Comp f g)
 
 -- | Wrap a result of 'fmap'
