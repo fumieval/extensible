@@ -20,6 +20,7 @@ import Data.Extensible.Product
 import Data.Extensible.Internal.Rig
 import Data.Extensible.Nullable
 import Data.Extensible.Wrapper
+import Data.Semigroup
 
 -- | @'TangleT' h xs m@ is the monad of computations that may depend on the elements in 'xs'.
 newtype TangleT h xs m a = TangleT
@@ -28,6 +29,9 @@ newtype TangleT h xs m a = TangleT
 
 instance MonadTrans (TangleT h xs) where
   lift = TangleT . lift
+
+instance (Monad m, Semigroup a) => Semigroup (TangleT h xs m a) where
+  (<>) = liftA2 (<>)
 
 instance (Monad m, Monoid a) => Monoid (TangleT h xs m a) where
   mempty = pure mempty
