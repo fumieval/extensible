@@ -24,6 +24,8 @@ module Data.Extensible.Internal (
   , leadership
   , compareMembership
   , impossibleMembership
+  , here
+  , navNext
   -- * Member class
   , Member(..)
   , remember
@@ -45,10 +47,6 @@ module Data.Extensible.Internal (
   -- * Sugar
   , Elaborate
   , Elaborated(..)
-  -- * Tree navigation
-  , NavHere(..)
-  , here
-  , navNext
   -- * Miscellaneous
   , Nat(..)
   , KnownPosition(..)
@@ -164,10 +162,6 @@ compareMembership (Membership m) (Membership n) = case compare m n of
 -- | There is no 'Membership' of an empty list.
 impossibleMembership :: Membership '[] x -> r
 impossibleMembership _ = error "Impossible"
-
--- | Ensure that the first element of @xs@ is @x@
-data NavHere xs x where
-  Here :: NavHere (x ': xs) x
 
 -- | The 'Membership' points the first element
 here :: Membership (x ': xs) x
