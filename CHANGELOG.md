@@ -1,3 +1,5 @@
+0.4.3
+-------------------------------------------------
 * Added `WrappedPointer`
 * Added `NFData` and `Generic` instances for `Comp`
 * Added a `Semigroup` instance for `h :* xs` and `Membership xs x`
