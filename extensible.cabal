@@ -85,6 +85,7 @@ test-suite effects
   main-is: effects.hs
   build-depends: base, extensible
   hs-source-dirs: tests
+  default-language:    Haskell2010
 
 benchmark records
   type:           exitcode-stdio-1.0
@@ -92,6 +93,7 @@ benchmark records
   ghc-options:    -O2
   hs-source-dirs: benchmarks
   build-depends: base, lens, criterion, extensible
+  default-language:    Haskell2010
 
 benchmark eff-comparison
   type:           exitcode-stdio-1.0
@@ -99,3 +101,4 @@ benchmark eff-comparison
   ghc-options:    -O2
   hs-source-dirs: benchmarks
   build-depends: base, criterion, extensible, extensible-effects, effin, freer-effects, mtl
+  default-language:    Haskell2010
