@@ -74,11 +74,16 @@ module Data.Extensible.Effect (
   , Identity
   , tickEff
   , runIterEff
+  -- ** Cont
+  , ContT
+  , contEff
+  , runContEff
   ) where
 
 import Control.Applicative
 import Control.Monad.Skeleton
 import Control.Monad.Trans.State.Strict
+import Control.Monad.Trans.Cont (ContT(..))
 import Data.Extensible.Field
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
@@ -422,3 +427,16 @@ runIterEff m = case debone m of
   Instruction i t :>>= k -> leadership i
     (\Refl -> return $ Right $ k $ runIdentity t)
     $ \j -> boned $ Instruction j t :>>= runIterEff . k
+
+contEff :: Associate k (ContT r m) xs => Proxy k
+  -> ((a -> m r) -> m r) -> Eff xs a
+contEff k = liftEff k . ContT
+
+runContEff :: forall k r xs a. Eff (k >: ContT r (Eff xs) ': xs) a
+  -> (a -> Eff xs r)
+  -> Eff xs r
+runContEff m cont = case debone m of
+  Return a -> cont a
+  Instruction i t :>>= k -> leadership i
+    (\Refl -> runContT t (flip runContEff cont . k))
+    $ \j -> boned $ Instruction j t :>>= flip runContEff cont . k
