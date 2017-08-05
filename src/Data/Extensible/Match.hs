@@ -23,6 +23,7 @@ import Data.Extensible.Sum
 import Data.Extensible.Wrapper
 import Data.Typeable (Typeable)
 import Data.Profunctor.Unsafe
+import Data.Semigroup
 import GHC.Generics (Generic)
 
 -- | Retrieve the contents so that they matches and pass both to the given function.
@@ -47,7 +48,8 @@ caseOf = flip match
 infix 0 `caseOf`
 
 -- | Turn a wrapper type into a clause for it.
-newtype Match h r x = Match { runMatch :: h x -> r } deriving (Typeable, Generic)
+newtype Match h r x = Match { runMatch :: h x -> r }
+  deriving (Typeable, Generic, Semigroup, Monoid)
 
 instance Wrapper h => Wrapper (Match h r) where
   type Repr (Match h r) x = Repr h x -> r

@@ -24,6 +24,7 @@ import Data.Proxy (Proxy(..))
 import Data.Profunctor.Unsafe (Profunctor(..))
 import Data.Functor.Identity (Identity(..))
 import Data.Extensible.Internal.Rig
+import Data.Semigroup
 import GHC.Generics (Generic)
 
 -- | The extensible data types should take @k -> *@ as a parameter.
@@ -59,7 +60,7 @@ instance Wrapper [] where
 
 -- | Poly-kinded composition
 newtype Comp (f :: j -> *) (g :: i -> j) (a :: i) = Comp { getComp :: f (g a) }
-  deriving (Show, Eq, Ord, Typeable, NFData, Generic)
+  deriving (Show, Eq, Ord, Typeable, NFData, Generic, Semigroup, Monoid)
 
 deriving instance (Functor f, Functor g) => Functor (Comp f g)
 deriving instance (Foldable f, Foldable g) => Foldable (Comp f g)
@@ -99,3 +100,10 @@ instance (Wrapper f, Wrapper g) => Wrapper (Prod f g) where
   type Repr (Prod f g) a = (Repr f a, Repr g a)
   _Wrapper = dimap (\(Prod f g) -> (view _Wrapper f, view _Wrapper g))
     $ fmap (\(a, b) -> review _Wrapper a `Prod` review _Wrapper b)
+
+instance (Semigroup (f a), Semigroup (g a)) => Semigroup (Prod f g a) where
+  Prod a b <> Prod c d = Prod (a <> c) (b <> d)
+
+instance (Monoid (f a), Monoid (g a)) => Monoid (Prod f g a) where
+  mempty = Prod mempty mempty
+  Prod a b `mappend` Prod c d = Prod (mappend a c) (mappend b d)
