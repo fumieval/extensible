@@ -55,6 +55,7 @@ module Data.Extensible.Effect (
   , stateEff
   , runStateEff
   , execStateEff
+  , evalStateEff
   -- ** Writer
   , WriterEff
   , writerEff
@@ -336,6 +337,11 @@ runStateEff = peelEff1 (\a s -> return (a, s)) contState
 execStateEff :: forall k s xs a. Eff (k >: State s ': xs) a -> s -> Eff xs s
 execStateEff = peelEff1 (const return) contState
 {-# INLINE execStateEff #-}
+
+-- | Run the frontal state effect.
+evalStateEff :: forall k s xs a. Eff (k >: State s ': xs) a -> s -> Eff xs a
+evalStateEff = peelEff1 (const . return) contState
+{-# INLINE evalStateEff #-}
 
 -- | @(,)@ already is a writer monad.
 type WriterEff w = (,) w
