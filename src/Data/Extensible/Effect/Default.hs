@@ -18,8 +18,11 @@ module Data.Extensible.Effect.Default (
   , runReaderDef
   , StateDef
   , runStateDef
+  , evalStateDef
+  , execStateDef
   , WriterDef
   , runWriterDef
+  , execWriterDef
   , MaybeDef
   , runMaybeDef
   , EitherDef
@@ -88,11 +91,23 @@ runStateDef :: Eff (StateDef s ': xs) a -> s -> Eff xs (a, s)
 runStateDef = runStateEff
 {-# INLINE runStateDef #-}
 
+evalStateDef :: Eff (StateDef s ': xs) a -> s -> Eff xs a
+evalStateDef = evalStateEff
+{-# INLINE evalStateDef #-}
+
+execStateDef :: Eff (StateDef s ': xs) a -> s -> Eff xs s
+execStateDef = execStateEff
+{-# INLINE execStateDef #-}
+
 type WriterDef w = "Writer" >: WriterEff w
 
 runWriterDef :: Monoid w => Eff (WriterDef w ': xs) a -> Eff xs (a, w)
 runWriterDef = runWriterEff
 {-# INLINE runWriterDef #-}
+
+execWriterDef :: Monoid w => Eff (WriterDef w ': xs) a -> Eff xs w
+execWriterDef = execWriterEff
+{-# INLINE execWriterDef #-}
 
 type MaybeDef = "Maybe" >: EitherEff ()
 

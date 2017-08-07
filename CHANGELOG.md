@@ -4,6 +4,7 @@
 * Added `castEff`
 * Added `evalStateEff`
 * Added `Semigroup` and `Monoid` instances for `Match`, `Comp`, `Prod`
+* Added `evalStateDef`, `execStateDef`, and `execWriterDef`
 
 0.4.3
 -------------------------------------------------
