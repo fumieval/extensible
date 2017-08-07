@@ -1,6 +1,7 @@
 0.4.4
 -------------------------------------------------
 * Added `contEff` and `runContEff`
+* Added `castEff`
 * Added `Semigroup` and `Monoid` instances for `Match`, `Comp`, `Prod`
 
 0.4.3

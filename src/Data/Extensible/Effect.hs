@@ -18,6 +18,7 @@ module Data.Extensible.Effect (
   , liftEff
   , liftsEff
   , hoistEff
+  , castEff
   -- * Step-wise handling
   , Interpreter(..)
   , handleEff
@@ -85,8 +86,10 @@ import Control.Monad.Skeleton
 import Control.Monad.Trans.State.Strict
 import Control.Monad.Trans.Cont (ContT(..))
 import Data.Extensible.Field
+import Data.Extensible.Inclusion
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
+import Data.Extensible.Product
 import Data.Extensible.Class
 import Data.Functor.Identity
 import Data.Profunctor.Unsafe -- Trustworthy since 7.8
@@ -119,6 +122,10 @@ hoistEff _ f = hoistSkeleton $ \(Instruction i t) -> case compareMembership (ass
   Right Refl -> Instruction i (f t)
   _ -> Instruction i t
 {-# INLINABLE hoistEff #-}
+
+castEff :: IncludeAssoc ys xs => Eff xs a -> Eff ys a
+castEff = hoistSkeleton
+  $ \(Instruction i t) -> Instruction (hlookup i inclusionAssoc) t
 
 -- | Build a relay-style handler from a triple of functions.
 --
