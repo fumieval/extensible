@@ -124,6 +124,7 @@ hoistEff _ f = hoistSkeleton $ \(Instruction i t) -> case compareMembership (ass
   _ -> Instruction i t
 {-# INLINABLE hoistEff #-}
 
+-- | Upcast an action.
 castEff :: IncludeAssoc ys xs => Eff xs a -> Eff ys a
 castEff = hoistSkeleton
   $ \(Instruction i t) -> Instruction (hlookup i inclusionAssoc) t
@@ -333,12 +334,12 @@ runStateEff :: forall k s xs a. Eff (k >: State s ': xs) a -> s -> Eff xs (a, s)
 runStateEff = peelEff1 (\a s -> return (a, s)) contState
 {-# INLINE runStateEff #-}
 
--- | Run the frontal state effect.
+-- | Run the frontal state effect and return the final state.
 execStateEff :: forall k s xs a. Eff (k >: State s ': xs) a -> s -> Eff xs s
 execStateEff = peelEff1 (const return) contState
 {-# INLINE execStateEff #-}
 
--- | Run the frontal state effect.
+-- | Run the frontal state effect and return the final result.
 evalStateEff :: forall k s xs a. Eff (k >: State s ': xs) a -> s -> Eff xs a
 evalStateEff = peelEff1 (const . return) contState
 {-# INLINE evalStateEff #-}
@@ -422,7 +423,7 @@ catchEff _ m0 handler = go m0 where
       Right Refl -> handler (getConst t)
 {-# INLINE catchEff #-}
 
--- | Run the frontal Either effect.
+-- | Run an action and abort on 'throwEff'.
 runEitherEff :: forall k e xs a. Eff (k >: EitherEff e ': xs) a -> Eff xs (Either e a)
 runEitherEff = peelEff0 (return . Right) $ \(Const e) _ -> return $ Left e
 {-# INLINE runEitherEff #-}
@@ -432,7 +433,7 @@ tickEff :: Associate k Identity xs => Proxy k -> Eff xs ()
 tickEff k = liftEff k $ Identity ()
 {-# INLINE tickEff #-}
 
--- | Run a computation until 'tickEff'.
+-- | Run a computation until the first call of 'tickEff'.
 runIterEff :: Eff (k >: Identity ': xs) a
   -> Eff xs (Either a (Eff (k >: Identity ': xs) a))
 runIterEff m = case debone m of
@@ -441,10 +442,12 @@ runIterEff m = case debone m of
     (\Refl -> return $ Right $ k $ runIdentity t)
     $ \j -> boned $ Instruction j t :>>= runIterEff . k
 
+-- | Place a continuation-passing action.
 contEff :: Associate k (ContT r m) xs => Proxy k
   -> ((a -> m r) -> m r) -> Eff xs a
 contEff k = liftEff k . ContT
 
+-- | Unwrap a continuation.
 runContEff :: forall k r xs a. Eff (k >: ContT r (Eff xs) ': xs) a
   -> (a -> Eff xs r)
   -> Eff xs r

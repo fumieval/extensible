@@ -71,6 +71,7 @@ instance (Associate "Either" (Const e) xs) => MonadError e (Eff xs) where
   throwError = throwEff pEither
   catchError = catchEff pEither
 
+-- | A bit dubious
 instance (Monoid e, Associate "Either" (Const e) xs) => Alternative (Eff xs) where
   empty = throwError mempty
   p <|> q = catchError p (const q)
@@ -79,44 +80,55 @@ instance (Monoid e, Associate "Either" (Const e) xs) => MonadPlus (Eff xs) where
   mzero = empty
   mplus = (<|>)
 
+-- | mtl-compatible reader
 type ReaderDef r = "Reader" >: ReaderEff r
 
+-- | Specialised version of 'runReaderEff' compatible with the 'MonadReader' instance.
 runReaderDef :: Eff (ReaderDef r ': xs) a -> r -> Eff xs a
 runReaderDef = runReaderEff
 {-# INLINE runReaderDef #-}
 
+-- | mtl-compatible state
 type StateDef s = "State" >: State s
 
+-- | 'runStateEff' specialised for the 'MonadState' instance.
 runStateDef :: Eff (StateDef s ': xs) a -> s -> Eff xs (a, s)
 runStateDef = runStateEff
 {-# INLINE runStateDef #-}
 
+-- | 'evalStateEff' specialised for the 'MonadState' instance.
 evalStateDef :: Eff (StateDef s ': xs) a -> s -> Eff xs a
 evalStateDef = evalStateEff
 {-# INLINE evalStateDef #-}
 
+-- | 'execStateEff' specialised for the 'MonadState' instance.
 execStateDef :: Eff (StateDef s ': xs) a -> s -> Eff xs s
 execStateDef = execStateEff
 {-# INLINE execStateDef #-}
 
+-- | mtl-compatible writer
 type WriterDef w = "Writer" >: WriterEff w
 
+-- | 'runWriterDef' specialised for the 'MonadWriter' instance.
 runWriterDef :: Monoid w => Eff (WriterDef w ': xs) a -> Eff xs (a, w)
 runWriterDef = runWriterEff
 {-# INLINE runWriterDef #-}
 
+-- | 'execWriterDef' specialised for the 'MonadWriter' instance.
 execWriterDef :: Monoid w => Eff (WriterDef w ': xs) a -> Eff xs w
 execWriterDef = execWriterEff
 {-# INLINE execWriterDef #-}
 
-type MaybeDef = "Maybe" >: EitherEff ()
+type MaybeDef = "Either" >: EitherEff ()
 
+-- | Similar to 'runMaybeT', but on 'Eff'
 runMaybeDef :: Eff (MaybeDef ': xs) a -> Eff xs (Maybe a)
 runMaybeDef = runMaybeEff
 {-# INLINE runMaybeDef #-}
 
 type EitherDef e = "Either" >: EitherEff e
 
+-- | Similar to 'runExceptT', but on 'Eff'
 runEitherDef :: Eff (EitherDef e ': xs) a -> Eff xs (Either e a)
 runEitherDef = runEitherEff
 {-# INLINE runEitherDef #-}
