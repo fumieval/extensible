@@ -105,24 +105,18 @@ class Generate (xs :: [k]) where
 
 instance Generate '[] where
   henumerate _ r = r
-  {-# INLINE henumerate #-}
 
   hcount _ = 0
-  {-# INLINE hcount #-}
 
   hgenerateList _ = pure HNil
-  {-# INLINE hgenerateList #-}
 
 instance Generate xs => Generate (x ': xs) where
   henumerate f r = f here $ henumerate (f . navNext) r
-  {-# INLINE henumerate #-}
 
   hcount _ = 1 + hcount (Proxy :: Proxy xs)
-  {-# INLINE hcount #-}
 
   -- | Enumerate 'Membership's and construct an 'HList'.
   hgenerateList f = HCons <$> f here <*> hgenerateList (f . navNext)
-  {-# INLINE hgenerateList #-}
 
 -- | Every element in @xs@ satisfies @c@
 class (ForallF c xs, Generate xs) => Forall (c :: k -> Constraint) (xs :: [k]) where
@@ -134,17 +128,13 @@ class (ForallF c xs, Generate xs) => Forall (c :: k -> Constraint) (xs :: [k]) w
 
 instance Forall c '[] where
   henumerateFor _ _ _ r = r
-  {-# INLINE henumerateFor #-}
 
   hgenerateListFor _ _ = pure HNil
-  {-# INLINE hgenerateListFor #-}
 
 instance (c x, Forall c xs) => Forall c (x ': xs) where
   henumerateFor p _ f r = f here $ henumerateFor p (Proxy :: Proxy xs) (f . navNext) r
-  {-# INLINE henumerateFor #-}
 
   hgenerateListFor p f = HCons <$> f here <*> hgenerateListFor p (f . navNext)
-  {-# INLINE hgenerateListFor #-}
 
 type family ForallF (c :: k -> Constraint) (xs :: [k]) :: Constraint where
   ForallF c '[] = ()
