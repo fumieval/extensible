@@ -10,6 +10,7 @@ cabal-dev
 cabal.sandbox.config
 cabal.config
 .stack-work
+.bash_history
 
 # =========================
 # Operating System Files
