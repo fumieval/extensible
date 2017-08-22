@@ -9,6 +9,7 @@
 --
 ------------------------------------------------------------------------
 module Data.Extensible.TH (mkField
+  , mkFieldAs
   , decEffects
   , decEffectSet
   , decEffectSuite
@@ -39,9 +40,13 @@ import Data.Foldable (foldMap)
 -- @
 --
 mkField :: String -> DecsQ
-mkField str = fmap concat $ forM (words str) $ \s@(x:xs) -> do
-  let st = litT (strTyLit s)
+mkField str = fmap concat $ forM (words str) $ \s@(x:xs) ->
   let name = mkName $ if isLower x then x : xs else '_' : x : xs
+  in mkFieldAs name s
+
+mkFieldAs :: Name -> String -> DecsQ
+mkFieldAs name s = do
+  let st = litT (strTyLit s)
   let lbl = conE 'Proxy `sigE` (conT ''Proxy `appT` st)
   sequence [sigD name $ conT ''FieldOptic `appT` st
     , valD (varP name) (normalB $ varE 'itemAssoc `appE` lbl) []
