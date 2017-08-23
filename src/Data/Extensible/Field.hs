@@ -206,12 +206,26 @@ instance Profunctor (LabelPhantom s) where
   dimap _ _ _ = error "Impossible"
 
 -- | Annotate a value by the field name.
+--
+-- @
+-- foo :: 'Record' '["num" >: Int, "str" >: String]
+-- foo = #num @= 42
+--   <: #str @= "foo"
+--   <: nil
+-- @
 (@=) :: Wrapper h => FieldName k -> Repr h v -> Field h (k ':> v)
 (@=) _ = Field #. review _Wrapper
 {-# INLINE (@=) #-}
 infix 1 @=
 
 -- | Lifted ('@=')
+-- @
+-- foo :: IO ('Record' '["num" >: Int, "str" >: String])
+-- foo = hsequence
+--   $ #num <@=> readLn
+--   <: #str <@=> getLine
+--   <: nil
+-- @
 (<@=>) :: (Functor f, Wrapper h) => FieldName k -> f (Repr h v) -> Comp f (Field h) (k ':> v)
 (<@=>) k = comp (k @=)
 {-# INLINE (<@=>) #-}
