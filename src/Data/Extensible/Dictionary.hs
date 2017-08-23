@@ -60,6 +60,10 @@ instance WrapForall Monoid h xs => Monoid (h :* xs) where
     (library :: Comp Dict (Instance1 Monoid h) :* xs)
   {-# INLINE mappend #-}
 
+instance WrapForall Bounded h xs => Bounded (h :* xs) where
+  minBound = hrepeatFor (Proxy :: Proxy (Instance1 Bounded h)) minBound
+  maxBound = hrepeatFor (Proxy :: Proxy (Instance1 Bounded h)) maxBound
+
 instance WrapForall NFData h xs => NFData (h :* xs) where
   rnf xs = henumerateFor (Proxy :: Proxy (Instance1 NFData h)) (Proxy :: Proxy xs)
     (\i -> deepseq (hlookup i xs)) ()

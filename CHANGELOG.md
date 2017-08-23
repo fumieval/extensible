@@ -6,6 +6,7 @@
 * Added `Semigroup` and `Monoid` instances for `Match`, `Comp`, `Prod`
 * Added `evalStateDef`, `execStateDef`, and `execWriterDef`
 * Added `mkFieldAs`
+* Added a `Bounded` instance for `:*`
 
 0.4.3
 -------------------------------------------------
