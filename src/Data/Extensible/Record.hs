@@ -93,7 +93,7 @@ deriveIsRecord name = reify name >>= \case
             ]
         ]
       ]
-  info -> fail $ "deriveAsRecord: Unsupported " ++ show info
+  info -> fail $ "deriveIsRecord: Unsupported " ++ show info
 
 shape2Pat :: [Pat] -> Pat
 shape2Pat [] = ConP 'HNil []
