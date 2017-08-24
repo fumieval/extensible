@@ -8,12 +8,15 @@ module Data.Extensible.Bits (BitProd(..)
   , BitRecordOf
   , BitRecord) where
 
+import Control.Comonad
 import Data.Bits
 import Data.Extensible.Class
 import Data.Extensible.Dictionary
 import Data.Extensible.Internal (getMemberId)
 import Data.Extensible.Field
 import Data.Functor.Identity
+import Data.Profunctor.Rep
+import Data.Profunctor.Sieve
 import Data.Proxy
 import Data.Word
 import GHC.TypeLits
@@ -86,3 +89,9 @@ proxyBitWidth _ _ = Proxy
 
 type BitRecordOf r h = BitProd r (Field h)
 type BitRecord r = BitRecordOf r Identity
+
+instance (Corepresentable p, Comonad (Corep p), Functor f) => Extensible f p (BitProd r) where
+  type ExtensibleConstr (BitProd r) h xs x
+    = (Bits r, FromBits r (h x), Forall (Instance1 (FromBits r) h) xs)
+  pieceAt i pafb = cotabulate $ \ws -> bupdate i (extract ws) <$> cosieve pafb (blookup i <$> ws)
+  {-# INLINE pieceAt #-}

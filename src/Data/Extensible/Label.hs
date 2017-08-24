@@ -35,6 +35,7 @@ instance (Extensible f p e
   , Associate k v xs
   , Labelling k p
   , Wrapper h
+  , ExtensibleConstr e (Field h) xs (k ':> v)
   , rep ~ Repr h v
   , s ~ e (Field h) xs
   , s ~ t
