@@ -1,4 +1,5 @@
 {-# LANGUAGE UndecidableInstances, ScopedTypeVariables, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, DeriveGeneric #-}
 {-# OPTIONS_GHC -ddump-simpl -ddump-to-file -dsuppress-all #-}
 
 module Data.Extensible.Bits (BitProd(..)
@@ -17,14 +18,17 @@ import Data.Extensible.Dictionary
 import Data.Extensible.Internal (getMemberId)
 import Data.Extensible.Field
 import Data.Functor.Identity
+import Data.Ix
 import Data.Profunctor.Rep
 import Data.Profunctor.Sieve
 import Data.Proxy
 import Data.Word
+import GHC.Generics (Generic)
 import GHC.TypeLits
 
 -- | Bit-level record
 newtype BitProd r (h :: k -> *) (xs :: [k]) = BitProd { unBitProd :: r }
+  deriving (Eq, Ord, Enum, Bounded, Ix, Generic)
 
 type family TotalBits h xs where
   TotalBits h '[] = 0
