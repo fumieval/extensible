@@ -3,6 +3,8 @@
 
 module Data.Extensible.Bits (BitProd(..)
   , FromBits(..)
+  , TotalBits
+  , BitFields
   , blookup
   , bupdate
   , BitRecordOf
@@ -24,6 +26,18 @@ import GHC.TypeLits
 -- | Bit-level record
 newtype BitProd r (h :: k -> *) (xs :: [k]) = BitProd { unBitProd :: r }
 
+type family TotalBits h xs where
+  TotalBits h '[] = 0
+  TotalBits h (x ': xs) = BitWidth (h x) + TotalBits h xs
+
+-- | Conversion between a value and a bit representation.
+--
+-- Instances of `FromBits` must satisfy the following laws:
+--
+-- > fromBits (x `shiftL` W .|. toBits a) ≡ a
+-- > toBits a `shiftR` W == zeroBits
+--
+-- where W is the 'BitWidth'.
 class (Bits r, KnownNat (BitWidth a)) => FromBits r a where
   type BitWidth a :: Nat
   fromBits :: r -> a
@@ -55,8 +69,12 @@ instance (Bits r, FromBits r (h (AssocValue x))) => FromBits r (Field h x) where
   fromBits = Field . fromBits
   toBits = toBits . getField
 
+type BitFields r h xs = (FromBits r r
+  , TotalBits h xs <= BitWidth r
+  , Forall (Instance1 (FromBits r) h) xs)
+
 blookup :: forall x r h xs.
-  (Bits r, FromBits r (h x), Forall (Instance1 (FromBits r) h) xs)
+  (BitFields r h xs, FromBits r (h x))
   => Membership xs x -> BitProd r h xs -> h x
 blookup i (BitProd r) = fromBits $ unsafeShiftR r
   $ bitOffsetAt (Proxy :: Proxy r) (Proxy :: Proxy h) (Proxy :: Proxy xs)
@@ -64,7 +82,7 @@ blookup i (BitProd r) = fromBits $ unsafeShiftR r
 {-# INLINE blookup #-}
 
 bupdate :: forall x r h xs.
-  (Bits r, FromBits r (h x), Forall (Instance1 (FromBits r) h) xs)
+  (BitFields r h xs, FromBits r (h x))
   => Membership xs x -> BitProd r h xs -> h x -> BitProd r h xs
 bupdate i (BitProd r) a = BitProd $ r .&. mask
   .|. unsafeShiftL (toBits a) offset
@@ -92,6 +110,6 @@ type BitRecord r = BitRecordOf r Identity
 
 instance (Corepresentable p, Comonad (Corep p), Functor f) => Extensible f p (BitProd r) where
   type ExtensibleConstr (BitProd r) h xs x
-    = (Bits r, FromBits r (h x), Forall (Instance1 (FromBits r) h) xs)
+    = (BitFields r h xs, FromBits r (h x))
   pieceAt i pafb = cotabulate $ \ws -> bupdate i (extract ws) <$> cosieve pafb (blookup i <$> ws)
   {-# INLINE pieceAt #-}
