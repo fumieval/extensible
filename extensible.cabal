@@ -29,6 +29,7 @@ source-repository head
 library
   exposed-modules:
     Data.Extensible
+    Data.Extensible.Bits
     Data.Extensible.Class
     Data.Extensible.Dictionary
     Data.Extensible.Field
