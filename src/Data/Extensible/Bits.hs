@@ -73,6 +73,11 @@ instance (Bits r, FromBits r (h (AssocValue x))) => FromBits r (Field h x) where
   fromBits = Field . fromBits
   toBits = toBits . getField
 
+instance (Bits r, KnownNat (TotalBits h xs)) => FromBits r (BitProd r h xs) where
+  type BitWidth (BitProd r h xs) = TotalBits h xs
+  fromBits = BitProd
+  toBits = unBitProd
+
 type BitFields r h xs = (FromBits r r
   , TotalBits h xs <= BitWidth r
   , Forall (Instance1 (FromBits r) h) xs)
