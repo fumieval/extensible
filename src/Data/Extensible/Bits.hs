@@ -8,6 +8,7 @@ module Data.Extensible.Bits (BitProd(..)
   , BitFields
   , blookup
   , bupdate
+  , toBitProd
   , BitRecordOf
   , BitRecord) where
 
@@ -15,6 +16,7 @@ import Control.Comonad
 import Data.Bits
 import Data.Extensible.Class
 import Data.Extensible.Dictionary
+import Data.Extensible.Product
 import Data.Extensible.Internal (getMemberId)
 import Data.Extensible.Field
 import Data.Functor.Identity
@@ -81,6 +83,10 @@ instance (Bits r, KnownNat (TotalBits h xs)) => FromBits r (BitProd r h xs) wher
 type BitFields r h xs = (FromBits r r
   , TotalBits h xs <= BitWidth r
   , Forall (Instance1 (FromBits r) h) xs)
+
+toBitProd :: forall r h xs. BitFields r h xs => h :* xs -> BitProd r h xs
+toBitProd p = hfoldrWithIndexFor (Proxy :: Proxy (Instance1 (FromBits r) h))
+  (\i v f r -> f $! bupdate i r v) id p (BitProd zeroBits)
 
 blookup :: forall x r h xs.
   (BitFields r h xs, FromBits r (h x))
