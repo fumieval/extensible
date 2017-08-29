@@ -66,6 +66,7 @@ module Data.Extensible.Effect (
   , execWriterEff
   -- ** Maybe
   , MaybeEff
+  , nothingEff
   , runMaybeEff
   -- ** Either
   , EitherEff
@@ -398,6 +399,10 @@ execWriterEff = peelEff1 (const return) contWriter `flip` mempty
 
 -- | An effect with no result
 type MaybeEff = Const ()
+
+-- | Break out of the computation. Similar to 'Nothing'.
+nothingEff :: Associate k MaybeEff xs => Proxy k -> Eff xs a
+nothingEff = flip throwEff ()
 
 -- | Run an effect which may fail in the name of @k@.
 runMaybeEff :: forall k xs a. Eff (k >: MaybeEff ': xs) a -> Eff xs (Maybe a)
