@@ -400,10 +400,7 @@ execWriterEff = peelEff1 (const return) contWriter `flip` mempty
 -- | An effect with no result
 type MaybeEff = Const ()
 
--- |
--- Make the failure of @MaybeEff@'s caluculations.
---
--- Simular to @Maybe@'s @Nothing@.
+-- | Break out of the computation. Similar to 'Nothing'.
 nothingEff :: Associate k MaybeEff xs => Proxy k -> Eff xs a
 nothingEff = flip throwEff ()
 
