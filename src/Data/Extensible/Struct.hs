@@ -2,6 +2,7 @@
 {-# LANGUAGE ViewPatterns, BangPatterns #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE MagicHash, UnboxedTuples #-}
+{-# LANGUAGE TypeFamilies #-}
 ------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Struct
@@ -34,6 +35,8 @@ module Data.Extensible.Struct (
   , newFrom
   , hlookup
   , hlength
+  , type (++)
+  , happend
   , hfoldrWithIndex
   , thaw
   , hfrozen
@@ -212,6 +215,23 @@ thaw (HProduct ar) = primitive $ \s -> case thawSmallArray# ar 0# (sizeofSmallAr
 hlength :: h :* xs -> Int
 hlength (HProduct ar) = I# (sizeofSmallArray# ar)
 {-# INLINE hlength #-}
+
+type family (++) (xs :: [k]) (ys :: [k]) :: [k] where
+  '[] ++ ys = ys
+  (x ': xs) ++ ys = x ': xs ++ ys
+
+infixr 5 ++
+
+-- | Combine products.
+happend :: (h :* xs) -> (h :* ys) -> (h :* (xs ++ ys))
+happend (HProduct lhs) (HProduct rhs) = runST $ primitive $ \s ->
+  let lhsSz = sizeofSmallArray# lhs
+      rhsSz = sizeofSmallArray# rhs
+  in  case newSmallArray# (lhsSz +# rhsSz) undefined s of { (# s, a #) ->
+      case copySmallArray# lhs 0# a 0# lhsSz s of { s ->
+      case copySmallArray# rhs 0# a lhsSz rhsSz s of { s ->
+      case unsafeFreezeSmallArray# a s of { (# s, frz #) ->
+      (# s, HProduct frz #) }}}}
 
 unsafeMembership :: Int -> Membership xs x
 unsafeMembership = unsafeCoerce#
