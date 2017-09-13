@@ -34,6 +34,7 @@ library
     Data.Extensible.Field
     Data.Extensible.Effect
     Data.Extensible.Effect.Default
+    Data.Extensible.Effect.Pipe
     Data.Extensible.HList
     Data.Extensible.Inclusion
     Data.Extensible.Internal
