@@ -224,14 +224,14 @@ infixr 5 ++
 
 -- | Combine products.
 happend :: (h :* xs) -> (h :* ys) -> (h :* (xs ++ ys))
-happend (HProduct lhs) (HProduct rhs) = runST $ primitive $ \s ->
+happend (HProduct lhs) (HProduct rhs) = runST $ primitive $ \s0 ->
   let lhsSz = sizeofSmallArray# lhs
       rhsSz = sizeofSmallArray# rhs
-  in  case newSmallArray# (lhsSz +# rhsSz) undefined s of { (# s, a #) ->
-      case copySmallArray# lhs 0# a 0# lhsSz s of { s ->
-      case copySmallArray# rhs 0# a lhsSz rhsSz s of { s ->
-      case unsafeFreezeSmallArray# a s of { (# s, frz #) ->
-      (# s, HProduct frz #) }}}}
+  in  case newSmallArray# (lhsSz +# rhsSz) undefined s0 of { (# s1, a #) ->
+      case copySmallArray# lhs 0# a 0# lhsSz s1 of { s2 ->
+      case copySmallArray# rhs 0# a lhsSz rhsSz s2 of { s3 ->
+      case unsafeFreezeSmallArray# a s3 of { (# s4, frz #) ->
+      (# s4, HProduct frz #) }}}}
 
 unsafeMembership :: Int -> Membership xs x
 unsafeMembership = unsafeCoerce#
