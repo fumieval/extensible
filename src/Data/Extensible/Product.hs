@@ -18,6 +18,8 @@ module Data.Extensible.Product (
   , (<:)
   , (<!)
   , hlength
+  , type (++)
+  , happend
   , hmap
   , hmapWithIndex
   , hzipWith
