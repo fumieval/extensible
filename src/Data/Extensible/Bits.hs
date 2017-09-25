@@ -25,6 +25,7 @@ import Data.Profunctor.Rep
 import Data.Profunctor.Sieve
 import Data.Proxy
 import Data.Word
+import Data.Int
 import GHC.Generics (Generic)
 import GHC.TypeLits
 
@@ -64,6 +65,31 @@ instance FromBits Word64 Word8 where
   type BitWidth Word8 = 8
   fromBits = fromIntegral
   toBits = fromIntegral
+
+instance FromBits Word64 Word16 where
+  type BitWidth Word16 = 16
+  fromBits = fromIntegral
+  toBits = fromIntegral
+
+instance FromBits Word64 Word32 where
+  type BitWidth Word32 = 32
+  fromBits = fromIntegral
+  toBits = fromIntegral
+
+instance FromBits Word64 Int8 where
+  type BitWidth Int8 = 8
+  fromBits = fromIntegral
+  toBits = fromIntegral . (fromIntegral :: Int8 -> Word8)
+
+instance FromBits Word64 Int16 where
+  type BitWidth Int16 = 16
+  fromBits = fromIntegral
+  toBits = fromIntegral . (fromIntegral :: Int16 -> Word16)
+
+instance FromBits Word64 Int32 where
+  type BitWidth Int32 = 32
+  fromBits = fromIntegral
+  toBits = fromIntegral . (fromIntegral :: Int32 -> Word32)
 
 instance FromBits r a => FromBits r (Identity a) where
   type BitWidth (Identity a) = BitWidth a
