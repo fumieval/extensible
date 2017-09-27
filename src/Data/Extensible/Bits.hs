@@ -29,7 +29,7 @@ import Data.Int
 import GHC.Generics (Generic)
 import GHC.TypeLits
 
--- | Bit-level record
+-- | Bit-vector product. It has similar interface as @(:*)@ but fields are packed into @r@.
 newtype BitProd r (h :: k -> *) (xs :: [k]) = BitProd { unBitProd :: r }
   deriving (Eq, Ord, Enum, Bounded, Ix, Generic)
 
@@ -106,14 +106,17 @@ instance (Bits r, KnownNat (TotalBits h xs)) => FromBits r (BitProd r h xs) wher
   fromBits = BitProd
   toBits = unBitProd
 
+-- | Fields are instances of 'FromBits' and fit in the representation.
 type BitFields r h xs = (FromBits r r
   , TotalBits h xs <= BitWidth r
   , Forall (Instance1 (FromBits r) h) xs)
 
+-- | Convert a normal extensible record into a bit record.
 toBitProd :: forall r h xs. BitFields r h xs => h :* xs -> BitProd r h xs
 toBitProd p = hfoldrWithIndexFor (Proxy :: Proxy (Instance1 (FromBits r) h))
   (\i v f r -> f $! bupdate i r v) id p (BitProd zeroBits)
 
+-- | 'hlookup' for 'BitProd'
 blookup :: forall x r h xs.
   (BitFields r h xs, FromBits r (h x))
   => Membership xs x -> BitProd r h xs -> h x
@@ -122,6 +125,7 @@ blookup i (BitProd r) = fromBits $ unsafeShiftR r
   $ getMemberId i
 {-# INLINE blookup #-}
 
+-- | Update a field of a 'BitProd'.
 bupdate :: forall x r h xs.
   (BitFields r h xs, FromBits r (h x))
   => Membership xs x -> BitProd r h xs -> h x -> BitProd r h xs

@@ -2,6 +2,7 @@
 * Added `nothingEff`
 * Added `happend`
 * Added `Arbitrary` instances for `:*`, `:|`, and wrappers
+* Added `Data.Extensible.Bits`
 
 0.4.4
 -------------------------------------------------
