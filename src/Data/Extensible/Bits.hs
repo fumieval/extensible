@@ -34,6 +34,10 @@ import GHC.TypeLits
 newtype BitProd r (h :: k -> *) (xs :: [k]) = BitProd { unBitProd :: r }
   deriving (Eq, Ord, Enum, Bounded, Ix, Generic)
 
+instance (Forall (Instance1 Show h) xs, BitFields r h xs) => Show (BitProd r h xs) where
+  showsPrec d x = showParen (d > 10)
+    $ showString "toBitProd " . showsPrec 11 (fromBitProd x)
+
 type family TotalBits h xs where
   TotalBits h '[] = 0
   TotalBits h (x ': xs) = BitWidth (h x) + TotalBits h xs
