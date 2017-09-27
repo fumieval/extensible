@@ -1,6 +1,7 @@
 -------------------------------------------------
 * Added `nothingEff`
 * Added `happend`
+* Added `Arbitrary` instances for `:*`, `:|`, and wrappers
 
 0.4.4
 -------------------------------------------------

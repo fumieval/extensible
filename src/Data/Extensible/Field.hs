@@ -61,6 +61,7 @@ import Data.Typeable (Typeable)
 import Foreign.Storable (Storable)
 import GHC.Generics (Generic)
 import GHC.TypeLits hiding (Nat)
+import Test.QuickCheck.Arbitrary
 
 -- | Take the type of the key
 type family AssocKey (kv :: Assoc k v) :: k where
@@ -102,6 +103,7 @@ ND_Field(Monoid)
 ND_Field(Enum)
 ND_Field(Bounded)
 ND_Field(NFData)
+ND_Field(Arbitrary)
 
 -- | Lift a function for the content.
 liftField :: (g (AssocValue kv) -> h (AssocValue kv)) -> Field g kv -> Field h kv

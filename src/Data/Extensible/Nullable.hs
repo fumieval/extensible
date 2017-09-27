@@ -28,10 +28,11 @@ import qualified Data.Extensible.Struct as S
 import Data.Profunctor.Unsafe
 import Data.Semigroup
 import GHC.Generics (Generic)
+import Test.QuickCheck.Arbitrary
 
 -- | Wrapped Maybe
 newtype Nullable h x = Nullable { getNullable :: Maybe (h x) }
-  deriving (Show, Eq, Ord, Typeable, Generic, NFData)
+  deriving (Show, Eq, Ord, Typeable, Generic, NFData, Arbitrary)
 
 instance Wrapper h => Wrapper (Nullable h) where
   type Repr (Nullable h) x = Maybe (Repr h x)

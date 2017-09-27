@@ -24,8 +24,11 @@ import Data.Extensible.Sum
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
 import Data.Constraint
+import Data.Extensible.Struct
 import Data.Extensible.Wrapper
 import Data.Semigroup
+import Test.QuickCheck.Arbitrary
+import Test.QuickCheck.Gen
 
 -- | Reify a collection of dictionaries, as you wish.
 library :: forall c xs. Forall c xs => Comp Dict c :* xs
@@ -64,6 +67,13 @@ instance WrapForall Bounded h xs => Bounded (h :* xs) where
   minBound = hrepeatFor (Proxy :: Proxy (Instance1 Bounded h)) minBound
   maxBound = hrepeatFor (Proxy :: Proxy (Instance1 Bounded h)) maxBound
 
+instance WrapForall Arbitrary h xs => Arbitrary (h :* xs) where
+  arbitrary = hgenerateFor (Proxy :: Proxy (Instance1 Arbitrary h)) (const arbitrary)
+  shrink xs = henumerateFor (Proxy :: Proxy (Instance1 Arbitrary h))
+    (Proxy :: Proxy xs) (\i -> (++)
+    $ map (\x -> hmodify (\s -> set s i x) xs) $ shrink $ hindex xs i)
+    []
+
 instance WrapForall NFData h xs => NFData (h :* xs) where
   rnf xs = henumerateFor (Proxy :: Proxy (Instance1 NFData h)) (Proxy :: Proxy xs)
     (\i -> deepseq (hlookup i xs)) ()
@@ -90,6 +100,18 @@ instance (Eq (h :| xs), WrapForall Ord h xs) => Ord (h :| xs) where
 instance WrapForall NFData h xs => NFData (h :| xs) where
   rnf (EmbedAt i h) = views (pieceAt i) (\(Comp Dict) -> rnf h) (library :: Comp Dict (Instance1 NFData h) :* xs)
   {-# INLINE rnf #-}
+
+instance WrapForall Arbitrary h xs => Arbitrary (h :| xs) where
+  arbitrary = choose (0, hcount (Proxy :: Proxy xs)) >>= henumerateFor
+      (Proxy :: Proxy (Instance1 Arbitrary h))
+      (Proxy :: Proxy xs)
+      (\m r i -> if i == 0
+        then EmbedAt m <$> arbitrary
+        else r (i - 1))
+        (error "Impossible")
+  shrink (EmbedAt i h) = views (pieceAt i)
+    (\(Comp Dict) -> EmbedAt i <$> shrink h)
+    (library :: Comp Dict (Instance1 Arbitrary h) :* xs)
 
 -- | Forall upon a wrapper
 type WrapForall c h = Forall (Instance1 c h)

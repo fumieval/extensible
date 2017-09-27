@@ -26,6 +26,7 @@ import Data.Functor.Identity (Identity(..))
 import Data.Extensible.Internal.Rig
 import Data.Semigroup
 import GHC.Generics (Generic)
+import Test.QuickCheck.Arbitrary
 
 -- | The extensible data types should take @k -> *@ as a parameter.
 -- This class allows us to take a shortcut for direct representation.
@@ -60,7 +61,7 @@ instance Wrapper [] where
 
 -- | Poly-kinded composition
 newtype Comp (f :: j -> *) (g :: i -> j) (a :: i) = Comp { getComp :: f (g a) }
-  deriving (Show, Eq, Ord, Typeable, NFData, Generic, Semigroup, Monoid)
+  deriving (Show, Eq, Ord, Typeable, NFData, Generic, Semigroup, Monoid, Arbitrary)
 
 deriving instance (Functor f, Functor g) => Functor (Comp f g)
 deriving instance (Foldable f, Foldable g) => Foldable (Comp f g)
@@ -78,7 +79,7 @@ instance (Functor f, Wrapper g) => Wrapper (Comp f g) where
 
 -- | Poly-kinded Const
 newtype Const' a x = Const' { getConst' :: a }
-  deriving (Show, Eq, Ord, Typeable, Generic, NFData, Functor, Foldable, Traversable)
+  deriving (Show, Eq, Ord, Typeable, Generic, NFData, Functor, Foldable, Traversable, Arbitrary)
 
 instance Wrapper (Const' a) where
   type Repr (Const' a) b = a
@@ -107,3 +108,7 @@ instance (Semigroup (f a), Semigroup (g a)) => Semigroup (Prod f g a) where
 instance (Monoid (f a), Monoid (g a)) => Monoid (Prod f g a) where
   mempty = Prod mempty mempty
   Prod a b `mappend` Prod c d = Prod (mappend a c) (mappend b d)
+
+instance (Arbitrary (f a), Arbitrary (g a)) => Arbitrary (Prod f g a) where
+  arbitrary = Prod <$> arbitrary <*> arbitrary
+  shrink (Prod a b) = Prod a `map` shrink b ++ flip Prod b `map` shrink a
