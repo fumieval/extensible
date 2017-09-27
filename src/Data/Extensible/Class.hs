@@ -59,30 +59,32 @@ import Data.Profunctor
 
 -- | This class allows us to use 'pieceAt' for both sums and products.
 class (Functor f, Profunctor p) => Extensible f p (t :: (k -> *) -> [k] -> *) where
-  pieceAt :: Membership xs x -> Optic' p f (t h xs) (h x)
+  type ExtensibleConstr t (h :: k -> *) (xs :: [k]) (x :: k) :: Constraint
+  type ExtensibleConstr t h xs x = ()
+  pieceAt :: ExtensibleConstr t h xs x => Membership xs x -> Optic' p f (t h xs) (h x)
 
 -- | Accessor for an element.
-piece :: (x ∈ xs, Extensible f p t) => Optic' p f (t h xs) (h x)
+piece :: (x ∈ xs, Extensible f p t, ExtensibleConstr t h xs x) => Optic' p f (t h xs) (h x)
 piece = pieceAt membership
 {-# INLINE piece #-}
 
 -- | Like 'piece', but reckon membership from its key.
-pieceAssoc :: (Associate k v xs, Extensible f p t) => Optic' p f (t h xs) (h (k ':> v))
+pieceAssoc :: (Associate k v xs, Extensible f p t, ExtensibleConstr t h xs (k ':> v)) => Optic' p f (t h xs) (h (k ':> v))
 pieceAssoc = pieceAt association
 {-# INLINE pieceAssoc #-}
 
 -- | Access a specified element through a wrapper.
-itemAt :: (Wrapper h, Extensible f p t) => Membership xs x -> Optic' p f (t h xs) (Repr h x)
+itemAt :: (Wrapper h, Extensible f p t, ExtensibleConstr t h xs x) => Membership xs x -> Optic' p f (t h xs) (Repr h x)
 itemAt m = pieceAt m . _Wrapper
 {-# INLINE itemAt #-}
 
 -- | Access an element through a wrapper.
-item :: (Wrapper h, Extensible f p t, x ∈ xs) => proxy x -> Optic' p f (t h xs) (Repr h x)
+item :: (Wrapper h, Extensible f p t, x ∈ xs, ExtensibleConstr t h xs x) => proxy x -> Optic' p f (t h xs) (Repr h x)
 item p = piece . _WrapperAs p
 {-# INLINE item #-}
 
 -- | Access an element specified by the key type through a wrapper.
-itemAssoc :: (Wrapper h, Extensible f p t, Associate k v xs)
+itemAssoc :: (Wrapper h, Extensible f p t, Associate k v xs, ExtensibleConstr t h xs (k ':> v))
   => proxy k -> Optic' p f (t h xs) (Repr h (k ':> v))
 itemAssoc p = pieceAssoc . _WrapperAs (proxyKey p)
 {-# INLINE itemAssoc #-}

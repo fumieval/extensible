@@ -29,6 +29,7 @@ source-repository head
 library
   exposed-modules:
     Data.Extensible
+    Data.Extensible.Bits
     Data.Extensible.Class
     Data.Extensible.Dictionary
     Data.Extensible.Field
@@ -85,5 +86,12 @@ test-suite effects
   type: exitcode-stdio-1.0
   main-is: effects.hs
   build-depends: base, extensible
+  hs-source-dirs: tests
+  default-language:    Haskell2010
+
+test-suite bits
+  type: exitcode-stdio-1.0
+  main-is: bits.hs
+  build-depends: base, extensible, lens, QuickCheck, template-haskell
   hs-source-dirs: tests
   default-language:    Haskell2010

@@ -181,6 +181,7 @@ type FieldOptic k = forall kind. forall f p t xs (h :: kind -> *) (v :: kind).
 type FieldOptic k = forall f p t xs (h :: kind -> *) (v :: kind).
 #endif
   (Extensible f p t
+  , ExtensibleConstr t (Field h) xs (k ':> v)
   , Associate k v xs
   , Labelling k p
   , Wrapper h)

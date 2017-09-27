@@ -1,6 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns, BangPatterns #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE MagicHash, UnboxedTuples #-}
 {-# LANGUAGE TypeFamilies #-}
 ------------------------------------------------------------------------

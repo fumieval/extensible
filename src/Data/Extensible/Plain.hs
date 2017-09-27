@@ -56,6 +56,6 @@ bury = embed .# Identity
 infixr 1 <%|
 
 -- | An accessor for newtype constructors.
-accessing :: (Coercible x a, x ∈ xs, Extensible f p t) => (a -> x) -> Optic' p f (t Identity xs) a
+accessing :: (Coercible x a, x ∈ xs, Extensible f p t, ExtensibleConstr t Identity xs x) => (a -> x) -> Optic' p f (t Identity xs) a
 accessing c = piece . _Wrapper . dimap coerce (fmap c)
 {-# INLINE accessing #-}
