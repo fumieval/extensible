@@ -9,6 +9,7 @@ module Data.Extensible.Bits (BitProd(..)
   , blookup
   , bupdate
   , toBitProd
+  , fromBitProd
   , BitRecordOf
   , BitRecord) where
 
@@ -115,6 +116,11 @@ type BitFields r h xs = (FromBits r r
 toBitProd :: forall r h xs. BitFields r h xs => h :* xs -> BitProd r h xs
 toBitProd p = hfoldrWithIndexFor (Proxy :: Proxy (Instance1 (FromBits r) h))
   (\i v f r -> f $! bupdate i r v) id p (BitProd zeroBits)
+
+-- | Convert a normal extensible record into a bit record.
+fromBitProd :: forall r h xs. BitFields r h xs => BitProd r h xs -> h :* xs
+fromBitProd p = htabulateFor (Proxy :: Proxy (Instance1 (FromBits r) h))
+  $ flip blookup p
 
 -- | 'hlookup' for 'BitProd'
 blookup :: forall x r h xs.
