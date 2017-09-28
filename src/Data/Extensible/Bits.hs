@@ -1,6 +1,5 @@
 {-# LANGUAGE UndecidableInstances, ScopedTypeVariables, MultiParamTypeClasses, TypeFamilies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving, DeriveGeneric #-}
-{-# OPTIONS_GHC -ddump-simpl -ddump-to-file -dsuppress-all #-}
 
 module Data.Extensible.Bits (BitProd(..)
   , FromBits(..)
