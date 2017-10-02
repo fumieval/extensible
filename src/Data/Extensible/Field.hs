@@ -3,7 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables, TypeFamilies #-}
 {-# LANGUAGE CPP #-}
 #if __GLASGOW_HASKELL__ >= 800
-{-# LANGUAGE UndecidableSuperClasses #-}
+{-# LANGUAGE UndecidableSuperClasses, TypeInType #-}
 #endif
 -----------------------------------------------------------------------------
 -- |
@@ -46,14 +46,19 @@ module Data.Extensible.Field (
   ) where
 import Control.DeepSeq (NFData)
 import Data.Coerce
+#if __GLASGOW_HASKELL__ < 802
+import Data.Constraint
+#endif
 import Data.Extensible.Class
 import Data.Extensible.Sum
 import Data.Extensible.Match
 import Data.Extensible.Product
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
+#if __GLASGOW_HASKELL__ >= 800
+import Data.Kind
+#endif
 import Data.Profunctor.Unsafe
-import Data.Constraint
 import Data.Extensible.Wrapper
 import Data.Functor.Identity
 import Data.Semigroup
@@ -84,8 +89,15 @@ instance (pk k, pv v) => KeyValue pk pv (k ':> v)
 --
 -- @'Field' :: (v -> *) -> Assoc k v -> *@
 --
-newtype Field (h :: v -> *) (kv :: Assoc k v) = Field { getField :: h (AssocValue kv) }
+#if __GLASGOW_HASKELL__ >= 800
+newtype Field (h :: v -> Type) (kv :: Assoc k v)
+#else
+newtype Field (h :: v -> *) (kv :: Assoc k v)
+#endif
+  = Field { getField :: h (AssocValue kv) }
+
   deriving (Typeable, Generic)
+
 #define ND_Field(c) deriving instance c (h (AssocValue kv)) => c (Field h kv)
 
 ND_Field(Eq)
@@ -176,7 +188,7 @@ matchField = matchWithField runMatch
 -- 'FieldOptic's can be generated using 'mkField' defined in the "Data.Extensible.TH" module.
 --
 #if __GLASGOW_HASKELL__ >= 800
-type FieldOptic k = forall kind. forall f p t xs (h :: kind -> *) (v :: kind).
+type FieldOptic k = forall kind. forall f p t xs (h :: kind -> Type) (v :: kind).
 #else
 type FieldOptic k = forall f p t xs (h :: kind -> *) (v :: kind).
 #endif
@@ -187,8 +199,12 @@ type FieldOptic k = forall f p t xs (h :: kind -> *) (v :: kind).
   , Wrapper h)
   => Optic' p f (t (Field h) xs) (Repr h v)
 
+#if __GLASGOW_HASKELL__ >= 800
 -- | The trivial inextensible data type
+data Inextensible (h :: k -> Type) (xs :: [k])
+#else
 data Inextensible (h :: k -> *) (xs :: [k])
+#endif
 
 instance (Functor f, Profunctor p) => Extensible f p Inextensible where
   pieceAt _ _ = error "Impossible"
