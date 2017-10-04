@@ -63,6 +63,9 @@ import Data.Extensible.Wrapper
 import Data.Functor.Identity
 import Data.Semigroup
 import Data.Typeable (Typeable)
+import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic.Mutable as M
+import qualified Data.Vector.Unboxed as U
 import Foreign.Storable (Storable)
 import GHC.Generics (Generic)
 import GHC.TypeLits hiding (Nat)
@@ -116,6 +119,51 @@ ND_Field(Enum)
 ND_Field(Bounded)
 ND_Field(NFData)
 ND_Field(Arbitrary)
+
+newtype instance U.MVector s (Field h x) = MV_Field (U.MVector s (h (AssocValue x)))
+newtype instance U.Vector (Field h x) = V_Field (U.Vector (h (AssocValue x)))
+
+instance (U.Unbox (h (AssocValue x))) => M.MVector U.MVector (Field h x) where
+  {-# INLINE basicLength #-}
+  {-# INLINE basicUnsafeSlice #-}
+  {-# INLINE basicOverlaps #-}
+  {-# INLINE basicUnsafeNew #-}
+  {-# INLINE basicInitialize #-}
+  {-# INLINE basicUnsafeReplicate #-}
+  {-# INLINE basicUnsafeRead #-}
+  {-# INLINE basicUnsafeWrite #-}
+  {-# INLINE basicClear #-}
+  {-# INLINE basicSet #-}
+  {-# INLINE basicUnsafeCopy #-}
+  {-# INLINE basicUnsafeGrow #-}
+  basicLength (MV_Field v) = M.basicLength v
+  basicUnsafeSlice i n (MV_Field v) = MV_Field $ M.basicUnsafeSlice i n v
+  basicOverlaps (MV_Field v1) (MV_Field v2) = M.basicOverlaps v1 v2
+  basicUnsafeNew n = MV_Field <$> M.basicUnsafeNew n
+  basicInitialize (MV_Field v) = M.basicInitialize v
+  basicUnsafeReplicate n (Field x) = MV_Field <$> M.basicUnsafeReplicate n x
+  basicUnsafeRead (MV_Field v) i = Field <$> M.basicUnsafeRead v i
+  basicUnsafeWrite (MV_Field v) i (Field x) = M.basicUnsafeWrite v i x
+  basicClear (MV_Field v) = M.basicClear v
+  basicSet (MV_Field v) (Field x) = M.basicSet v x
+  basicUnsafeCopy (MV_Field v1) (MV_Field v2) = M.basicUnsafeCopy v1 v2
+  basicUnsafeMove (MV_Field v1) (MV_Field v2) = M.basicUnsafeMove v1 v2
+  basicUnsafeGrow (MV_Field v) n = MV_Field <$> M.basicUnsafeGrow v n
+
+instance (U.Unbox (h (AssocValue x))) => G.Vector U.Vector (Field h x) where
+  {-# INLINE basicUnsafeFreeze #-}
+  {-# INLINE basicUnsafeThaw #-}
+  {-# INLINE basicLength #-}
+  {-# INLINE basicUnsafeSlice #-}
+  {-# INLINE basicUnsafeIndexM #-}
+  basicUnsafeFreeze (MV_Field v) = V_Field <$> G.basicUnsafeFreeze v
+  basicUnsafeThaw (V_Field v) = MV_Field <$> G.basicUnsafeThaw v
+  basicLength (V_Field v) = G.basicLength v
+  basicUnsafeSlice i n (V_Field v) = V_Field $ G.basicUnsafeSlice i n v
+  basicUnsafeIndexM (V_Field v) i = Field <$> G.basicUnsafeIndexM v i
+  basicUnsafeCopy (MV_Field mv) (V_Field v) = G.basicUnsafeCopy mv v
+
+instance (U.Unbox (h (AssocValue x))) => U.Unbox (Field h x)
 
 -- | Lift a function for the content.
 liftField :: (g (AssocValue kv) -> h (AssocValue kv)) -> Field g kv -> Field h kv
