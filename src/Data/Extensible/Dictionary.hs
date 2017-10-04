@@ -27,6 +27,9 @@ import Data.Constraint
 import Data.Extensible.Struct
 import Data.Extensible.Wrapper
 import Data.Semigroup
+import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic.Mutable as M
+import qualified Data.Vector.Unboxed as U
 import Test.QuickCheck.Arbitrary
 import Test.QuickCheck.Gen
 
@@ -66,6 +69,63 @@ instance WrapForall Monoid h xs => Monoid (h :* xs) where
 instance WrapForall Bounded h xs => Bounded (h :* xs) where
   minBound = hrepeatFor (Proxy :: Proxy (Instance1 Bounded h)) minBound
   maxBound = hrepeatFor (Proxy :: Proxy (Instance1 Bounded h)) maxBound
+
+newtype instance U.MVector s (h :* xs) = MV_Product (Comp (U.MVector s) h :* xs)
+newtype instance U.Vector (h :* xs) = V_Product (Comp U.Vector h :* xs)
+
+#define ENUM_EACH(expr) henumerateFor \
+  (Proxy :: Proxy (Instance1 U.Unbox h)) (Proxy :: Proxy (x ': xs)) \
+  ((>>) . (expr)) (return ())
+
+hlookupC :: Membership xs a -> Comp f g :* xs -> f (g a)
+hlookupC i = getComp . hlookup i
+
+instance WrapForall U.Unbox h (x ': xs) => G.Vector U.Vector (h :* (x ': xs)) where
+  basicUnsafeFreeze (MV_Product v) = fmap V_Product
+    $ hgenerateFor (Proxy :: Proxy (Instance1 U.Unbox h))
+    $ \m -> Comp <$> G.basicUnsafeFreeze (hlookupC m v)
+  basicUnsafeThaw (V_Product v) = fmap MV_Product
+    $ hgenerateFor (Proxy :: Proxy (Instance1 U.Unbox h))
+    $ \m -> Comp <$> G.basicUnsafeThaw (hlookupC m v)
+  basicLength (V_Product v) = G.basicLength $ getComp $ hindex v here
+  basicUnsafeSlice i n (V_Product v) = V_Product
+    $ htabulateFor (Proxy :: Proxy (Instance1 U.Unbox h))
+    $ \m -> Comp $ G.basicUnsafeSlice i n (hlookupC m v)
+  basicUnsafeIndexM (V_Product v) i = hgenerateFor (Proxy :: Proxy (Instance1 U.Unbox h))
+    $ \m -> G.basicUnsafeIndexM (hlookupC m v) i
+  basicUnsafeCopy (MV_Product v) (V_Product w)
+    = ENUM_EACH(\i -> G.basicUnsafeCopy (hlookupC i v) (hlookupC i w))
+
+instance WrapForall U.Unbox h (x ': xs) => M.MVector U.MVector (h :* (x ': xs)) where
+  basicLength (MV_Product v) = M.basicLength $ getComp $ hindex v here
+  basicUnsafeSlice i n (MV_Product v) = MV_Product
+    $ htabulateFor (Proxy :: Proxy (Instance1 U.Unbox h))
+    $ \m -> Comp $ M.basicUnsafeSlice i n (hlookupC m v)
+  basicOverlaps (MV_Product v1) (MV_Product v2) = henumerateFor
+    (Proxy :: Proxy (Instance1 U.Unbox h)) (Proxy :: Proxy (x ': xs))
+    (\i -> (||) $ M.basicOverlaps (hlookupC i v1) (hlookupC i v2))
+    False
+  basicUnsafeNew n = fmap MV_Product
+    $ hgenerateFor (Proxy :: Proxy (Instance1 U.Unbox h))
+    (const $ Comp <$> M.basicUnsafeNew n)
+  basicInitialize (MV_Product v) = ENUM_EACH(\i -> M.basicInitialize $ hlookupC i v)
+  basicUnsafeReplicate n x = fmap MV_Product
+    $ hgenerateFor (Proxy :: Proxy (Instance1 U.Unbox h))
+    $ \m -> fmap Comp $ M.basicUnsafeReplicate n $ hlookup m x
+  basicUnsafeRead (MV_Product v) i = hgenerateFor (Proxy :: Proxy (Instance1 U.Unbox h))
+    (\m -> M.basicUnsafeRead (hlookupC m v) i)
+  basicUnsafeWrite (MV_Product v) i x = ENUM_EACH(\m -> M.basicUnsafeWrite (hlookupC m v) i (hlookup m x))
+  basicClear (MV_Product v) = ENUM_EACH(\i -> M.basicClear $ hlookupC i v)
+  basicSet (MV_Product v) x = ENUM_EACH(\i -> M.basicSet (hlookupC i v) (hlookup i x))
+  basicUnsafeCopy (MV_Product v1) (MV_Product v2)
+    = ENUM_EACH(\i -> M.basicUnsafeCopy (hlookupC i v1) (hlookupC i v2))
+  basicUnsafeMove (MV_Product v1) (MV_Product v2)
+    = ENUM_EACH(\i -> M.basicUnsafeMove (hlookupC i v1) (hlookupC i v2))
+  basicUnsafeGrow (MV_Product v) n = fmap MV_Product
+    $ hgenerateFor (Proxy :: Proxy (Instance1 U.Unbox h))
+    $ \i -> Comp <$> M.basicUnsafeGrow (hlookupC i v) n
+
+instance WrapForall U.Unbox h (x ': xs) => U.Unbox (h :* (x ': xs))
 
 instance WrapForall Arbitrary h xs => Arbitrary (h :* xs) where
   arbitrary = hgenerateFor (Proxy :: Proxy (Instance1 Arbitrary h)) (const arbitrary)

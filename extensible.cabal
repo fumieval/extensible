@@ -74,6 +74,7 @@ library
     , deepseq
     , tagged
     , transformers
+    , vector
     , mtl
     , monad-skeleton >= 0.1.2
     , StateVar
