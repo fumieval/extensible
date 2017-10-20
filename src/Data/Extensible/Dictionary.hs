@@ -181,6 +181,7 @@ type WrapForall c h = Forall (Instance1 c h)
 class c (h x) => Instance1 c h x
 instance c (h x) => Instance1 c h x
 
+#if !MIN_VERSION_vector(0,12,1)
 newtype instance U.MVector s (Identity a) = MV_Identity (U.MVector s a)
 newtype instance U.Vector (Identity a) = V_Identity (U.Vector a)
 
@@ -270,3 +271,4 @@ instance (U.Unbox a) => G.Vector U.Vector (Const' a b) where
   basicUnsafeCopy (MV_Const mv) (V_Const v) = G.basicUnsafeCopy mv v
 
 instance (U.Unbox a) => U.Unbox (Const' a b)
+#endif
