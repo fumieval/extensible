@@ -27,6 +27,7 @@ module Data.Extensible.Product (
   , hfoldMap
   , hfoldMapWithIndex
   , hfoldrWithIndex
+  , hfoldlWithIndex
   , htraverse
   , htraverseWithIndex
   , hsequence
@@ -34,6 +35,7 @@ module Data.Extensible.Product (
   , hfoldMapFor
   , hfoldMapWithIndexFor
   , hfoldrWithIndexFor
+  , hfoldlWithIndexFor
   -- * Evaluating
   , hforce
   -- * Update
@@ -134,11 +136,20 @@ hfoldMapWithIndex :: Monoid a
 hfoldMapWithIndex f = hfoldrWithIndex (\i -> mappend . f i) mempty
 {-# INLINE hfoldMapWithIndex #-}
 
+hfoldlWithIndex :: (forall x. Membership xs x -> r -> h x -> r) -> r -> h :* xs -> r
+hfoldlWithIndex f r xs = hfoldrWithIndex (\i x c a -> c $! f i a x) id xs r
+{-# INLINE hfoldlWithIndex #-}
+
 -- | 'hfoldrWithIndex' with a constraint for each element.
 hfoldrWithIndexFor :: (Forall c xs) => proxy c
   -> (forall x. c x => Membership xs x -> h x -> r -> r) -> r -> h :* xs -> r
 hfoldrWithIndexFor p f r xs = henumerateFor p xs (\i -> f i (hlookup i xs)) r
 {-# INLINE hfoldrWithIndexFor #-}
+
+hfoldlWithIndexFor :: (Forall c xs) => proxy c
+  -> (forall x. c x => Membership xs x -> r -> h x -> r) -> r -> h :* xs -> r
+hfoldlWithIndexFor p f r xs = hfoldrWithIndexFor p (\i x c a -> c $! f i a x) id xs r
+{-# INLINE hfoldlWithIndexFor #-}
 
 -- | 'hfoldMapWithIndex' with a constraint for each element.
 hfoldMapWithIndexFor :: (Forall c xs, Monoid a) => proxy c
