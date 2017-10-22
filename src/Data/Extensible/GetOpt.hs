@@ -37,11 +37,11 @@ optReqArg ss ls ph expl = OptDescr' [] $ Option ss ls (ReqArg (:) ph) expl
 
 getOptRecord :: RecordOf OptDescr' xs -- ^ a record of option descriptors
     -> [String] -- ^ arguments
-    -> (Record xs, [String], [String]) -- ^ (result, remaining non-options, errors)
-getOptRecord descs args = (foldl' (flip id) def fs, rs, es) where
-    (fs, rs, es) = getOpt Permute updaters args
-    updaters = hfoldrWithIndex
-        (\i (Field (OptDescr' _ opt)) -> (:)
-            $ fmap (\f -> over (pieceAt i) (Field . fmap f . getField)) opt)
-        [] descs
-    def = hmap (\(Field (OptDescr' x _)) -> Field (pure x)) descs
+    -> (Record xs, [String], [String], String -> String) -- ^ (result, remaining non-options, errors, usageInfo)
+getOptRecord descs args = (foldl' (flip id) def fs, rs, es, flip usageInfo updaters) where
+  (fs, rs, es) = getOpt Permute updaters args
+  updaters = hfoldrWithIndex
+      (\i (Field (OptDescr' _ opt)) -> (:)
+          $ fmap (\f -> over (pieceAt i) (Field . fmap f . getField)) opt)
+      [] descs
+  def = hmap (\(Field (OptDescr' x _)) -> Field (pure x)) descs
