@@ -73,6 +73,7 @@ library
     , semigroups
     , comonad
     , deepseq
+    , hashable
     , tagged
     , transformers
     , vector

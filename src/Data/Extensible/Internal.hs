@@ -65,6 +65,7 @@ import Data.Word
 #endif
 import Control.Monad
 import Unsafe.Coerce
+import Data.Hashable
 import Data.Typeable
 import Language.Haskell.TH hiding (Pred)
 import Data.Bits
@@ -98,6 +99,9 @@ class Member xs x where
 instance (Elaborate x (FindType x xs) ~ 'Expecting pos, KnownPosition pos) => Member xs x where
   membership = Membership (theInt (Proxy :: Proxy pos))
   {-# INLINE membership #-}
+
+instance Hashable (Membership xs x) where
+  hashWithSalt s = hashWithSalt s . getMemberId
 
 reifyMembership :: Int -> (forall x. Membership xs x -> r) -> r
 reifyMembership n k = k (Membership n)

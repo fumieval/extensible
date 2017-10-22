@@ -27,6 +27,7 @@ import Data.Constraint
 import Data.Extensible.Struct
 import Data.Extensible.Wrapper
 import Data.Functor.Identity
+import Data.Hashable
 import Data.Semigroup
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as M
@@ -66,6 +67,11 @@ instance WrapForall Monoid h xs => Monoid (h :* xs) where
   mappend = hzipWith3 (\(Comp Dict) -> mappend)
     (library :: Comp Dict (Instance1 Monoid h) :* xs)
   {-# INLINE mappend #-}
+
+instance WrapForall Hashable h xs => Hashable (h :* xs) where
+  hashWithSalt = hfoldlWithIndexFor (Proxy :: Proxy (Instance1 Hashable h))
+    (const hashWithSalt)
+  {-# INLINE hashWithSalt #-}
 
 instance WrapForall Bounded h xs => Bounded (h :* xs) where
   minBound = hrepeatFor (Proxy :: Proxy (Instance1 Bounded h)) minBound
@@ -161,6 +167,12 @@ instance (Eq (h :| xs), WrapForall Ord h xs) => Ord (h :| xs) where
 instance WrapForall NFData h xs => NFData (h :| xs) where
   rnf (EmbedAt i h) = views (pieceAt i) (\(Comp Dict) -> rnf h) (library :: Comp Dict (Instance1 NFData h) :* xs)
   {-# INLINE rnf #-}
+
+instance WrapForall Hashable h xs => Hashable (h :| xs) where
+  hashWithSalt s (EmbedAt i h) = views (pieceAt i)
+    (\(Comp Dict) -> s `hashWithSalt` i `hashWithSalt` h)
+    (library :: Comp Dict (Instance1 Hashable h) :* xs)
+  {-# INLINE hashWithSalt #-}
 
 instance WrapForall Arbitrary h xs => Arbitrary (h :| xs) where
   arbitrary = choose (0, hcount (Proxy :: Proxy xs)) >>= henumerateFor
