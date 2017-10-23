@@ -20,6 +20,7 @@ import Data.Extensible.Product
 import Data.Extensible.Internal (getMemberId)
 import Data.Extensible.Field
 import Data.Functor.Identity
+import Data.Hashable
 import Data.Ix
 import Data.Profunctor.Rep
 import Data.Profunctor.Sieve
@@ -31,7 +32,7 @@ import GHC.TypeLits
 
 -- | Bit-vector product. It has similar interface as @(:*)@ but fields are packed into @r@.
 newtype BitProd r (h :: k -> *) (xs :: [k]) = BitProd { unBitProd :: r }
-  deriving (Eq, Ord, Enum, Bounded, Ix, Generic)
+  deriving (Eq, Ord, Enum, Bounded, Ix, Generic, Hashable)
 
 instance (Forall (Instance1 Show h) xs, BitFields r h xs) => Show (BitProd r h xs) where
   showsPrec d x = showParen (d > 10)
