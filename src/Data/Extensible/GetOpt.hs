@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.GetOpt
@@ -8,17 +9,25 @@
 --
 -- A wrapper for 'System.Console.GetOpt'
 --------------------------------------------------------------------------------
-module Data.Extensible.GetOpt where
+module Data.Extensible.GetOpt (OptDescr'(..)
+  , optNoArg
+  , optReqArg
+  , getOptRecord) where
 
 import Data.Extensible.Class
 import Data.Extensible.Field
 import Data.Extensible.Internal.Rig
 import Data.Extensible.Product
+import Data.Extensible.Wrapper
 import Data.List (foldl')
 import System.Console.GetOpt
 
 -- | 'OptDescr' with a default
 data OptDescr' a = OptDescr' a (OptDescr (a -> a))
+
+instance Wrapper OptDescr' where
+  type Repr OptDescr' a = OptDescr' a
+  _Wrapper = id
 
 -- | Option without an argument; the result is the total count of this option.
 optNoArg :: [Char] -- ^ short option
