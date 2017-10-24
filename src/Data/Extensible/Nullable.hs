@@ -22,6 +22,7 @@ import Data.Extensible.Product
 import Data.Extensible.Sum
 import Data.Extensible.Inclusion
 import Data.Extensible.Internal.Rig
+import Data.Hashable
 import Data.Typeable (Typeable)
 import Data.Extensible.Wrapper
 import qualified Data.Extensible.Struct as S
@@ -32,7 +33,7 @@ import Test.QuickCheck.Arbitrary
 
 -- | Wrapped Maybe
 newtype Nullable h x = Nullable { getNullable :: Maybe (h x) }
-  deriving (Show, Eq, Ord, Typeable, Generic, NFData, Arbitrary)
+  deriving (Show, Eq, Ord, Typeable, Generic, NFData, Arbitrary, Hashable)
 
 instance Wrapper h => Wrapper (Nullable h) where
   type Repr (Nullable h) x = Maybe (Repr h x)

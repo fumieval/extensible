@@ -61,6 +61,7 @@ import Data.Kind
 import Data.Profunctor.Unsafe
 import Data.Extensible.Wrapper
 import Data.Functor.Identity
+import Data.Hashable
 import Data.Semigroup
 import Data.Typeable (Typeable)
 import qualified Data.Vector.Generic as G
@@ -119,6 +120,7 @@ ND_Field(Enum)
 ND_Field(Bounded)
 ND_Field(NFData)
 ND_Field(Arbitrary)
+ND_Field(Hashable)
 
 newtype instance U.MVector s (Field h x) = MV_Field (U.MVector s (h (AssocValue x)))
 newtype instance U.Vector (Field h x) = V_Field (U.Vector (h (AssocValue x)))

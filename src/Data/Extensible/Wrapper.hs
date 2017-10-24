@@ -24,6 +24,7 @@ import Data.Proxy (Proxy(..))
 import Data.Profunctor.Unsafe (Profunctor(..))
 import Data.Functor.Identity (Identity(..))
 import Data.Extensible.Internal.Rig
+import Data.Hashable
 import Data.Semigroup
 import GHC.Generics (Generic)
 import Test.QuickCheck.Arbitrary
@@ -61,7 +62,7 @@ instance Wrapper [] where
 
 -- | Poly-kinded composition
 newtype Comp (f :: j -> *) (g :: i -> j) (a :: i) = Comp { getComp :: f (g a) }
-  deriving (Show, Eq, Ord, Typeable, NFData, Generic, Semigroup, Monoid, Arbitrary)
+  deriving (Show, Eq, Ord, Typeable, NFData, Generic, Semigroup, Monoid, Arbitrary, Hashable)
 
 deriving instance (Functor f, Functor g) => Functor (Comp f g)
 deriving instance (Foldable f, Foldable g) => Foldable (Comp f g)
@@ -79,7 +80,7 @@ instance (Functor f, Wrapper g) => Wrapper (Comp f g) where
 
 -- | Poly-kinded Const
 newtype Const' a x = Const' { getConst' :: a }
-  deriving (Show, Eq, Ord, Typeable, Generic, NFData, Functor, Foldable, Traversable, Arbitrary)
+  deriving (Show, Eq, Ord, Typeable, Generic, NFData, Functor, Foldable, Traversable, Arbitrary, Hashable)
 
 instance Wrapper (Const' a) where
   type Repr (Const' a) b = a
@@ -96,6 +97,7 @@ data Prod f g a = Prod (f a) (g a)
   deriving (Show, Eq, Ord, Typeable, Generic, Functor, Foldable, Traversable)
 
 instance (NFData (f a), NFData (g a)) => NFData (Prod f g a)
+instance (Hashable (f a), Hashable (g a)) => Hashable (Prod f g a)
 
 instance (Wrapper f, Wrapper g) => Wrapper (Prod f g) where
   type Repr (Prod f g) a = (Repr f a, Repr g a)
