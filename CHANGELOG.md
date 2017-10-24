@@ -1,3 +1,11 @@
+0.4.6
+-------------------------------------------------
+* New module `Data.Extensible.GetOpt`
+* Added `fromBitProd`
+* Added `Hashable` instances for `:*`, `:|`, `BitProd`, `Membership`, and various wrappers
+* Added an `Unbox` instance for `:*`
+* Added `hfoldlWithIndex` and `hfoldlWithIndexFor`
+
 0.4.5
 -------------------------------------------------
 * Added `nothingEff`
