@@ -1,14 +1,12 @@
-{-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE OverloadedLabels, LambdaCase #-}
 import Control.Lens
 import Data.Extensible
 import Data.Extensible.GetOpt
-import System.Environment
 
-main = getArgs >>= \args -> case getOptRecord opts args of
-  (_, _, _:_, usage) -> putStrLn $ usage "getopt.hs"
-  (r, _, [], _) -> do
-    putStrLn $ "verbose: " ++ show (r ^. #verbose)
-    putStrLn $ "extra: " ++ show (r ^. #extra)
+main :: IO ()
+main = withGetOpt opts $ \r _args -> do
+  putStrLn $ "verbose: " ++ show (r ^. #verbose > 0)
+  putStrLn $ "extra: " ++ show (r ^? #extra. folded)
   where
     opts = #verbose @= optNoArg "v" ["verbose"] "verbose"
       <: #extra @= optReqArg "e" ["extra"] "ARG" "extra arguments"
