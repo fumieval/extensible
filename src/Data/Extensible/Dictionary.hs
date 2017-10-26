@@ -115,7 +115,9 @@ instance WrapForall U.Unbox h (x ': xs) => M.MVector U.MVector (h :* (x ': xs)) 
   basicUnsafeNew n = fmap MV_Product
     $ hgenerateFor (Proxy :: Proxy (Instance1 U.Unbox h))
     (const $ Comp <$> M.basicUnsafeNew n)
+#if MIN_VERSION_vector(0,11,0)
   basicInitialize (MV_Product v) = ENUM_EACH(\i -> M.basicInitialize $ hlookupC i v)
+#endif
   basicUnsafeReplicate n x = fmap MV_Product
     $ hgenerateFor (Proxy :: Proxy (Instance1 U.Unbox h))
     $ \m -> fmap Comp $ M.basicUnsafeReplicate n $ hlookup m x
@@ -202,7 +204,6 @@ instance (U.Unbox a) => M.MVector U.MVector (Identity a) where
   {-# INLINE basicUnsafeSlice #-}
   {-# INLINE basicOverlaps #-}
   {-# INLINE basicUnsafeNew #-}
-  {-# INLINE basicInitialize #-}
   {-# INLINE basicUnsafeReplicate #-}
   {-# INLINE basicUnsafeRead #-}
   {-# INLINE basicUnsafeWrite #-}
@@ -214,7 +215,10 @@ instance (U.Unbox a) => M.MVector U.MVector (Identity a) where
   basicUnsafeSlice i n (MV_Identity v) = MV_Identity $ M.basicUnsafeSlice i n v
   basicOverlaps (MV_Identity v1) (MV_Identity v2) = M.basicOverlaps v1 v2
   basicUnsafeNew n = MV_Identity <$> M.basicUnsafeNew n
+#if MIN_VERSION_vector(0,11,0)
   basicInitialize (MV_Identity v) = M.basicInitialize v
+  {-# INLINE basicInitialize #-}
+#endif
   basicUnsafeReplicate n (Identity x) = MV_Identity <$> M.basicUnsafeReplicate n x
   basicUnsafeRead (MV_Identity v) i = Identity <$> M.basicUnsafeRead v i
   basicUnsafeWrite (MV_Identity v) i (Identity x) = M.basicUnsafeWrite v i x
@@ -247,7 +251,6 @@ instance (U.Unbox a) => M.MVector U.MVector (Const' a b) where
   {-# INLINE basicUnsafeSlice #-}
   {-# INLINE basicOverlaps #-}
   {-# INLINE basicUnsafeNew #-}
-  {-# INLINE basicInitialize #-}
   {-# INLINE basicUnsafeReplicate #-}
   {-# INLINE basicUnsafeRead #-}
   {-# INLINE basicUnsafeWrite #-}
@@ -259,7 +262,10 @@ instance (U.Unbox a) => M.MVector U.MVector (Const' a b) where
   basicUnsafeSlice i n (MV_Const v) = MV_Const $ M.basicUnsafeSlice i n v
   basicOverlaps (MV_Const v1) (MV_Const v2) = M.basicOverlaps v1 v2
   basicUnsafeNew n = MV_Const <$> M.basicUnsafeNew n
+#if MIN_VERSION_vector(0,11,0)
   basicInitialize (MV_Const v) = M.basicInitialize v
+  {-# INLINE basicInitialize #-}
+#endif
   basicUnsafeReplicate n (Const' x) = MV_Const <$> M.basicUnsafeReplicate n x
   basicUnsafeRead (MV_Const v) i = Const' <$> M.basicUnsafeRead v i
   basicUnsafeWrite (MV_Const v) i (Const' x) = M.basicUnsafeWrite v i x

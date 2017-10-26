@@ -130,7 +130,6 @@ instance (U.Unbox (h (AssocValue x))) => M.MVector U.MVector (Field h x) where
   {-# INLINE basicUnsafeSlice #-}
   {-# INLINE basicOverlaps #-}
   {-# INLINE basicUnsafeNew #-}
-  {-# INLINE basicInitialize #-}
   {-# INLINE basicUnsafeReplicate #-}
   {-# INLINE basicUnsafeRead #-}
   {-# INLINE basicUnsafeWrite #-}
@@ -142,7 +141,10 @@ instance (U.Unbox (h (AssocValue x))) => M.MVector U.MVector (Field h x) where
   basicUnsafeSlice i n (MV_Field v) = MV_Field $ M.basicUnsafeSlice i n v
   basicOverlaps (MV_Field v1) (MV_Field v2) = M.basicOverlaps v1 v2
   basicUnsafeNew n = MV_Field <$> M.basicUnsafeNew n
+#if MIN_VERSION_vector(0,11,0)
   basicInitialize (MV_Field v) = M.basicInitialize v
+  {-# INLINE basicInitialize #-}
+#endif
   basicUnsafeReplicate n (Field x) = MV_Field <$> M.basicUnsafeReplicate n x
   basicUnsafeRead (MV_Field v) i = Field <$> M.basicUnsafeRead v i
   basicUnsafeWrite (MV_Field v) i (Field x) = M.basicUnsafeWrite v i x
