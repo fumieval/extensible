@@ -89,10 +89,10 @@ getOptRecord descs args = (result, rs, es, flip usageInfo updaters) where
 
 -- | When there's an error, print it along with the usage info to stderr
 -- and terminate with 'exitFailure'.
-withGetOpt :: MonadIO m => RecordOf (OptionDescr h) xs
+withGetOpt :: MonadIO m => String -> RecordOf (OptionDescr h) xs
   -> (RecordOf h xs -> [String] -> m a) -> m a
-withGetOpt descs k = getOptRecord descs <$> liftIO getArgs >>= \case
+withGetOpt nonOptUsage descs k = getOptRecord descs <$> liftIO getArgs >>= \case
   (r, xs, [], _) -> k r xs
   (_, _, errs, usage) -> liftIO $ do
     mapM_ (hPutStrLn stderr) errs
-    getProgName >>= die . usage
+    getProgName >>= die . usage . (++ (' ' : nonOptUsage))
