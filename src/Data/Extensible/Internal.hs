@@ -118,7 +118,7 @@ type (>:) = '(:>)
 class Associate k v xs | k xs -> v where
   association :: Membership xs (k ':> v)
 
-instance (Elaborate k (FindAssoc k xs) ~ 'Expecting (n ':> v), KnownPosition n) => Associate k v xs where
+instance (Elaborate k (FindAssoc 'Zero k xs) ~ 'Expecting (n ':> v), KnownPosition n) => Associate k v xs where
   association = Membership (theInt (Proxy :: Proxy n))
 
 -- | A readable type search result
@@ -129,14 +129,10 @@ type family Elaborate (key :: k) (xs :: [v]) :: Elaborated k v where
   Elaborate k '[x] = 'Expecting x
   Elaborate k xs = 'Duplicate k
 
-type family FindAssoc (key :: k) (xs :: [Assoc k v]) where
-  FindAssoc k ((k ':> v) ': xs) = ('Zero ':> v) ': MapSuccKey (FindAssoc k xs)
-  FindAssoc k ((k' ':> v) ': xs) = MapSuccKey (FindAssoc k xs)
-  FindAssoc k '[] = '[]
-
-type family MapSuccKey (xs :: [Assoc Nat v]) :: [Assoc Nat v] where
-  MapSuccKey '[] = '[]
-  MapSuccKey ((k ':> x) ': xs) = (Succ k ':> x) ': MapSuccKey xs
+type family FindAssoc (n :: Nat) (key :: k) (xs :: [Assoc k v]) where
+  FindAssoc n k ((k ':> v) ': xs) = (n ':> v) ': FindAssoc (Succ n) k xs
+  FindAssoc n k ((k' ':> v) ': xs) = FindAssoc (Succ n) k xs
+  FindAssoc n k '[] = '[]
 
 instance Show (Membership xs x) where
   show (Membership n) = "$(mkMembership " ++ show n ++ ")"
