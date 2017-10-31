@@ -84,11 +84,11 @@ deriveIsRecord name = reify name >>= \case
             []
             ]
         , FunD 'recordToList [Clause
-            [VarP rec]
+            [ConP conName (map VarP newNames)]
             (NormalB $ shape2Exp [AppE (ConE 'Field)
                 $ AppE (ConE 'Identity)
-                $ VarE n `AppE` VarE rec
-              | n <- names])
+                $ VarE n
+              | n <- newNames])
             []
             ]
         ]
