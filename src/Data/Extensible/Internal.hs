@@ -48,9 +48,6 @@ module Data.Extensible.Internal (
   , Elaborate
   , Elaborated(..)
   -- * Miscellaneous
-  , Nat(..)
-  , KnownPosition(..)
-  , Succ
   , Head
   , Last
   , module Data.Type.Equality
@@ -70,6 +67,7 @@ import Data.Typeable
 import Language.Haskell.TH hiding (Pred)
 import Data.Bits
 import Data.Semigroup (Semigroup(..))
+import GHC.TypeLits
 
 -- | Generates a 'Membership' that corresponds to the given ordinal (0-origin).
 mkMembership :: Int -> Q Exp
@@ -96,8 +94,8 @@ remember i r = unsafeCoerce (Remembrance r :: Remembrance xs x r) i
 class Member xs x where
   membership :: Membership xs x
 
-instance (Elaborate x (FindType x xs) ~ 'Expecting pos, KnownPosition pos) => Member xs x where
-  membership = Membership (theInt (Proxy :: Proxy pos))
+instance (Elaborate x (FindType x xs) ~ 'Expecting pos, KnownNat pos) => Member xs x where
+  membership = Membership (fromInteger $ natVal (Proxy :: Proxy pos))
   {-# INLINE membership #-}
 
 instance Hashable (Membership xs x) where
@@ -118,8 +116,8 @@ type (>:) = '(:>)
 class Associate k v xs | k xs -> v where
   association :: Membership xs (k ':> v)
 
-instance (Elaborate k (FindAssoc 'Zero k xs) ~ 'Expecting (n ':> v), KnownPosition n) => Associate k v xs where
-  association = Membership (theInt (Proxy :: Proxy n))
+instance (Elaborate k (FindAssoc 0 k xs) ~ 'Expecting (n ':> v), KnownNat n) => Associate k v xs where
+  association = Membership (fromInteger $ natVal (Proxy :: Proxy n))
 
 -- | A readable type search result
 data Elaborated k v = Expecting v | Missing k | Duplicate k
@@ -130,8 +128,8 @@ type family Elaborate (key :: k) (xs :: [v]) :: Elaborated k v where
   Elaborate k xs = 'Duplicate k
 
 type family FindAssoc (n :: Nat) (key :: k) (xs :: [Assoc k v]) where
-  FindAssoc n k ((k ':> v) ': xs) = (n ':> v) ': FindAssoc (Succ n) k xs
-  FindAssoc n k ((k' ':> v) ': xs) = FindAssoc (Succ n) k xs
+  FindAssoc n k ((k ':> v) ': xs) = (n ':> v) ': FindAssoc (1 + n) k xs
+  FindAssoc n k ((k' ':> v) ': xs) = FindAssoc (1 + n) k xs
   FindAssoc n k '[] = '[]
 
 instance Show (Membership xs x) where
@@ -181,7 +179,7 @@ type family Head (xs :: [k]) :: k where
 
 -- | FindType types
 type family FindType (x :: k) (xs :: [k]) :: [Nat] where
-  FindType x (x ': xs) = 'Zero ': FindType x xs
+  FindType x (x ': xs) = 0 ': FindType x xs
   FindType x (y ': ys) = MapSucc (FindType x ys)
   FindType x '[] = '[]
 
@@ -189,32 +187,7 @@ type family Last (x :: [k]) :: k where
   Last '[x] = x
   Last (x ': xs) = Last xs
 
--- | Type level binary number
-data Nat = Zero | DNat Nat | SDNat Nat
-
--- | Converts type naturals into 'Word'.
-class KnownPosition n where
-  theInt :: proxy n -> Int
-
-instance KnownPosition 'Zero where
-  theInt _ = 0
-  {-# INLINE theInt #-}
-
-instance KnownPosition n => KnownPosition ('DNat n) where
-  theInt _ = theInt (Proxy :: Proxy n) `unsafeShiftL` 1
-  {-# INLINE theInt #-}
-
-instance KnownPosition n => KnownPosition ('SDNat n) where
-  theInt _ = (theInt (Proxy :: Proxy n) `unsafeShiftL` 1) + 1
-  {-# INLINE theInt #-}
-
--- | The successor of the number
-type family Succ (x :: Nat) :: Nat where
-  Succ 'Zero = 'SDNat 'Zero
-  Succ ('DNat n) = 'SDNat n
-  Succ ('SDNat n) = 'DNat (Succ n)
-
 -- | Ideally, it will be 'Map Succ'
 type family MapSucc (xs :: [Nat]) :: [Nat] where
   MapSucc '[] = '[]
-  MapSucc (x ': xs) = Succ x ': MapSucc xs
+  MapSucc (x ': xs) = (1 + x) ': MapSucc xs
