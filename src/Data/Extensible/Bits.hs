@@ -19,6 +19,7 @@ import Data.Extensible.Dictionary
 import Data.Extensible.Product
 import Data.Extensible.Internal (getMemberId)
 import Data.Extensible.Field
+import Data.Extensible.Wrapper
 import Data.Functor.Identity
 import Data.Hashable
 import Data.Ix
@@ -55,6 +56,16 @@ class (Bits r, KnownNat (BitWidth a)) => FromBits r a where
   type BitWidth a :: Nat
   fromBits :: r -> a
   toBits :: a -> r
+
+instance Bits r => FromBits r () where
+  type BitWidth () = 0
+  fromBits _ = ()
+  toBits _ = zeroBits
+
+instance Bits r => FromBits r (Proxy a) where
+  type BitWidth (Proxy a) = 0
+  fromBits _ = Proxy
+  toBits _ = zeroBits
 
 instance FromBits Word64 Word64 where
   type BitWidth Word64 = 64
@@ -101,6 +112,11 @@ instance FromBits r a => FromBits r (Identity a) where
   type BitWidth (Identity a) = BitWidth a
   fromBits = Identity . fromBits
   toBits = toBits . runIdentity
+
+instance FromBits r a => FromBits r (Const' a b) where
+  type BitWidth (Const' a b) = BitWidth a
+  fromBits = Const' . fromBits
+  toBits = toBits . getConst'
 
 instance (Bits r, FromBits r (h (AssocValue x))) => FromBits r (Field h x) where
   type BitWidth (Field h x) = BitWidth (h (AssocValue x))
