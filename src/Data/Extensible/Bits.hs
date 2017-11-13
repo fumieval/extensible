@@ -113,6 +113,13 @@ instance FromBits r a => FromBits r (Identity a) where
   fromBits = Identity . fromBits
   toBits = toBits . runIdentity
 
+instance (FromBits r a, FromBits r b, n ~ (BitWidth a + BitWidth b), n <= BitWidth r, KnownNat n) => FromBits r (a, b) where
+  type BitWidth (a, b) = BitWidth a + BitWidth b
+  fromBits r = (fromBits (unsafeShiftR r width), fromBits r) where
+    width = fromInteger $ natVal (Proxy :: Proxy (BitWidth b))
+  toBits (a, b) = unsafeShiftL (toBits a) width .|. toBits b where
+    width = fromInteger $ natVal (Proxy :: Proxy (BitWidth b))
+
 instance FromBits r a => FromBits r (Const' a b) where
   type BitWidth (Const' a b) = BitWidth a
   fromBits = Const' . fromBits
