@@ -27,12 +27,13 @@ import Data.Profunctor.Sieve
 import Data.Proxy
 import Data.Word
 import Data.Int
+import Foreign.Storable (Storable)
 import GHC.Generics (Generic)
 import GHC.TypeLits
 
 -- | Bit-vector product. It has similar interface as @(:*)@ but fields are packed into @r@.
 newtype BitProd r (h :: k -> *) (xs :: [k]) = BitProd { unBitProd :: r }
-  deriving (Eq, Ord, Enum, Bounded, Ix, Generic, Hashable)
+  deriving (Eq, Ord, Enum, Bounded, Ix, Generic, Hashable, Storable)
 
 instance (Forall (Instance1 Show h) xs, BitFields r h xs) => Show (BitProd r h xs) where
   showsPrec d x = showParen (d > 10)
