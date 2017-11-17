@@ -163,6 +163,15 @@ proxyBitWidth _ _ = Proxy
 type BitRecordOf r h = BitProd r (Field h)
 type BitRecord r = BitRecordOf r Identity
 
+type family SelectMax :: Ordering -> Nat -> Nat -> Nat where
+  SelectMax LT a b = b
+  SelectMax EQ a b = a
+  SelectMax GT a b = a
+
+type family MaximumNatOr :: Nat -> [Nat] -> Nat where
+  MaximumNatOr m (n ': xs) = MaximumNatOr (SelectMax (CmpNat m n) m n) xs
+  MaximumNatOr m '[] = []
+
 instance (Corepresentable p, Comonad (Corep p), Functor f) => Extensible f p (BitProd r) where
   type ExtensibleConstr (BitProd r) h xs x
     = (BitFields r h xs, FromBits r (h x))
