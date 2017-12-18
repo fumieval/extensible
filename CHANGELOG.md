@@ -1,3 +1,9 @@
+0.4.7
+-------------------------------------------------
+* Made various optimisations to improve the compilation time
+* Added trivial instances for `FromBits`
+* Generalised the API of `Data.Extensible.GetOpt`
+
 0.4.6
 -------------------------------------------------
 * New module `Data.Extensible.GetOpt`
