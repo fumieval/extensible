@@ -65,7 +65,6 @@ import Unsafe.Coerce
 import Data.Hashable
 import Data.Typeable
 import Language.Haskell.TH hiding (Pred)
-import Data.Bits
 import Data.Semigroup (Semigroup(..))
 import GHC.TypeLits
 
