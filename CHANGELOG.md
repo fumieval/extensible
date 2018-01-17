@@ -1,3 +1,5 @@
+* Added `optFlag`, `optLastArg`, and `optionOptArg`
+
 0.4.7
 -------------------------------------------------
 * Made various optimisations to improve the compilation time

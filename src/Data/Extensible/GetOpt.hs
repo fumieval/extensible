@@ -11,12 +11,17 @@
 --------------------------------------------------------------------------------
 module Data.Extensible.GetOpt (OptionDescr(..)
   , OptDescr'
+  , getOptRecord
+  , withGetOpt
+  -- * Basic descriptors
+  , optFlag
+  , optLastArg
+  -- * More generic descriptors
   , optNoArg
   , optReqArg
   , optionNoArg
   , optionReqArg
-  , getOptRecord
-  , withGetOpt) where
+  , optionOptArg) where
 
 import Control.Monad.IO.Class
 import Data.Extensible.Class
@@ -61,6 +66,13 @@ optNoArg :: [Char] -- ^ short option
     -> OptDescr' Int
 optNoArg = optionNoArg Identity
 
+-- | True when specified
+optFlag :: [Char] -- ^ short option
+    -> [String] -- ^ long option
+    -> String -- ^ explanation
+    -> OptDescr' Bool
+optFlag = optionNoArg (pure . (>0))
+
 optionNoArg :: (Int -> h a) -> [Char] -> [String] -> String -> OptionDescr h a
 optionNoArg f ss ls expl = OptionDescr f 0 $ Option ss ls (NoArg (+1)) expl
 
@@ -72,8 +84,19 @@ optReqArg :: [Char] -- ^ short option
     -> OptDescr' [String]
 optReqArg = optionReqArg Identity
 
+-- | Takes the last argument when more than one is specified.
+optLastArg :: [Char] -- ^ short option
+    -> [String] -- ^ long option
+    -> String -- ^ placeholder
+    -> String -- ^ explanation
+    -> OptDescr' (Maybe String)
+optLastArg ss ls ph expl = OptionDescr pure Nothing $ Option ss ls (ReqArg (const . Just) ph) expl
+
 optionReqArg :: ([String] -> h a) -> [Char] -> [String] -> String -> String -> OptionDescr h a
 optionReqArg f ss ls ph expl = OptionDescr f [] $ Option ss ls (ReqArg (:) ph) expl
+
+optionOptArg :: ([Maybe String] -> h a) -> [Char] -> [String] -> String -> String -> OptionDescr h a
+optionOptArg f ss ls ph expl = OptionDescr f [] $ Option ss ls (OptArg (:) ph) expl
 
 getOptRecord :: RecordOf (OptionDescr h) xs -- ^ a record of option descriptors
     -> [String] -- ^ arguments
