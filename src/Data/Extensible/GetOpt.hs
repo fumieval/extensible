@@ -7,7 +7,10 @@
 --
 -- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
 --
--- A wrapper for 'System.Console.GetOpt'
+-- A wrapper for 'System.Console.GetOpt'.
+--
+-- See also: <https://www.schoolofhaskell.com/user/fumieval/extensible/getopt-and-extensible-records GetOpt and extensible records - School of Haskell>
+--
 --------------------------------------------------------------------------------
 module Data.Extensible.GetOpt (OptionDescr(..)
   , OptDescr'
@@ -98,6 +101,7 @@ optionReqArg f ss ls ph expl = OptionDescr f [] $ Option ss ls (ReqArg (:) ph) e
 optionOptArg :: ([Maybe String] -> h a) -> [Char] -> [String] -> String -> String -> OptionDescr h a
 optionOptArg f ss ls ph expl = OptionDescr f [] $ Option ss ls (OptArg (:) ph) expl
 
+-- | Parse option arguments.
 getOptRecord :: RecordOf (OptionDescr h) xs -- ^ a record of option descriptors
     -> [String] -- ^ arguments
     -> (RecordOf h xs, [String], [String], String -> String) -- ^ (result, remaining non-options, errors, usageInfo)
@@ -110,10 +114,13 @@ getOptRecord descs args = (result, rs, es, flip usageInfo updaters) where
   result = hmap (\(Field (OptionDescr k x _)) -> Field (k x))
       $ foldl' (flip id) descs fs
 
--- | When there's an error, print it along with the usage info to stderr
+-- | An all-in-one utility function.
+-- When there's an error, print it along with the usage info to stderr
 -- and terminate with 'exitFailure'.
-withGetOpt :: MonadIO m => String -> RecordOf (OptionDescr h) xs
-  -> (RecordOf h xs -> [String] -> m a) -> m a
+withGetOpt :: MonadIO m => String -- ^ Non-option usage
+  -> RecordOf (OptionDescr h) xs -- ^ option desciptors
+  -> (RecordOf h xs -> [String] -> m a) -- ^ the result and non-option arguments
+  -> m a
 withGetOpt nonOptUsage descs k = getOptRecord descs <$> liftIO getArgs >>= \case
   (r, xs, [], _) -> k r xs
   (_, _, errs, usage) -> liftIO $ do
