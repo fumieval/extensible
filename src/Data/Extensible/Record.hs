@@ -60,7 +60,6 @@ deriveIsRecord name = reify name >>= \case
 #else
   TyConI (DataD _ _ vars [RecC conName vst] _) -> do
 #endif
-    rec <- newName "rec"
     let names = [x | (x, _, _) <- vst]
     newNames <- traverse (newName . nameBase) names
     let tvmap = [(tvName tv, VarT (mkName $ "p" ++ show i)) | (i, tv) <- zip [0 :: Int ..] vars]
