@@ -80,10 +80,6 @@ instance WrapForall Bounded h xs => Bounded (h :* xs) where
 newtype instance U.MVector s (h :* xs) = MV_Product (Comp (U.MVector s) h :* xs)
 newtype instance U.Vector (h :* xs) = V_Product (Comp U.Vector h :* xs)
 
-#define ENUM_EACH(expr) henumerateFor \
-  (Proxy :: Proxy (Instance1 U.Unbox h)) (Proxy :: Proxy (x ': xs)) \
-  ((>>) . (expr)) (return ())
-
 hlookupC :: Membership xs a -> Comp f g :* xs -> f (g a)
 hlookupC i = getComp . hlookup i
 
@@ -101,7 +97,7 @@ instance WrapForall U.Unbox h (x ': xs) => G.Vector U.Vector (h :* (x ': xs)) wh
   basicUnsafeIndexM (V_Product v) i = hgenerateFor (Proxy :: Proxy (Instance1 U.Unbox h))
     $ \m -> G.basicUnsafeIndexM (hlookupC m v) i
   basicUnsafeCopy (MV_Product v) (V_Product w)
-    = ENUM_EACH(\i -> G.basicUnsafeCopy (hlookupC i v) (hlookupC i w))
+    = henumerateFor (Proxy :: Proxy (Instance1 U.Unbox h)) (Proxy :: Proxy (x ': xs)) ((>>) . \i -> G.basicUnsafeCopy (hlookupC i v) (hlookupC i w)) (return ())
 
 instance WrapForall U.Unbox h (x ': xs) => M.MVector U.MVector (h :* (x ': xs)) where
   basicLength (MV_Product v) = M.basicLength $ getComp $ hindex v here
@@ -116,20 +112,20 @@ instance WrapForall U.Unbox h (x ': xs) => M.MVector U.MVector (h :* (x ': xs)) 
     $ hgenerateFor (Proxy :: Proxy (Instance1 U.Unbox h))
     (const $ Comp <$> M.basicUnsafeNew n)
 #if MIN_VERSION_vector(0,11,0)
-  basicInitialize (MV_Product v) = ENUM_EACH(\i -> M.basicInitialize $ hlookupC i v)
+  basicInitialize (MV_Product v) = henumerateFor (Proxy :: Proxy (Instance1 U.Unbox h)) (Proxy :: Proxy (x ': xs)) ((>>) . \i -> M.basicInitialize $ hlookupC i v) (return ())
 #endif
   basicUnsafeReplicate n x = fmap MV_Product
     $ hgenerateFor (Proxy :: Proxy (Instance1 U.Unbox h))
     $ \m -> fmap Comp $ M.basicUnsafeReplicate n $ hlookup m x
   basicUnsafeRead (MV_Product v) i = hgenerateFor (Proxy :: Proxy (Instance1 U.Unbox h))
     (\m -> M.basicUnsafeRead (hlookupC m v) i)
-  basicUnsafeWrite (MV_Product v) i x = ENUM_EACH(\m -> M.basicUnsafeWrite (hlookupC m v) i (hlookup m x))
-  basicClear (MV_Product v) = ENUM_EACH(\i -> M.basicClear $ hlookupC i v)
-  basicSet (MV_Product v) x = ENUM_EACH(\i -> M.basicSet (hlookupC i v) (hlookup i x))
+  basicUnsafeWrite (MV_Product v) i x = henumerateFor (Proxy :: Proxy (Instance1 U.Unbox h)) (Proxy :: Proxy (x ': xs)) ((>>) . \m -> M.basicUnsafeWrite (hlookupC m v) i (hlookup m x)) (return ())
+  basicClear (MV_Product v) = henumerateFor (Proxy :: Proxy (Instance1 U.Unbox h)) (Proxy :: Proxy (x ': xs)) ((>>) . \i -> M.basicClear $ hlookupC i v) (return ())
+  basicSet (MV_Product v) x = henumerateFor (Proxy :: Proxy (Instance1 U.Unbox h)) (Proxy :: Proxy (x ': xs)) ((>>) . \i -> M.basicSet (hlookupC i v) (hlookup i x)) (return ())
   basicUnsafeCopy (MV_Product v1) (MV_Product v2)
-    = ENUM_EACH(\i -> M.basicUnsafeCopy (hlookupC i v1) (hlookupC i v2))
+    = henumerateFor (Proxy :: Proxy (Instance1 U.Unbox h)) (Proxy :: Proxy (x ': xs)) ((>>) . \i -> M.basicUnsafeCopy (hlookupC i v1) (hlookupC i v2)) (return ())
   basicUnsafeMove (MV_Product v1) (MV_Product v2)
-    = ENUM_EACH(\i -> M.basicUnsafeMove (hlookupC i v1) (hlookupC i v2))
+    = henumerateFor (Proxy :: Proxy (Instance1 U.Unbox h)) (Proxy :: Proxy (x ': xs)) ((>>) . \i -> M.basicUnsafeMove (hlookupC i v1) (hlookupC i v2)) (return ())
   basicUnsafeGrow (MV_Product v) n = fmap MV_Product
     $ hgenerateFor (Proxy :: Proxy (Instance1 U.Unbox h))
     $ \i -> Comp <$> M.basicUnsafeGrow (hlookupC i v) n
