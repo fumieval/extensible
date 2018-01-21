@@ -1,3 +1,6 @@
+0.4.7.1
+-------------------------------------------------
+* Fixed weird CPP errors on macOS 10.13.2 (#18)
 * Added `optFlag`, `optLastArg`, and `optionOptArg`
 
 0.4.7
