@@ -1,3 +1,5 @@
+* Added cassava's `FromNamedRecord` and `FromRecord` instances
+
 0.4.7.1
 -------------------------------------------------
 * Fixed weird CPP errors on macOS 10.13.2 (#18)

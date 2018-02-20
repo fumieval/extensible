@@ -18,7 +18,10 @@
 -----------------------------------------------------------------------
 module Data.Extensible.Dictionary (library, WrapForall, Instance1) where
 import Control.DeepSeq
+import qualified Data.Csv as Csv
+import qualified Data.ByteString.Char8 as BC
 import Data.Extensible.Class
+import Data.Extensible.Field
 import Data.Extensible.Product
 import Data.Extensible.Sum
 import Data.Extensible.Internal
@@ -32,6 +35,7 @@ import Data.Semigroup
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Unboxed as U
+import GHC.TypeLits
 import Test.QuickCheck.Arbitrary
 import Test.QuickCheck.Gen
 
@@ -143,6 +147,14 @@ instance WrapForall NFData h xs => NFData (h :* xs) where
   rnf xs = henumerateFor (Proxy :: Proxy (Instance1 NFData h)) (Proxy :: Proxy xs)
     (\i -> deepseq (hlookup i xs)) ()
   {-# INLINE rnf #-}
+
+instance WrapForall Csv.FromField h xs => Csv.FromRecord (h :* xs) where
+  parseRecord rec = hgenerateFor (Proxy :: Proxy (Instance1 Csv.FromField h))
+    $ \i -> G.indexM rec (getMemberId i) >>= Csv.parseField
+
+instance Forall (KeyValue KnownSymbol (Instance1 Csv.FromField h)) xs => Csv.FromNamedRecord (Field h :* xs) where
+  parseNamedRecord rec = hgenerateFor (Proxy :: Proxy (KeyValue KnownSymbol (Instance1 Csv.FromField h)))
+    $ \i -> rec Csv..: BC.pack (symbolVal (proxyAssocKey i)) >>= Csv.parseField
 
 instance WrapForall Show h xs => Show (h :| xs) where
   showsPrec d (EmbedAt i h) = showParen (d > 10) $ showString "EmbedAt "
