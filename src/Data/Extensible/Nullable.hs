@@ -39,6 +39,9 @@ instance Wrapper h => Wrapper (Nullable h) where
   type Repr (Nullable h) x = Maybe (Repr h x)
   _Wrapper = withIso _Wrapper $ \f g -> dimap (fmap f . getNullable) (fmap (Nullable . fmap g))
 
+instance Semigroup (h x) => Semigroup (Nullable h x) where
+  (<>) = mappend
+
 instance Semigroup (h x) => Monoid (Nullable h x) where
   mempty = Nullable Nothing
   mappend (Nullable (Just a)) (Nullable (Just b)) = Nullable (Just (a <> b))

@@ -65,7 +65,7 @@ instance WrapForall Semigroup h xs => Semigroup (h :* xs) where
     (library :: Comp Dict (Instance1 Semigroup h) :* xs)
   {-# INLINE (<>) #-}
 
-instance WrapForall Monoid h xs => Monoid (h :* xs) where
+instance (WrapForall Semigroup h xs, WrapForall Monoid h xs) => Monoid (h :* xs) where
   mempty = hrepeatFor (Proxy :: Proxy (Instance1 Monoid h)) mempty
   {-# INLINE mempty #-}
   mappend = hzipWith3 (\(Comp Dict) -> mappend)
