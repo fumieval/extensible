@@ -3,7 +3,10 @@ version:             0.4.7.1
 synopsis:            Extensible, efficient, optics-friendly data types and effects
 homepage:            https://github.com/fumieval/extensible
 bug-reports:         http://github.com/fumieval/extensible/issues
-description:         Poly-kinded extensible records, variants, effects, tangles
+description:
+    This package provides a powerful framework to combine and manipulate various types of structures.
+    .
+    See also <https://www.schoolofhaskell.com/user/fumieval/extensible School of Haskell> for tutorials.
 license:             BSD3
 license-file:        LICENSE
 author:              Fumiaki Kinoshita
