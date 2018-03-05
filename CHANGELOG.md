@@ -1,4 +1,5 @@
 * Added cassava's `FromNamedRecord` and `FromRecord` instances
+* Added `KeyIs` and `ValueIs`
 
 0.4.7.1
 -------------------------------------------------

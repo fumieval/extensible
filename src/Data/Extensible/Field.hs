@@ -39,6 +39,8 @@ module Data.Extensible.Field (
   , AssocValue
   , KeyValue
   , proxyAssocKey
+  , KeyIs
+  , ValueIs
   -- * Internal
   , LabelPhantom
   , Labelling
@@ -89,6 +91,17 @@ type family AssocValue (kv :: Assoc k v) :: v where
 class (pk (AssocKey kv), pv (AssocValue kv)) => KeyValue pk pv kv where
 
 instance (pk k, pv v) => KeyValue pk pv (k ':> v)
+
+-- | Combined constraint for 'Assoc'
+class (pk (AssocKey kv)) => KeyIs pk kv where
+
+instance (pk k) => KeyIs pk (k ':> v)
+
+-- | Combined constraint for 'Assoc'
+class (pv (AssocValue kv)) => ValueIs pv kv where
+
+instance (pv v) => ValueIs pv (k ':> v)
+
 
 -- | A @'Field' h (k ':> v)@ is @h v@ annotated with the field name @k@.
 --
