@@ -4,7 +4,7 @@ import Data.Extensible
 import Data.Extensible.GetOpt
 
 main :: IO ()
-main = withGetOpt opts $ \r _args -> do
+main = withGetOpt "" opts $ \r _args -> do
   putStrLn $ "verbose: " ++ show (r ^. #verbose > 0)
   putStrLn $ "extra: " ++ show (r ^? #extra. folded)
   where

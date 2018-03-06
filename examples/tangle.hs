@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell, DataKinds #-}
+{-# LANGUAGE TypeOperators, PolyKinds, FlexibleContexts, FlexibleInstances, TemplateHaskell, DataKinds #-}
 import Control.Monad.Trans.Class
 import Data.Extensible
 import Data.Functor.Identity
@@ -30,4 +30,4 @@ makeRec :: IO (Record Rec)
 makeRec = runTangles
   (htabulateFor (Proxy :: Proxy MakeRec)
     $ \m -> Comp $ Field . pure <$> make m)
-  (wrench Nil)
+  (wrench nil)

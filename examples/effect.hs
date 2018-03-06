@@ -1,4 +1,5 @@
-{-# LANGUAGE TemplateHaskell, DataKinds, FlexibleContexts #-}
+{-# LANGUAGE TemplateHaskell, DataKinds, TypeOperators, PolyKinds, FlexibleContexts #-}
+{-# OPTIONS_GHC -fno-warn-simplifiable-class-constraints#-}
 import Data.Extensible
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Writer.Strict
