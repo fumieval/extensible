@@ -39,6 +39,7 @@ module Data.Extensible.Field (
   , AssocValue
   , KeyValue
   , proxyAssocKey
+  , proxyAssocValue
   , KeyIs
   , ValueIs
   -- * Internal
@@ -82,6 +83,10 @@ type family AssocKey (kv :: Assoc k v) :: k where
 -- | Proxy-level 'AssocKey'. This is useful when using 'symbolVal'.
 proxyAssocKey :: proxy kv -> Proxy (AssocKey kv)
 proxyAssocKey _ = Proxy
+
+-- | Proxy-level 'AssocKey'. This is useful when using 'symbolVal'.
+proxyAssocValue :: proxy kv -> Proxy (AssocValue kv)
+proxyAssocValue _ = Proxy
 
 -- | Take the type of the value
 type family AssocValue (kv :: Assoc k v) :: v where
