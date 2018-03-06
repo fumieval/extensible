@@ -78,6 +78,7 @@ library
     , hashable
     , tagged
     , transformers
+    , unordered-containers
     , vector
     , mtl
     , monad-skeleton >= 0.1.2

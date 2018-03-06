@@ -31,10 +31,12 @@ import Data.Extensible.Struct
 import Data.Extensible.Wrapper
 import Data.Functor.Identity
 import Data.Hashable
+import qualified Data.HashMap.Strict as HM
 import Data.Semigroup
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector as V
 import GHC.TypeLits
 import Test.QuickCheck.Arbitrary
 import Test.QuickCheck.Gen
@@ -155,6 +157,16 @@ instance WrapForall Csv.FromField h xs => Csv.FromRecord (h :* xs) where
 instance Forall (KeyValue KnownSymbol (Instance1 Csv.FromField h)) xs => Csv.FromNamedRecord (Field h :* xs) where
   parseNamedRecord rec = hgenerateFor (Proxy :: Proxy (KeyValue KnownSymbol (Instance1 Csv.FromField h)))
     $ \i -> rec Csv..: BC.pack (symbolVal (proxyAssocKey i)) >>= Csv.parseField
+
+instance WrapForall Csv.ToField h xs => Csv.ToRecord (h :* xs) where
+  toRecord = V.fromList
+    . hfoldrWithIndexFor (Proxy :: Proxy (Instance1 Csv.ToField h))
+      (\_ v -> (:) $ Csv.toField v) []
+
+instance Forall (KeyValue KnownSymbol (Instance1 Csv.ToField h)) xs => Csv.ToNamedRecord (Field h :* xs) where
+  toNamedRecord = hfoldlWithIndexFor (Proxy :: Proxy (KeyValue KnownSymbol (Instance1 Csv.ToField h)))
+    (\k m v -> HM.insert (BC.pack (symbolVal (proxyAssocKey k))) (Csv.toField v) m)
+    HM.empty
 
 instance WrapForall Show h xs => Show (h :| xs) where
   showsPrec d (EmbedAt i h) = showParen (d > 10) $ showString "EmbedAt "

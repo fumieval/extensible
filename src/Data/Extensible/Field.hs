@@ -141,6 +141,7 @@ ND_Field(NFData)
 ND_Field(Arbitrary)
 ND_Field(Hashable)
 ND_Field(Csv.FromField)
+ND_Field(Csv.ToField)
 
 newtype instance U.MVector s (Field h x) = MV_Field (U.MVector s (h (AssocValue x)))
 newtype instance U.Vector (Field h x) = V_Field (U.Vector (h (AssocValue x)))
