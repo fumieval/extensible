@@ -175,7 +175,7 @@ instance Forall (KeyValue KnownSymbol (Instance1 J.FromJSON h)) xs => J.FromJSON
     (Proxy :: Proxy (KeyValue KnownSymbol (Instance1 J.FromJSON h)))
     $ \m -> let k = symbolVal (proxyAssocKey m) in case HM.lookup (T.pack k) v of
       Just a -> Field <$> J.parseJSON a
-      Nothing -> fail $ "Missing key: " ++ k
+      Nothing -> Field <$> J.parseJSON J.Null
 
 instance Forall (KeyValue KnownSymbol (Instance1 J.ToJSON h)) xs => J.ToJSON (Field h :* xs) where
   toJSON = J.Object . hfoldlWithIndexFor
