@@ -1,5 +1,6 @@
 * Added cassava's `ToNamedRecord`, `ToRecord`, `FromNamedRecord` and `FromRecord` instances
 * Added `KeyIs` and `ValueIs`
+* Added `FromJSON` and `ToJSON` instances for `(:*)`
 
 0.4.7.1
 -------------------------------------------------

@@ -68,25 +68,27 @@ library
     , PolyKinds
     , CPP
   build-depends:       base >= 4.8 && <5
-    , template-haskell
+    , aeson
     , bytestring
-    , constraints
     , cassava
+    , comonad
+    , constraints
+    , deepseq
     , ghc-prim
+    , hashable
+    , monad-skeleton >= 0.1.2
+    , mtl
     , primitive
     , profunctors
+    , QuickCheck
     , semigroups
-    , comonad
-    , deepseq
-    , hashable
+    , StateVar
     , tagged
+    , template-haskell
+    , text
     , transformers
     , unordered-containers
     , vector
-    , mtl
-    , monad-skeleton >= 0.1.2
-    , StateVar
-    , QuickCheck
   hs-source-dirs:      src
   ghc-options: -Wall
   default-language:    Haskell2010

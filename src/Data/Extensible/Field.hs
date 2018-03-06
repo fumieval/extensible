@@ -48,6 +48,7 @@ module Data.Extensible.Field (
   , Inextensible
   ) where
 import Control.DeepSeq (NFData)
+import qualified Data.Aeson as J
 import Data.Coerce
 #if __GLASGOW_HASKELL__ < 802
 import Data.Constraint
@@ -142,6 +143,8 @@ ND_Field(Arbitrary)
 ND_Field(Hashable)
 ND_Field(Csv.FromField)
 ND_Field(Csv.ToField)
+ND_Field(J.FromJSON)
+ND_Field(J.ToJSON)
 
 newtype instance U.MVector s (Field h x) = MV_Field (U.MVector s (h (AssocValue x)))
 newtype instance U.Vector (Field h x) = V_Field (U.Vector (h (AssocValue x)))

@@ -18,6 +18,7 @@
 -----------------------------------------------------------------------
 module Data.Extensible.Dictionary (library, WrapForall, Instance1) where
 import Control.DeepSeq
+import qualified Data.Aeson as J
 import qualified Data.Csv as Csv
 import qualified Data.ByteString.Char8 as BC
 import Data.Extensible.Class
@@ -37,6 +38,7 @@ import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector as V
+import qualified Data.Text as T
 import GHC.TypeLits
 import Test.QuickCheck.Arbitrary
 import Test.QuickCheck.Gen
@@ -166,6 +168,19 @@ instance WrapForall Csv.ToField h xs => Csv.ToRecord (h :* xs) where
 instance Forall (KeyValue KnownSymbol (Instance1 Csv.ToField h)) xs => Csv.ToNamedRecord (Field h :* xs) where
   toNamedRecord = hfoldlWithIndexFor (Proxy :: Proxy (KeyValue KnownSymbol (Instance1 Csv.ToField h)))
     (\k m v -> HM.insert (BC.pack (symbolVal (proxyAssocKey k))) (Csv.toField v) m)
+    HM.empty
+
+instance Forall (KeyValue KnownSymbol (Instance1 J.FromJSON h)) xs => J.FromJSON (Field h :* xs) where
+  parseJSON = J.withObject "Object" $ \v -> hgenerateFor
+    (Proxy :: Proxy (KeyValue KnownSymbol (Instance1 J.FromJSON h)))
+    $ \m -> let k = symbolVal (proxyAssocKey m) in case HM.lookup (T.pack k) v of
+      Just a -> Field <$> J.parseJSON a
+      Nothing -> fail $ "Missing key: " ++ k
+
+instance Forall (KeyValue KnownSymbol (Instance1 J.ToJSON h)) xs => J.ToJSON (Field h :* xs) where
+  toJSON = J.Object . hfoldlWithIndexFor
+    (Proxy :: Proxy (KeyValue KnownSymbol (Instance1 J.ToJSON h)))
+    (\k m v -> HM.insert (T.pack (symbolVal (proxyAssocKey k))) (J.toJSON v) m)
     HM.empty
 
 instance WrapForall Show h xs => Show (h :| xs) where
