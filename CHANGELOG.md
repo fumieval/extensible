@@ -1,3 +1,8 @@
+0.4.8
+-------------------------------------------------
+* Changed the `FromJSON` instance for `Record` to call `parseJSON Null` for missing fields
+* Added `FromJSON` and `ToJSON` instances for `Nullable (Field h) :* xs`
+
 0.4.7.2
 -------------------------------------------------
 * Added cassava's `ToNamedRecord`, `ToRecord`, `FromNamedRecord` and `FromRecord` instances
