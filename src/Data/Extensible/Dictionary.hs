@@ -170,12 +170,12 @@ instance Forall (KeyValue KnownSymbol (Instance1 Csv.ToField h)) xs => Csv.ToNam
     (\k m v -> HM.insert (BC.pack (symbolVal (proxyAssocKey k))) (Csv.toField v) m)
     HM.empty
 
+-- | @'parseJSON' 'J.Null'@ is called for missing fields.
 instance Forall (KeyValue KnownSymbol (Instance1 J.FromJSON h)) xs => J.FromJSON (Field h :* xs) where
   parseJSON = J.withObject "Object" $ \v -> hgenerateFor
     (Proxy :: Proxy (KeyValue KnownSymbol (Instance1 J.FromJSON h)))
-    $ \m -> let k = symbolVal (proxyAssocKey m) in case HM.lookup (T.pack k) v of
-      Just a -> Field <$> J.parseJSON a
-      Nothing -> Field <$> J.parseJSON J.Null
+    $ \m -> let k = symbolVal (proxyAssocKey m)
+      in fmap Field $ J.parseJSON $ maybe J.Null id $ HM.lookup (T.pack k) v
 
 instance Forall (KeyValue KnownSymbol (Instance1 J.ToJSON h)) xs => J.ToJSON (Field h :* xs) where
   toJSON = J.Object . hfoldlWithIndexFor
