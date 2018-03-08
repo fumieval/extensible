@@ -5,7 +5,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Class
--- Copyright   :  (c) Fumiaki Kinoshita 2017
+-- Copyright   :  (c) Fumiaki Kinoshita 2018
 -- License     :  BSD3
 --
 -- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
@@ -22,6 +22,7 @@ module Data.Extensible.Class (
   -- * Membership
   , Membership
   , mkMembership
+  , getMemberId
   , compareMembership
   , leadership
   -- * Member
@@ -138,6 +139,7 @@ instance (c x, Forall c xs) => Forall c (x ': xs) where
 
   hgenerateListFor p f = HCons <$> f here <*> hgenerateListFor p (f . navNext)
 
+-- | HACK: Without this, the constraints are not propagated well.
 type family ForallF (c :: k -> Constraint) (xs :: [k]) :: Constraint where
   ForallF c '[] = ()
   ForallF c (x ': xs) = (c x, Forall c xs)

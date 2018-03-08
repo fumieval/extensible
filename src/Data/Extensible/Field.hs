@@ -8,7 +8,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Field
--- Copyright   :  (c) Fumiaki Kinoshita 2017
+-- Copyright   :  (c) Fumiaki Kinoshita 2018
 -- License     :  BSD3
 --
 -- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
@@ -98,12 +98,12 @@ class (pk (AssocKey kv), pv (AssocValue kv)) => KeyValue pk pv kv where
 
 instance (pk k, pv v) => KeyValue pk pv (k ':> v)
 
--- | Combined constraint for 'Assoc'
+-- | Constraint applied to 'AssocKey'
 class (pk (AssocKey kv)) => KeyIs pk kv where
 
 instance (pk k) => KeyIs pk (k ':> v)
 
--- | Combined constraint for 'Assoc'
+-- | Constraint applied to 'AssocValue'
 class (pv (AssocValue kv)) => ValueIs pv kv where
 
 instance (pv v) => ValueIs pv (k ':> v)

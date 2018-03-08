@@ -8,7 +8,7 @@
 ------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Inclusion
--- Copyright   :  (c) Fumiaki Kinoshita 2017
+-- Copyright   :  (c) Fumiaki Kinoshita 2018
 -- License     :  BSD3
 --
 -- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
@@ -28,6 +28,7 @@ module Data.Extensible.Inclusion (
   -- * Key-value
   , IncludeAssoc
   , Associated
+  , Associated'
   , inclusionAssoc
   , shrinkAssoc
   , spreadAssoc

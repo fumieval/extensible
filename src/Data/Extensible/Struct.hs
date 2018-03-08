@@ -7,7 +7,7 @@
 ------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Struct
--- Copyright   :  (c) Fumiaki Kinoshita 2017
+-- Copyright   :  (c) Fumiaki Kinoshita 2018
 -- License     :  BSD3
 --
 -- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
@@ -78,6 +78,7 @@ get :: PrimMonad m => Struct (PrimState m) h xs -> Membership xs x -> m (h x)
 get (Struct m) (getMemberId -> I# i) = primitive $ unsafeCoerce# readSmallArray# m i
 {-# INLINE get #-}
 
+-- | Atomically modify an element in a 'Struct'.
 atomicModify :: PrimMonad m
   => Struct (PrimState m) h xs -> Membership xs x -> (h x -> (h x, a)) -> m a
 atomicModify (Struct m) (getMemberId -> I# i) f = primitive
@@ -91,6 +92,7 @@ atomicModify (Struct m) (getMemberId -> I# i) f = primitive
           _ -> retry y s'
 {-# INLINE atomicModify #-}
 
+-- | Strict version of 'atomicModify'.
 atomicModify' :: PrimMonad m
   => Struct (PrimState m) h xs -> Membership xs x -> (h x -> (h x, a)) -> m a
 atomicModify' s i f = atomicModify s i
@@ -98,6 +100,7 @@ atomicModify' s i f = atomicModify s i
   >>= (return $!)
 {-# INLINE atomicModify' #-}
 
+-- | Apply a function to an element atomically.
 atomicModify_ :: PrimMonad m
   => Struct (PrimState m) h xs -> Membership xs x -> (h x -> h x) -> m (h x)
 atomicModify_ (Struct m) (getMemberId -> I# i) f = primitive
@@ -110,6 +113,7 @@ atomicModify_ (Struct m) (getMemberId -> I# i) f = primitive
         _ -> retry y s'
 {-# INLINE atomicModify_ #-}
 
+-- | Strict version of 'atomicModify_'.
 atomicModify'_ :: PrimMonad m
   => Struct (PrimState m) h xs -> Membership xs x -> (h x -> h x) -> m (h x)
 atomicModify'_ s i f = atomicModify_ s i f >>= (return $!)
@@ -217,6 +221,7 @@ hlength :: h :* xs -> Int
 hlength (HProduct ar) = I# (sizeofSmallArray# ar)
 {-# INLINE hlength #-}
 
+-- | Concatenate type level lists
 type family (++) (xs :: [k]) (ys :: [k]) :: [k] where
   '[] ++ ys = ys
   (x ': xs) ++ ys = x ': xs ++ ys
@@ -298,6 +303,7 @@ hfrozen :: (forall s. ST s (Struct s h xs)) -> h :* xs
 hfrozen m = runST $ m >>= unsafeFreeze
 {-# INLINE[0] hfrozen #-}
 
+-- | Turn a product into a 'Struct' temporarily.
 hmodify :: (forall s. Struct s h xs -> ST s ()) -> h :* xs -> h :* xs
 hmodify f m = runST $ do
   s <- thaw m

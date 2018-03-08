@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Internal.Rig
--- Copyright   :  (c) Fumiaki Kinoshita 2017
+-- Copyright   :  (c) Fumiaki Kinoshita 2018
 -- License     :  BSD3
 --
 -- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
@@ -44,17 +44,20 @@ over :: Optic (->) Identity s t a b -> (a -> b) -> s -> t
 over = coerce
 {-# INLINE over #-}
 
+-- | Reifies the structure of 'Iso's
 data Exchange a b s t = Exchange (s -> a) (b -> t)
 
 instance Profunctor (Exchange a b) where
   dimap f g (Exchange sa bt) = Exchange (sa . f) (g . bt)
   {-# INLINE dimap #-}
 
+-- | Recover tho functions from an Iso/
 withIso :: Optic (Exchange a b) Identity s t a b -> ((s -> a) -> (b -> t) -> r) -> r
 withIso l r = case l (Exchange id Identity) of
   Exchange f g -> r f (coerce g)
 {-# INLINE withIso #-}
 
+-- | @'review' :: AReview s a -> a -> s@
 review :: Optic' Tagged Identity s a -> a -> s
 review = coerce
 {-# INLINE review #-}

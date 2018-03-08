@@ -5,7 +5,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Effect.Default
--- Copyright   :  (c) Fumiaki Kinoshita 2017
+-- Copyright   :  (c) Fumiaki Kinoshita 2018
 -- License     :  BSD3
 --
 -- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
@@ -119,6 +119,7 @@ execWriterDef :: Monoid w => Eff (WriterDef w ': xs) a -> Eff xs w
 execWriterDef = execWriterEff
 {-# INLINE execWriterDef #-}
 
+-- | Same as @'EitherDef' ()@
 type MaybeDef = "Either" >: EitherEff ()
 
 -- | Similar to 'runMaybeT', but on 'Eff'
@@ -126,6 +127,7 @@ runMaybeDef :: Eff (MaybeDef ': xs) a -> Eff xs (Maybe a)
 runMaybeDef = runMaybeEff
 {-# INLINE runMaybeDef #-}
 
+-- | mtl-compatible either effect
 type EitherDef e = "Either" >: EitherEff e
 
 -- | Similar to 'runExceptT', but on 'Eff'

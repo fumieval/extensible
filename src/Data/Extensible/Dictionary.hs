@@ -3,12 +3,11 @@
 #if __GLASGOW_HASKELL__ >= 800
 {-# LANGUAGE UndecidableSuperClasses #-}
 #endif
-
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 -----------------------------------------------------------------------
---
+-- |
 -- Module      :  Data.Extensible.Dictionary
--- Copyright   :  (c) Fumiaki Kinoshita 2017
+-- Copyright   :  (c) Fumiaki Kinoshita 2018
 -- License     :  BSD3
 --
 -- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>

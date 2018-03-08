@@ -5,7 +5,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Product
--- Copyright   :  (c) Fumiaki Kinoshita 2017
+-- Copyright   :  (c) Fumiaki Kinoshita 2018
 -- License     :  BSD3
 --
 -- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
@@ -136,6 +136,7 @@ hfoldMapWithIndex :: Monoid a
 hfoldMapWithIndex f = hfoldrWithIndex (\i -> mappend . f i) mempty
 {-# INLINE hfoldMapWithIndex #-}
 
+-- | Perform a strict left fold over the elements.
 hfoldlWithIndex :: (forall x. Membership xs x -> r -> h x -> r) -> r -> h :* xs -> r
 hfoldlWithIndex f r xs = hfoldrWithIndex (\i x c a -> c $! f i a x) id xs r
 {-# INLINE hfoldlWithIndex #-}
@@ -146,6 +147,7 @@ hfoldrWithIndexFor :: (Forall c xs) => proxy c
 hfoldrWithIndexFor p f r xs = henumerateFor p xs (\i -> f i (hlookup i xs)) r
 {-# INLINE hfoldrWithIndexFor #-}
 
+-- | Constrained 'hfoldlWithIndex'
 hfoldlWithIndexFor :: (Forall c xs) => proxy c
   -> (forall x. c x => Membership xs x -> r -> h x -> r) -> r -> h :* xs -> r
 hfoldlWithIndexFor p f r xs = hfoldrWithIndexFor p (\i x c a -> c $! f i a x) id xs r
@@ -157,6 +159,7 @@ hfoldMapWithIndexFor :: (Forall c xs, Monoid a) => proxy c
 hfoldMapWithIndexFor p f = hfoldrWithIndexFor p (\i -> mappend . f i) mempty
 {-# INLINE hfoldMapWithIndexFor #-}
 
+-- | Constrained 'hfoldMap'
 hfoldMapFor :: (Forall c xs, Monoid a) => proxy c
   -> (forall x. c x => h x -> a) -> h :* xs -> a
 hfoldMapFor p f = hfoldMapWithIndexFor p (const f)

@@ -1,6 +1,15 @@
 {-# LANGUAGE UndecidableInstances, ScopedTypeVariables, MultiParamTypeClasses, TypeFamilies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving, DeriveGeneric #-}
-
+-----------------------------------------------------------------------
+-- |
+-- Module      :  Data.Extensible.Bits
+-- Copyright   :  (c) Fumiaki Kinoshita 2018
+-- License     :  BSD3
+--
+-- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
+--
+-- Bit-packed records
+-----------------------------------------------------------------------
 module Data.Extensible.Bits (BitProd(..)
   , FromBits(..)
   , TotalBits
@@ -40,6 +49,7 @@ instance (Forall (Instance1 Show h) xs, BitFields r h xs) => Show (BitProd r h x
   showsPrec d x = showParen (d > 10)
     $ showString "toBitProd " . showsPrec 11 (fromBitProd x)
 
+-- | Total 'BitWidth'
 type family TotalBits h xs where
   TotalBits h '[] = 0
   TotalBits h (x ': xs) = BitWidth (h x) + TotalBits h xs
@@ -187,7 +197,10 @@ bitOffsetAt _ ph _ = henumerateFor
 proxyBitWidth :: Proxy h -> proxy x -> Proxy (BitWidth (h x))
 proxyBitWidth _ _ = Proxy
 
+-- | Bit-packed record
 type BitRecordOf r h = BitProd r (Field h)
+
+-- | Bit-packed record
 type BitRecord r = BitRecordOf r Identity
 
 instance (Corepresentable p, Comonad (Corep p), Functor f) => Extensible f p (BitProd r) where

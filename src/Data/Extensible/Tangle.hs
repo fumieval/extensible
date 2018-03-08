@@ -2,14 +2,21 @@
 ------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Struct
--- Copyright   :  (c) Fumiaki Kinoshita 2017
+-- Copyright   :  (c) Fumiaki Kinoshita 2018
 -- License     :  BSD3
 --
 -- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
 --
 -- Extensible tangles
 ------------------------------------------------------------------------
-module Data.Extensible.Tangle where
+module Data.Extensible.Tangle
+  ( TangleT(..)
+  , lasso
+  , hitchAt
+  , runTangleT
+  , evalTangleT
+  , runTangles
+  ) where
 
 import Control.Applicative
 import Control.Monad.Trans.RWS.Strict

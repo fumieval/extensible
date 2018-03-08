@@ -2,7 +2,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.GetOpt
--- Copyright   :  (c) Fumiaki Kinoshita 2017
+-- Copyright   :  (c) Fumiaki Kinoshita 2018
 -- License     :  BSD3
 --
 -- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
@@ -56,6 +56,7 @@ extendArg f (NoArg a) = NoArg $ f Nothing a
 extendArg f (ReqArg a ph) = ReqArg (\s -> f (Just s) (a s)) ph
 extendArg f (OptArg a ph) = OptArg (f <*> a) ph
 
+-- | Simple option descriptor
 type OptDescr' = OptionDescr Identity
 
 instance Wrapper (OptionDescr h) where
@@ -76,6 +77,7 @@ optFlag :: [Char] -- ^ short option
     -> OptDescr' Bool
 optFlag = optionNoArg (pure . (>0))
 
+-- | Wrapper-generic version of `optNoArg`
 optionNoArg :: (Int -> h a) -> [Char] -> [String] -> String -> OptionDescr h a
 optionNoArg f ss ls expl = OptionDescr f 0 $ Option ss ls (NoArg (+1)) expl
 
@@ -95,9 +97,11 @@ optLastArg :: [Char] -- ^ short option
     -> OptDescr' (Maybe String)
 optLastArg ss ls ph expl = OptionDescr pure Nothing $ Option ss ls (ReqArg (const . Just) ph) expl
 
+-- | Wrapper-generic version of `optReqArg`
 optionReqArg :: ([String] -> h a) -> [Char] -> [String] -> String -> String -> OptionDescr h a
 optionReqArg f ss ls ph expl = OptionDescr f [] $ Option ss ls (ReqArg (:) ph) expl
 
+-- | Construct an option with an optional argument
 optionOptArg :: ([Maybe String] -> h a) -> [Char] -> [String] -> String -> String -> OptionDescr h a
 optionOptArg f ss ls ph expl = OptionDescr f [] $ Option ss ls (OptArg (:) ph) expl
 

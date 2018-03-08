@@ -8,7 +8,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Inclusion
--- Copyright   :  (c) Fumiaki Kinoshita 2017
+-- Copyright   :  (c) Fumiaki Kinoshita 2018
 -- License     :  BSD3
 --
 -- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
@@ -80,7 +80,9 @@ mkMembership n = do
     $ conT ''Membership `appT` pure t `appT` varT (names !! n)
 
 -- | The position of @x@ in the type level set @xs@.
-newtype Membership (xs :: [k]) (x :: k) = Membership { getMemberId :: Int } deriving (Typeable, NFData)
+newtype Membership (xs :: [k]) (x :: k) = Membership
+  { getMemberId :: Int -- ^ get the position as an 'Int'.
+  } deriving (Typeable, NFData)
 
 newtype Remembrance xs x r = Remembrance (Member xs x => r)
 
@@ -100,6 +102,7 @@ instance (Elaborate x (FindType x xs) ~ 'Expecting pos, KnownNat pos) => Member 
 instance Hashable (Membership xs x) where
   hashWithSalt s = hashWithSalt s . getMemberId
 
+-- | Make up a 'Membership' from an integer.
 reifyMembership :: Int -> (forall x. Membership xs x -> r) -> r
 reifyMembership n k = k (Membership n)
 
@@ -121,11 +124,13 @@ instance (Elaborate k (FindAssoc 0 k xs) ~ 'Expecting (n ':> v), KnownNat n) => 
 -- | A readable type search result
 data Elaborated k v = Expecting v | Missing k | Duplicate k
 
+-- | Make the result more readable
 type family Elaborate (key :: k) (xs :: [v]) :: Elaborated k v where
   Elaborate k '[] = 'Missing k
   Elaborate k '[x] = 'Expecting x
   Elaborate k xs = 'Duplicate k
 
+-- | Find a type associated to the specified key.
 type family FindAssoc (n :: Nat) (key :: k) (xs :: [Assoc k v]) where
   FindAssoc n k ((k ':> v) ': xs) = (n ':> v) ': FindAssoc (1 + n) k xs
   FindAssoc n k ((k' ':> v) ': xs) = FindAssoc (1 + n) k xs
@@ -173,6 +178,7 @@ navNext (Membership n) = Membership (n + 1)
 -- | Unicode flipped alias for 'Member'
 type x ∈ xs = Member xs x
 
+-- | First element
 type family Head (xs :: [k]) :: k where
   Head (x ': xs) = x
 
@@ -182,6 +188,7 @@ type family FindType (x :: k) (xs :: [k]) :: [Nat] where
   FindType x (y ': ys) = MapSucc (FindType x ys)
   FindType x '[] = '[]
 
+-- | Last element
 type family Last (x :: [k]) :: k where
   Last '[x] = x
   Last (x ': xs) = Last xs

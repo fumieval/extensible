@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.TH
--- Copyright   :  (c) Fumiaki Kinoshita 2017
+-- Copyright   :  (c) Fumiaki Kinoshita 2018
 -- License     :  BSD3
 --
 -- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
@@ -44,6 +44,7 @@ mkField str = fmap concat $ forM (words str) $ \s@(x:xs) ->
   let name = mkName $ if isLower x then x : xs else '_' : x : xs
   in mkFieldAs name s
 
+-- | @'mkFieldAs' (mkName "foo") "bar"@ defines a field for "bar" as @foo@.
 mkFieldAs :: Name -> String -> DecsQ
 mkFieldAs name s = do
   let st = litT (strTyLit s)
@@ -86,6 +87,7 @@ decEffectSet = customDecEffects True False
 decEffectSuite :: DecsQ -> DecsQ
 decEffectSuite = customDecEffects True True
 
+-- | Generate effect suite with custom settings.
 customDecEffects :: Bool -- ^ generate a synonym of the set of actions
     -> Bool -- ^ generate synonyms for individual actions
     -> DecsQ -> DecsQ

@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible
--- Copyright   :  (c) Fumiaki Kinoshita 2017
+-- Copyright   :  (c) Fumiaki Kinoshita 2018
 -- License     :  BSD3
 --
 -- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
