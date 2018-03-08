@@ -27,6 +27,7 @@ import Data.Extensible.Product
 import Data.Extensible.Sum
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
+import Data.Extensible.Nullable
 import Data.Constraint
 import Data.Extensible.Struct
 import Data.Extensible.Wrapper
@@ -181,6 +182,18 @@ instance Forall (KeyValue KnownSymbol (Instance1 J.ToJSON h)) xs => J.ToJSON (Fi
   toJSON = J.Object . hfoldlWithIndexFor
     (Proxy :: Proxy (KeyValue KnownSymbol (Instance1 J.ToJSON h)))
     (\k m v -> HM.insert (T.pack (symbolVal (proxyAssocKey k))) (J.toJSON v) m)
+    HM.empty
+
+instance Forall (KeyValue KnownSymbol (Instance1 J.FromJSON h)) xs => J.FromJSON (Nullable (Field h) :* xs) where
+  parseJSON = J.withObject "Object" $ \v -> hgenerateFor
+    (Proxy :: Proxy (KeyValue KnownSymbol (Instance1 J.FromJSON h)))
+    $ \m -> let k = symbolVal (proxyAssocKey m)
+      in fmap Nullable $ traverse J.parseJSON $ HM.lookup (T.pack k) v
+
+instance Forall (KeyValue KnownSymbol (Instance1 J.ToJSON h)) xs => J.ToJSON (Nullable (Field h) :* xs) where
+  toJSON = J.Object . hfoldlWithIndexFor
+    (Proxy :: Proxy (KeyValue KnownSymbol (Instance1 J.ToJSON h)))
+    (\k m (Nullable v) -> maybe id (HM.insert (T.pack $ symbolVal $ proxyAssocKey k) . J.toJSON) v m)
     HM.empty
 
 instance WrapForall Show h xs => Show (h :| xs) where
