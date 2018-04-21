@@ -36,8 +36,8 @@ import Control.Monad.Reader.Class
 import Control.Monad.State.Strict
 import Control.Monad.Writer.Class
 
-instance Associate "IO" IO xs => MonadIO (Eff xs) where
-  liftIO = liftEff (Proxy :: Proxy "IO")
+instance (MonadIO m, Associate "IO" m xs) => MonadIO (Eff xs) where
+  liftIO = liftEff (Proxy :: Proxy "IO") . liftIO
 
 pReader :: Proxy "Reader"
 pReader = Proxy

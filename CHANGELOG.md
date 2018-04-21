@@ -1,3 +1,5 @@
+* Generalised the `MonadIO` instance for `Eff` to `(MonadIO m, Associate "IO" m xs) => MonadIO (Eff xs)`
+
 0.4.8
 -------------------------------------------------
 * Changed the `FromJSON` instance for `Record` to call `parseJSON Null` for missing fields
