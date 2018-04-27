@@ -80,7 +80,7 @@ instance (Functor f, Wrapper g) => Wrapper (Comp f g) where
 
 -- | Poly-kinded Const
 newtype Const' a x = Const' { getConst' :: a }
-  deriving (Show, Eq, Ord, Typeable, Generic, NFData, Functor, Foldable, Traversable, Arbitrary, Hashable)
+  deriving (Show, Eq, Ord, Typeable, Generic, NFData, Semigroup, Monoid, Functor, Foldable, Traversable, Arbitrary, Hashable)
 
 instance Wrapper (Const' a) where
   type Repr (Const' a) b = a
