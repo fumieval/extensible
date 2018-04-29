@@ -1,4 +1,5 @@
 * Generalised the `MonadIO` instance for `Eff` to `(MonadIO m, Associate "IO" m xs) => MonadIO (Eff xs)`
+* Added `And :: (k -> Constraint) -> (k -> Constraint) -> k -> Constraint`
 
 0.4.8
 -------------------------------------------------

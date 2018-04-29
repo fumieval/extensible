@@ -15,7 +15,7 @@
 -- Reification of constraints using extensible data types.
 -- Also includes orphan instances.
 -----------------------------------------------------------------------
-module Data.Extensible.Dictionary (library, WrapForall, Instance1) where
+module Data.Extensible.Dictionary (library, WrapForall, Instance1, And) where
 import Control.DeepSeq
 import qualified Data.Aeson as J
 import qualified Data.Csv as Csv
@@ -47,6 +47,9 @@ import Test.QuickCheck.Gen
 library :: forall c xs. Forall c xs => Comp Dict c :* xs
 library = hrepeatFor (Proxy :: Proxy c) $ Comp Dict
 {-# INLINE library #-}
+
+class (f x, g x) => And f g x
+instance (f x, g x) => And f g x
 
 instance WrapForall Show h xs => Show (h :* xs) where
   showsPrec d xs = showParen (d > 0)
