@@ -7,6 +7,25 @@
 -- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
 --
 -- This module just reexports everything.
+--
+-- * Basic
+--
+--     * 'Data.Extensible.Class': basic membership operations.
+--     * 'Data.Extensible.Product': Combinators for extensible products
+--     * 'Data.Extensible.Sum': the basic interface for extensible sums
+--     * 'Data.Extensible.Field': extensible records and variants
+--     * 'Data.Extensible.Inclusion': shrinking records and widening variants
+--
+-- * Advanced
+--     * 'Data.Extensible.Record': Conversion between regular records and
+--     extensible records
+--     * 'Data.Extensible.Nullable': Nullable records
+--     * 'Data.Extensible.Tangle': Extensible tangle
+--     * 'Data.Extensible.Effect': Extensible effects
+--     * 'Data.Extensible.Match': Extensible pattern match
+--
+-- * Internal
+--     * 'Data.Extensible.Wrapper': Stock wrappers
 -----------------------------------------------------------------------------
 module Data.Extensible (
   module Data.Extensible.Class
