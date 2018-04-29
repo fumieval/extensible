@@ -56,6 +56,10 @@ instance Wrapper Maybe where
   type Repr Maybe a = Maybe a
   _Wrapper = id
 
+instance Wrapper (Either e) where
+  type Repr (Either e) a = Either e a
+  _Wrapper = id
+
 instance Wrapper [] where
   type Repr [] a = [a]
   _Wrapper = id
