@@ -78,6 +78,7 @@ library
     , hashable
     , monad-skeleton >= 0.1.2
     , mtl
+    , prettyprinter
     , primitive
     , profunctors
     , QuickCheck

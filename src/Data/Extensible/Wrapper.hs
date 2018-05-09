@@ -26,6 +26,7 @@ import Data.Functor.Identity (Identity(..))
 import Data.Extensible.Internal.Rig
 import Data.Hashable
 import Data.Semigroup
+import Data.Text.Prettyprint.Doc
 import GHC.Generics (Generic)
 import Test.QuickCheck.Arbitrary
 
@@ -66,7 +67,7 @@ instance Wrapper [] where
 
 -- | Poly-kinded composition
 newtype Comp (f :: j -> *) (g :: i -> j) (a :: i) = Comp { getComp :: f (g a) }
-  deriving (Show, Eq, Ord, Typeable, NFData, Generic, Semigroup, Monoid, Arbitrary, Hashable)
+  deriving (Show, Eq, Ord, Typeable, NFData, Generic, Semigroup, Monoid, Arbitrary, Hashable, Pretty)
 
 deriving instance (Functor f, Functor g) => Functor (Comp f g)
 deriving instance (Foldable f, Foldable g) => Foldable (Comp f g)

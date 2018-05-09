@@ -1,6 +1,7 @@
 {-# LANGUAGE Trustworthy #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE MultiParamTypeClasses, UndecidableInstances, FunctionalDependencies #-}
 {-# LANGUAGE ScopedTypeVariables, BangPatterns #-}
 {-# LANGUAGE StandaloneDeriving #-}
@@ -63,6 +64,7 @@ import Data.Word
 import Control.Monad
 import Unsafe.Coerce
 import Data.Hashable
+import Data.Text.Prettyprint.Doc
 import Data.Typeable
 import Language.Haskell.TH hiding (Pred)
 import Data.Semigroup (Semigroup(..))
@@ -138,6 +140,9 @@ type family FindAssoc (n :: Nat) (key :: k) (xs :: [Assoc k v]) where
 
 instance Show (Membership xs x) where
   show (Membership n) = "$(mkMembership " ++ show n ++ ")"
+
+instance Pretty (Membership xs x) where
+  pretty (Membership n) = "$(mkMembership " <> pretty n <> ")"
 
 instance Eq (Membership xs x) where
   _ == _ = True

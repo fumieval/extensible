@@ -1,4 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses, UndecidableInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE ScopedTypeVariables, TypeFamilies #-}
 {-# LANGUAGE CPP #-}
@@ -70,6 +71,7 @@ import Data.Functor.Identity
 import Data.Hashable
 import Data.Semigroup
 import Data.String
+import Data.Text.Prettyprint.Doc
 import Data.Typeable (Typeable)
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as M
@@ -221,6 +223,11 @@ instance (KnownSymbol k, Wrapper h, Show (Repr h v)) => Show (Field h (k ':> v))
   showsPrec d (Field a) = showParen (d >= 1) $ showString (symbolVal (Proxy :: Proxy k))
     . showString " @= "
     . showsPrec 1 (view _Wrapper a)
+
+instance (KnownSymbol k, Pretty (h v)) => Pretty (Field h (k ':> v)) where
+  pretty (Field a) = fromString (symbolVal (Proxy :: Proxy k))
+    <> ": "
+    <> pretty a
 
 -- | The type of records which contain several fields.
 --
