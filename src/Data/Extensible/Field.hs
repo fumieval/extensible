@@ -40,6 +40,7 @@ module Data.Extensible.Field (
   , KeyValue
   , proxyAssocKey
   , proxyAssocValue
+  , stringAssocKey
   , KeyIs
   , ValueIs
   -- * Internal
@@ -68,6 +69,7 @@ import Data.Extensible.Wrapper
 import Data.Functor.Identity
 import Data.Hashable
 import Data.Semigroup
+import Data.String
 import Data.Typeable (Typeable)
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as M
@@ -85,9 +87,14 @@ type family AssocKey (kv :: Assoc k v) :: k where
 proxyAssocKey :: proxy kv -> Proxy (AssocKey kv)
 proxyAssocKey _ = Proxy
 
--- | Proxy-level 'AssocKey'. This is useful when using 'symbolVal'.
+-- | Proxy-level 'AssocValue'.
 proxyAssocValue :: proxy kv -> Proxy (AssocValue kv)
 proxyAssocValue _ = Proxy
+
+-- | Get a string from a proxy of @'Assoc' 'Symbol' v@.
+stringAssocKey :: (IsString a, KnownSymbol (AssocKey kv)) => proxy kv -> a
+stringAssocKey = fromString . symbolVal . proxyAssocKey
+{-# INLINE stringAssocKey #-}
 
 -- | Take the type of the value
 type family AssocValue (kv :: Assoc k v) :: v where
