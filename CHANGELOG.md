@@ -1,5 +1,8 @@
 * Generalised the `MonadIO` instance for `Eff` to `(MonadIO m, Associate "IO" m xs) => MonadIO (Eff xs)`
 * Added `And :: (k -> Constraint) -> (k -> Constraint) -> k -> Constraint`
+* Added `Semigroup` and `Monoid` instances for `Const'`
+* Added `stringAssocKey :: (IsString a, KnownSymbol (AssocKey kv)) => proxy kv -> a`
+* Added a `Wrapper` instance for `Either e`
 
 0.4.8
 -------------------------------------------------
