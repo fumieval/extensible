@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveTraversable, StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TemplateHaskell #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Wrapper
@@ -27,7 +28,10 @@ import Data.Extensible.Internal.Rig
 import Data.Hashable
 import Data.Semigroup
 import GHC.Generics (Generic)
+import Language.Haskell.TH.Lift
+import Language.Haskell.TH (conE, appE)
 import Test.QuickCheck.Arbitrary
+
 
 -- | The extensible data types should take @k -> *@ as a parameter.
 -- This class allows us to take a shortcut for direct representation.
@@ -71,6 +75,9 @@ newtype Comp (f :: j -> *) (g :: i -> j) (a :: i) = Comp { getComp :: f (g a) }
 deriving instance (Functor f, Functor g) => Functor (Comp f g)
 deriving instance (Foldable f, Foldable g) => Foldable (Comp f g)
 deriving instance (Traversable f, Traversable g) => Traversable (Comp f g)
+
+instance Lift (f (g a)) => Lift (Comp f g a) where
+  lift = appE (conE 'Comp) . lift . getComp
 
 -- | Wrap a result of 'fmap'
 comp :: Functor f => (a -> g b) -> f a -> Comp f g b

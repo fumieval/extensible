@@ -65,6 +65,7 @@ import Unsafe.Coerce
 import Data.Hashable
 import Data.Typeable
 import Language.Haskell.TH hiding (Pred)
+import Language.Haskell.TH.Lift
 import Data.Semigroup (Semigroup(..))
 import GHC.TypeLits
 
@@ -83,6 +84,9 @@ mkMembership n = do
 newtype Membership (xs :: [k]) (x :: k) = Membership
   { getMemberId :: Int -- ^ get the position as an 'Int'.
   } deriving (Typeable, NFData)
+
+instance Lift (Membership xs x) where
+  lift (Membership i) = mkMembership i
 
 newtype Remembrance xs x r = Remembrance (Member xs x => r)
 

@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase, TypeFamilies #-}
+{-# LANGUAGE LambdaCase, TypeFamilies, TemplateHaskell #-}
 ------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Nullable
@@ -29,6 +29,8 @@ import qualified Data.Extensible.Struct as S
 import Data.Profunctor.Unsafe
 import Data.Semigroup
 import GHC.Generics (Generic)
+import Language.Haskell.TH.Lift
+import Language.Haskell.TH (appE, conE)
 import Test.QuickCheck.Arbitrary
 
 -- | Wrapped Maybe
@@ -47,6 +49,9 @@ instance Semigroup (h x) => Monoid (Nullable h x) where
   mappend (Nullable (Just a)) (Nullable (Just b)) = Nullable (Just (a <> b))
   mappend a@(Nullable (Just _)) _ = a
   mappend _ b = b
+
+instance Lift (h a) => Lift (Nullable h a) where
+  lift = appE (conE 'Nullable) . lift . getNullable
 
 -- | Apply a function to its content.
 mapNullable :: (g x -> h y) -> Nullable g x -> Nullable h y

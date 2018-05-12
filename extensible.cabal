@@ -86,6 +86,7 @@ library
     , tagged
     , template-haskell
     , text
+    , th-lift
     , transformers
     , unordered-containers
     , vector

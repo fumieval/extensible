@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies, ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances, MultiParamTypeClasses #-}
 #if __GLASGOW_HASKELL__ >= 800
@@ -16,6 +17,7 @@
 -- Also includes orphan instances.
 -----------------------------------------------------------------------
 module Data.Extensible.Dictionary (library, WrapForall, Instance1, And) where
+import Control.Applicative
 import Control.DeepSeq
 import qualified Data.Aeson as J
 import qualified Data.Csv as Csv
@@ -39,6 +41,8 @@ import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector as V
 import qualified Data.Text as T
+import Language.Haskell.TH.Lift
+import Language.Haskell.TH
 import GHC.TypeLits
 import Test.QuickCheck.Arbitrary
 import Test.QuickCheck.Gen
@@ -87,6 +91,18 @@ instance WrapForall Hashable h xs => Hashable (h :* xs) where
 instance WrapForall Bounded h xs => Bounded (h :* xs) where
   minBound = hrepeatFor (Proxy :: Proxy (Instance1 Bounded h)) minBound
   maxBound = hrepeatFor (Proxy :: Proxy (Instance1 Bounded h)) maxBound
+
+#if !MIN_VERSION_th_lift(0,7,9)
+instance Lift a => Lift (Identity a) where
+  lift = appE (conE 'Identity) . lift . runIdentity
+
+instance Lift a => Lift (Const a b) where
+  lift = appE (conE 'Const) . lift . getConst
+#endif
+
+instance WrapForall Lift h xs => Lift (h :* xs) where
+  lift = hfoldrWithIndexFor (Proxy :: Proxy (Instance1 Lift h))
+    (\_ x xs -> infixE (Just $ lift x) (varE '(<:)) (Just xs)) (varE 'nil)
 
 newtype instance U.MVector s (h :* xs) = MV_Product (Comp (U.MVector s) h :* xs)
 newtype instance U.Vector (h :* xs) = V_Product (Comp U.Vector h :* xs)
@@ -225,6 +241,11 @@ instance WrapForall Hashable h xs => Hashable (h :| xs) where
     (\(Comp Dict) -> s `hashWithSalt` i `hashWithSalt` h)
     (library :: Comp Dict (Instance1 Hashable h) :* xs)
   {-# INLINE hashWithSalt #-}
+
+instance WrapForall Lift h xs => Lift (h :| xs) where
+  lift (EmbedAt i h) = views (pieceAt i)
+    (\(Comp Dict) -> conE 'EmbedAt `appE` lift i `appE` lift h)
+    (library :: Comp Dict (Instance1 Lift h) :* xs)
 
 instance WrapForall Arbitrary h xs => Arbitrary (h :| xs) where
   arbitrary = choose (0, hcount (Proxy :: Proxy xs)) >>= henumerateFor
