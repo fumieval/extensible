@@ -1,3 +1,5 @@
+0.4.9
+-------------------------------------------------
 * Generalised the `MonadIO` instance for `Eff` to `(MonadIO m, Associate "IO" m xs) => MonadIO (Eff xs)`
 * Added `And :: (k -> Constraint) -> (k -> Constraint) -> k -> Constraint`
 * Added `Semigroup` and `Monoid` instances for `Const'`
