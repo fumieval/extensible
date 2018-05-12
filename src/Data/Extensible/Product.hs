@@ -22,6 +22,7 @@ module Data.Extensible.Product (
   , happend
   , hmap
   , hmapWithIndex
+  , hmapWithIndexFor
   , hzipWith
   , hzipWith3
   , hfoldMap
@@ -102,6 +103,14 @@ hindex = flip hlookup
 hmapWithIndex :: (forall x. Membership xs x -> g x -> h x) -> g :* xs -> h :* xs
 hmapWithIndex t p = hfrozen (newFrom p t)
 {-# INLINE hmapWithIndex #-}
+
+-- | Map a function to every element of a product.
+hmapWithIndexFor :: Forall c xs
+  => proxy c
+  -> (forall x. c x => Membership xs x -> g x -> h x)
+  -> g :* xs -> h :* xs
+hmapWithIndexFor c t p = hfrozen $ newFor c $ \i -> t i $ hlookup i p
+{-# INLINE hmapWithIndexFor #-}
 
 -- | Transform every element in a product, preserving the order.
 --
