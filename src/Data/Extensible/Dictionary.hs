@@ -4,6 +4,7 @@
 #if __GLASGOW_HASKELL__ >= 800
 {-# LANGUAGE UndecidableSuperClasses #-}
 #endif
+{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 -----------------------------------------------------------------------
 -- |
@@ -36,6 +37,7 @@ import Data.Functor.Identity
 import Data.Hashable
 import qualified Data.HashMap.Strict as HM
 import Data.Semigroup
+import Data.Text.Prettyprint.Doc
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Unboxed as U
@@ -60,6 +62,21 @@ instance WrapForall Show h xs => Show (h :* xs) where
     $ henumerateFor (Proxy :: Proxy (Instance1 Show h)) xs
     (\i r -> showsPrec 0 (hlookup i xs) . showString " <: " . r)
     (showString "nil")
+
+#if !MIN_VERSION_prettyprinter(1,2,1)
+instance Pretty a => Pretty (Identity a) where
+  pretty = pretty . runIdentity
+
+instance Pretty a => Pretty (Const a b) where
+  pretty = pretty . getConst
+#endif
+
+instance WrapForall Pretty h xs => Pretty (h :* xs) where
+  pretty xs = align
+    $ encloseSep (flatAlt "" "{ ") (flatAlt "" " }") (flatAlt "" "; ")
+    $ henumerateFor (Proxy :: Proxy (Instance1 Pretty h)) xs
+    (\i r -> pretty (hlookup i xs) : r)
+    []
 
 instance WrapForall Eq h xs => Eq (h :* xs) where
   xs == ys = henumerateFor (Proxy :: Proxy (Instance1 Eq h)) xs
@@ -258,6 +275,13 @@ instance WrapForall Arbitrary h xs => Arbitrary (h :| xs) where
   shrink (EmbedAt i h) = views (pieceAt i)
     (\(Comp Dict) -> EmbedAt i <$> shrink h)
     (library :: Comp Dict (Instance1 Arbitrary h) :* xs)
+
+instance WrapForall Pretty h xs => Pretty (h :| xs) where
+  pretty (EmbedAt i h) = "EmbedAt "
+    <> pretty i
+    <> " "
+    <> views (pieceAt i) (\(Comp Dict) -> pretty h)
+    (library :: Comp Dict (Instance1 Pretty h) :* xs)
 
 -- | Forall upon a wrapper
 type WrapForall c h = Forall (Instance1 c h)
