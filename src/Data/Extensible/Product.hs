@@ -89,7 +89,7 @@ nil = hfrozen $ new $ error "Impossible"
 {-# NOINLINE nil #-}
 {-# RULES "toHList/nil" toHList nil = HList.HNil #-}
 
--- | Convert 'L.HList' into a product.
+-- | Convert 'HList.HList' into a product.
 fromHList :: HList.HList h xs -> h :* xs
 fromHList xs = hfrozen (newFromHList xs)
 {-# INLINE fromHList #-}
