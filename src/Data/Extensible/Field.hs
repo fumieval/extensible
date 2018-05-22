@@ -324,8 +324,8 @@ instance Profunctor (LabelPhantom s) where
 --
 -- @
 -- foo :: 'Record' '["num" >: Int, "str" >: String]
--- foo = #num @= 42
---   <: #str @= "foo"
+-- foo = #num \@= 42
+--   <: #str \@= "foo"
 --   <: nil
 -- @
 (@=) :: Wrapper h => FieldName k -> Repr h v -> Field h (k ':> v)
@@ -334,11 +334,12 @@ instance Profunctor (LabelPhantom s) where
 infix 1 @=
 
 -- | Lifted ('@=')
+--
 -- @
 -- foo :: IO ('Record' '["num" >: Int, "str" >: String])
 -- foo = hsequence
---   $ #num <@=> readLn
---   <: #str <@=> getLine
+--   $ #num \<\@=\> readLn
+--   <: #str \<\@=\> getLine
 --   <: nil
 -- @
 (<@=>) :: (Functor f, Wrapper h) => FieldName k -> f (Repr h v) -> Comp f (Field h) (k ':> v)
@@ -351,7 +352,7 @@ infix 1 <@=>
 (@:>) _ = Field
 infix 1 @:>
 
--- | Kind-monomorphic, unwrapped version of @('@=')@
+-- | Kind-monomorphic, unwrapped version of '@='
 (@==) :: FieldName (k :: Symbol) -> v -> Field Identity (k ':> v)
 (@==) = (@=)
 {-# INLINE (@==) #-}
