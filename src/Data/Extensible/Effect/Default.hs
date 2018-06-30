@@ -32,12 +32,29 @@ import Control.Applicative
 import Data.Extensible.Effect
 import Data.Extensible.Internal
 import Control.Monad.Except
+import Control.Monad.Catch
 import Control.Monad.Reader.Class
+import Control.Monad.Skeleton
 import Control.Monad.State.Strict
+import Control.Monad.Trans.Resource
 import Control.Monad.Writer.Class
 
 instance (MonadIO m, Associate "IO" m xs) => MonadIO (Eff xs) where
   liftIO = liftEff (Proxy :: Proxy "IO") . liftIO
+
+instance (MonadResource m, Associate "IO" m xs) => MonadResource (Eff xs) where
+  liftResourceT = liftEff (Proxy :: Proxy "IO") . liftResourceT
+
+instance (MonadThrow m, Associate "IO" m xs) => MonadThrow (Eff xs) where
+  throwM = liftEff (Proxy :: Proxy "IO") . throwM
+
+instance (MonadCatch m, Associate "IO" m xs) => MonadCatch (Eff xs) where
+  catch m0 h = go m0 where
+    go m = case debone m of
+      Return a -> return a
+      Instruction i t :>>= k -> case compareMembership (association :: Membership xs ("IO" ':> m)) i of
+        Left _ -> boned $ Instruction i t :>>= go . k
+        Right Refl -> boned $ Instruction i (try t) :>>= go . either h k 
 
 pReader :: Proxy "Reader"
 pReader = Proxy

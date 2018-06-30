@@ -74,6 +74,7 @@ library
     , comonad
     , constraints
     , deepseq
+    , exceptions
     , ghc-prim
     , hashable
     , monad-skeleton >= 0.1.2
@@ -81,6 +82,7 @@ library
     , prettyprinter
     , primitive
     , profunctors
+    , resourcet
     , QuickCheck
     , semigroups
     , StateVar
