@@ -43,6 +43,8 @@ module Data.Extensible (
   , module Data.Extensible.Tangle
   , module Data.Extensible.TH
   , module Data.Extensible.Wrapper
+  , Proxy(..)
+  , KnownSymbol
   ) where
 
 import Data.Extensible.Class
@@ -60,3 +62,5 @@ import Data.Extensible.Sum
 import Data.Extensible.Tangle
 import Data.Extensible.TH
 import Data.Extensible.Wrapper
+import Data.Proxy
+import GHC.TypeLits
