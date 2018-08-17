@@ -1,8 +1,10 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies, ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances, MultiParamTypeClasses #-}
 #if __GLASGOW_HASKELL__ >= 800
 {-# LANGUAGE UndecidableSuperClasses #-}
+{-# LANGUAGE TypeInType #-}
 #endif
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -20,6 +22,8 @@
 module Data.Extensible.Dictionary (library, WrapForall, Instance1, And) where
 import Control.Applicative
 import Control.DeepSeq
+import Control.Monad.Trans
+import Control.Monad.Trans.Cont
 import qualified Data.Aeson as J
 import qualified Data.Csv as Csv
 import qualified Data.ByteString.Char8 as BC
@@ -38,13 +42,17 @@ import Data.Hashable
 import qualified Data.HashMap.Strict as HM
 import Data.Semigroup
 import Data.Text.Prettyprint.Doc
+import Data.Typeable
+import Data.Kind
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector as V
 import qualified Data.Text as T
-import Language.Haskell.TH.Lift
-import Language.Haskell.TH
+import Data.Winery
+import Data.Winery.Internal
+import qualified Language.Haskell.TH.Lift as TH
+import Language.Haskell.TH hiding (Type)
 import GHC.TypeLits
 import Test.QuickCheck.Arbitrary
 import Test.QuickCheck.Gen
@@ -110,16 +118,16 @@ instance WrapForall Bounded h xs => Bounded (h :* xs) where
   maxBound = hrepeatFor (Proxy :: Proxy (Instance1 Bounded h)) maxBound
 
 #if !MIN_VERSION_th_lift(0,7,9)
-instance Lift a => Lift (Identity a) where
-  lift = appE (conE 'Identity) . lift . runIdentity
+instance TH.Lift a => TH.Lift (Identity a) where
+  lift = appE (conE 'Identity) . TH.lift . runIdentity
 
-instance Lift a => Lift (Const a b) where
-  lift = appE (conE 'Const) . lift . getConst
+instance TH.Lift a => TH.Lift (Const a b) where
+  lift = appE (conE 'Const) . TH.lift . getConst
 #endif
 
-instance WrapForall Lift h xs => Lift (h :* xs) where
-  lift = hfoldrWithIndexFor (Proxy :: Proxy (Instance1 Lift h))
-    (\_ x xs -> infixE (Just $ lift x) (varE '(<:)) (Just xs)) (varE 'nil)
+instance WrapForall TH.Lift h xs => TH.Lift (h :* xs) where
+  lift = hfoldrWithIndexFor (Proxy :: Proxy (Instance1 TH.Lift h))
+    (\_ x xs -> infixE (Just $ TH.lift x) (varE '(<:)) (Just xs)) (varE 'nil)
 
 newtype instance U.MVector s (h :* xs) = MV_Product (Comp (U.MVector s) h :* xs)
 newtype instance U.Vector (h :* xs) = V_Product (Comp U.Vector h :* xs)
@@ -259,10 +267,10 @@ instance WrapForall Hashable h xs => Hashable (h :| xs) where
     (library :: Comp Dict (Instance1 Hashable h) :* xs)
   {-# INLINE hashWithSalt #-}
 
-instance WrapForall Lift h xs => Lift (h :| xs) where
+instance WrapForall TH.Lift h xs => TH.Lift (h :| xs) where
   lift (EmbedAt i h) = views (pieceAt i)
-    (\(Comp Dict) -> conE 'EmbedAt `appE` lift i `appE` lift h)
-    (library :: Comp Dict (Instance1 Lift h) :* xs)
+    (\(Comp Dict) -> conE 'EmbedAt `appE` TH.lift i `appE` TH.lift h)
+    (library :: Comp Dict (Instance1 TH.Lift h) :* xs)
 
 instance WrapForall Arbitrary h xs => Arbitrary (h :| xs) where
   arbitrary = choose (0, hcount (Proxy :: Proxy xs)) >>= henumerateFor
@@ -385,3 +393,31 @@ instance (U.Unbox a) => G.Vector U.Vector (Const' a b) where
 
 instance (U.Unbox a) => U.Unbox (Const' a b)
 #endif
+
+instance (Typeable (h :: v -> Type), Typeable v, Typeable xs
+  , Forall (KeyValue KnownSymbol (Instance1 Serialise h)) xs)
+  => Serialise (RecordOf h xs) where
+  schemaVia _ ts = SRecord $ henumerateFor
+    (Proxy :: Proxy (KeyValue KnownSymbol (Instance1 Serialise h))) (Proxy :: Proxy xs)
+    (\k -> (:)
+      (stringAssocKey k
+      , schemaVia (proxyApp (Proxy :: Proxy h) $ proxyAssocValue k) ts)) []
+  toEncoding r = encodeMulti
+      $ \x -> hfoldrWithIndexFor (Proxy :: Proxy (KeyValue KnownSymbol (Instance1 Serialise h)))
+      (\_ (Field v) -> encodeItem $ toEncoding v) x r
+  deserialiser = Deserialiser $ Plan $ \case
+    SRecord schs -> do
+      let schs' = [(k, (i, s)) | (i, (k, s)) <- zip [0..] schs]
+      exs <- hgenerateFor (Proxy :: Proxy (KeyValue KnownSymbol (Instance1 Serialise h)))
+        (\k -> let name = stringAssocKey k in case lookup name schs' of
+          Just (i, sch) -> Field . Prod (Const' i) . Comp <$> unwrapDeserialiser deserialiser sch
+          Nothing -> errorStrategy $ "Schema not found for " <> pretty name)
+        :: Strategy (RecordOf (Prod (Const' Int) (Comp Decoder h)) xs)
+      return $ evalContT $ do
+        offsets <- decodeOffsets (length schs)
+        lift $ \bs -> hmap
+          (\(Field (Prod (Const' i) (Comp m))) -> Field $ decodeAt (unsafeIndexV "Serialise (RecordOf h xs)" offsets i) m bs) exs
+    s -> unexpectedSchema "Record" s
+
+proxyApp :: Proxy f -> Proxy a -> Proxy (f a)
+proxyApp _ _ = Proxy
