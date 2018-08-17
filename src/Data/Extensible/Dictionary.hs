@@ -43,7 +43,9 @@ import qualified Data.HashMap.Strict as HM
 import Data.Semigroup
 import Data.Text.Prettyprint.Doc
 import Data.Typeable
+#if __GLASGOW_HASKELL__ >= 800
 import Data.Kind
+#endif
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Unboxed as U
@@ -393,9 +395,12 @@ instance (U.Unbox a) => G.Vector U.Vector (Const' a b) where
 
 instance (U.Unbox a) => U.Unbox (Const' a b)
 #endif
-
+#if __GLASGOW_HASKELL__ >= 800
 instance (Typeable (h :: v -> Type), Typeable v, Typeable xs
   , Forall (KeyValue KnownSymbol (Instance1 Serialise h)) xs)
+#else
+instance (Typeable (RecordOf h xs), Forall (KeyValue KnownSymbol (Instance1 Serialise h)) xs)
+#endif
   => Serialise (RecordOf h xs) where
   schemaVia _ ts = SRecord $ henumerateFor
     (Proxy :: Proxy (KeyValue KnownSymbol (Instance1 Serialise h))) (Proxy :: Proxy xs)
