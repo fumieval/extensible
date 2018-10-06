@@ -4,6 +4,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE MagicHash, UnboxedTuples #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
 ------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Struct
