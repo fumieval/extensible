@@ -51,8 +51,6 @@ import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector as V
 import qualified Data.Text as T
-import Data.Winery
-import Data.Winery.Internal
 import qualified Language.Haskell.TH.Lift as TH
 import Language.Haskell.TH hiding (Type)
 import GHC.TypeLits
@@ -395,34 +393,6 @@ instance (U.Unbox a) => G.Vector U.Vector (Const' a b) where
 
 instance (U.Unbox a) => U.Unbox (Const' a b)
 #endif
-#if __GLASGOW_HASKELL__ >= 800
-instance (Typeable (h :: v -> Type), Typeable v, Typeable xs
-  , Forall (KeyValue KnownSymbol (Instance1 Serialise h)) xs)
-#else
-instance (Typeable (RecordOf h xs), Forall (KeyValue KnownSymbol (Instance1 Serialise h)) xs)
-#endif
-  => Serialise (RecordOf h xs) where
-  schemaVia _ ts = SRecord $ henumerateFor
-    (Proxy :: Proxy (KeyValue KnownSymbol (Instance1 Serialise h))) (Proxy :: Proxy xs)
-    (\k -> (:)
-      (stringAssocKey k
-      , schemaVia (proxyApp (Proxy :: Proxy h) $ proxyAssocValue k) ts)) []
-  toEncoding r = encodeMulti
-      $ \x -> hfoldrWithIndexFor (Proxy :: Proxy (KeyValue KnownSymbol (Instance1 Serialise h)))
-      (\_ (Field v) -> encodeItem $ toEncoding v) x r
-  deserialiser = Deserialiser $ Plan $ \case
-    SRecord schs -> do
-      let schs' = [(k, (i, s)) | (i, (k, s)) <- zip [0..] schs]
-      exs <- hgenerateFor (Proxy :: Proxy (KeyValue KnownSymbol (Instance1 Serialise h)))
-        (\k -> let name = stringAssocKey k in case lookup name schs' of
-          Just (i, sch) -> Field . Prod (Const' i) . Comp <$> unwrapDeserialiser deserialiser sch
-          Nothing -> errorStrategy $ "Schema not found for " <> pretty name)
-        :: Strategy (RecordOf (Prod (Const' Int) (Comp Decoder h)) xs)
-      return $ evalContT $ do
-        offsets <- decodeOffsets (length schs)
-        lift $ \bs -> hmap
-          (\(Field (Prod (Const' i) (Comp m))) -> Field $ decodeAt (unsafeIndexV "Serialise (RecordOf h xs)" offsets i) m bs) exs
-    s -> unexpectedSchema "Record" s
 
 proxyApp :: Proxy f -> Proxy a -> Proxy (f a)
 proxyApp _ _ = Proxy
