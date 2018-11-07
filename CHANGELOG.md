@@ -1,3 +1,12 @@
+0.4.10.1
+-------------------------------------------------
+* Fixed build on GHC 8.6
+
+0.4.10
+-------------------------------------------------
+* Added a `MonadResource`, `MonadThrow`, and `MonadCatch` instances for `Eff`
+* `Proxy` and `KnownSymbol` are now reexported from `Data.Extensible`
+
 0.4.9
 -------------------------------------------------
 * Generalised the `MonadIO` instance for `Eff` to `(MonadIO m, Associate "IO" m xs) => MonadIO (Eff xs)`
