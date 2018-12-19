@@ -21,6 +21,7 @@ module Data.Extensible.Bits (BitProd(..)
   , BitRecordOf
   , BitRecord) where
 
+import Control.Applicative
 import Control.Comonad
 import Data.Bits
 import Data.Extensible.Class
@@ -28,7 +29,6 @@ import Data.Extensible.Dictionary
 import Data.Extensible.Product
 import Data.Extensible.Internal (getMemberId)
 import Data.Extensible.Field
-import Data.Extensible.Wrapper
 import Data.Functor.Identity
 import Data.Hashable
 import Data.Ix
@@ -130,10 +130,10 @@ instance (FromBits r a, FromBits r b, n ~ (BitWidth a + BitWidth b), n <= BitWid
   toBits (a, b) = unsafeShiftL (toBits a) width .|. toBits b where
     width = fromInteger $ natVal (Proxy :: Proxy (BitWidth b))
 
-instance FromBits r a => FromBits r (Const' a b) where
-  type BitWidth (Const' a b) = BitWidth a
-  fromBits = Const' . fromBits
-  toBits = toBits . getConst'
+instance FromBits r a => FromBits r (Const a b) where
+  type BitWidth (Const a b) = BitWidth a
+  fromBits = Const . fromBits
+  toBits = toBits . getConst
 
 instance (Bits r, FromBits r (h (AssocValue x))) => FromBits r (Field h x) where
   type BitWidth (Field h x) = BitWidth (h (AssocValue x))

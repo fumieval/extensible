@@ -13,12 +13,12 @@
 module Data.Extensible.Wrapper (
   Wrapper(..)
   , _WrapperAs
-  , Const'(..)
   , Comp(..)
   , comp
   , Prod(..)
   ) where
 
+import Control.Applicative
 import Control.DeepSeq
 import Data.Typeable (Typeable)
 import Data.Proxy (Proxy(..))
@@ -89,13 +89,9 @@ instance (Functor f, Wrapper g) => Wrapper (Comp f g) where
   _Wrapper = withIso _Wrapper $ \f g -> dimap (fmap f .# getComp) (fmap (comp g))
   {-# INLINE _Wrapper #-}
 
--- | Poly-kinded Const
-newtype Const' a x = Const' { getConst' :: a }
-  deriving (Show, Eq, Ord, Typeable, Generic, NFData, Semigroup, Monoid, Functor, Foldable, Traversable, Arbitrary, Hashable)
-
-instance Wrapper (Const' a) where
-  type Repr (Const' a) b = a
-  _Wrapper = dimap getConst' (fmap Const')
+instance Wrapper (Const a) where
+  type Repr (Const a) b = a
+  _Wrapper = dimap getConst (fmap Const)
   {-# INLINE _Wrapper #-}
 
 instance Wrapper Proxy where
