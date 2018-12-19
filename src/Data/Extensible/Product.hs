@@ -65,9 +65,6 @@ import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig (review)
 import Data.Extensible.Struct
 import Data.Extensible.Sum
-#if !MIN_VERSION_base(4,8,0)
-import Control.Applicative
-#endif
 import Data.Extensible.Class
 import qualified Data.Extensible.HList as HList
 import Data.Extensible.Wrapper

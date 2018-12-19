@@ -33,19 +33,11 @@ module Data.Extensible.Internal (
   -- * Member class
   , Member(..)
   , remember
-#if __GLASGOW_HASKELL__ >= 800
   , type (∈)
-#else
-  , (∈)()
-#endif
   , FindType
   -- * Association
   , Assoc(..)
-#if __GLASGOW_HASKELL__ >= 800
   , type (>:)
-#else
-  , (>:)()
-#endif
   , Associate(..)
   , FindAssoc
   -- * Sugar
@@ -60,10 +52,6 @@ module Data.Extensible.Internal (
 import Control.DeepSeq (NFData)
 import Data.Type.Equality
 import Data.Proxy
-#if !MIN_VERSION_base(4,8,0)
-import Control.Applicative
-import Data.Word
-#endif
 import Control.Monad
 import Unsafe.Coerce
 import Data.Hashable

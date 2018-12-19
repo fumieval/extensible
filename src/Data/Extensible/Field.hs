@@ -4,9 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables, TypeFamilies #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE TemplateHaskell #-}
-#if __GLASGOW_HASKELL__ >= 800
 {-# LANGUAGE UndecidableSuperClasses, TypeInType #-}
-#endif
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Field
@@ -63,9 +61,7 @@ import Data.Extensible.Match
 import Data.Extensible.Product
 import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
-#if __GLASGOW_HASKELL__ >= 800
 import Data.Kind
-#endif
 import Data.Profunctor.Unsafe
 import Data.Extensible.Wrapper
 import Data.Functor.Identity
@@ -124,11 +120,7 @@ instance (pv v) => ValueIs pv (k ':> v)
 --
 -- @'Field' :: (v -> *) -> Assoc k v -> *@
 --
-#if __GLASGOW_HASKELL__ >= 800
 newtype Field (h :: v -> Type) (kv :: Assoc k v)
-#else
-newtype Field (h :: v -> *) (kv :: Assoc k v)
-#endif
   = Field { getField :: h (AssocValue kv) }
 
   deriving (Typeable, Generic)
@@ -282,11 +274,7 @@ matchField = matchWithField runMatch
 --
 -- 'FieldOptic's can be generated using 'mkField' defined in the "Data.Extensible.TH" module.
 --
-#if __GLASGOW_HASKELL__ >= 800
 type FieldOptic k = forall kind. forall f p t xs (h :: kind -> Type) (v :: kind).
-#else
-type FieldOptic k = forall f p t xs (h :: kind -> *) (v :: kind).
-#endif
   (Extensible f p t
   , ExtensibleConstr t (Field h) xs (k ':> v)
   , Associate k v xs
@@ -294,12 +282,8 @@ type FieldOptic k = forall f p t xs (h :: kind -> *) (v :: kind).
   , Wrapper h)
   => Optic' p f (t (Field h) xs) (Repr h v)
 
-#if __GLASGOW_HASKELL__ >= 800
 -- | The trivial inextensible data type
 data Inextensible (h :: k -> Type) (xs :: [k])
-#else
-data Inextensible (h :: k -> *) (xs :: [k])
-#endif
 
 instance (Functor f, Profunctor p) => Extensible f p Inextensible where
   pieceAt _ _ = error "Impossible"

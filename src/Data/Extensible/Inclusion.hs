@@ -2,9 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
-#if __GLASGOW_HASKELL__ >= 800
 {-# LANGUAGE UndecidableSuperClasses #-}
-#endif
 ------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Inclusion
@@ -16,11 +14,7 @@
 ------------------------------------------------------------------------
 module Data.Extensible.Inclusion (
   -- * Inclusion
-#if __GLASGOW_HASKELL__ >= 800
   type (⊆)
-#else
-  (⊆)()
-#endif
   , Include
   , inclusion
   , shrink

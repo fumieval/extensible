@@ -24,9 +24,6 @@ module Data.Extensible.Sum (
   ) where
 
 import Data.Extensible.Internal
-#if !MIN_VERSION_base(4,8,0)
-import Control.Applicative
-#endif
 import Data.Typeable
 import Data.Extensible.Class
 import Data.Profunctor

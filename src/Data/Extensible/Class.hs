@@ -1,7 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses, UndecidableInstances, ScopedTypeVariables, TypeFamilies #-}
-#if __GLASGOW_HASKELL__ >= 800
 {-# LANGUAGE UndecidableSuperClasses #-}
-#endif
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Class
@@ -28,11 +26,7 @@ module Data.Extensible.Class (
   -- * Member
   , Member(..)
   , remember
-#if __GLASGOW_HASKELL__ >= 800
   , type (∈)
-#else
-  , (∈)()
-#endif
   , FindType
   -- * Generation
   , Generate(..)
@@ -40,11 +34,7 @@ module Data.Extensible.Class (
   , ForallF
   -- * Association
   , Assoc(..)
-#if __GLASGOW_HASKELL__ >= 800
   , type (>:)
-#else
-  , (>:)()
-#endif
   , Associate(..)
   , FindAssoc
   -- * Sugar

@@ -54,7 +54,6 @@ import Data.Extensible.Inclusion
 import Data.Extensible.Label
 import Data.Extensible.Match
 import Data.Extensible.Nullable
-import Data.Extensible.Plain
 import Data.Extensible.Product
 import Data.Extensible.Record
 import Data.Extensible.Sum
