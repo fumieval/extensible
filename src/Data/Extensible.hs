@@ -36,7 +36,6 @@ module Data.Extensible (
   , module Data.Extensible.Label
   , module Data.Extensible.Match
   , module Data.Extensible.Nullable
-  , module Data.Extensible.Plain
   , module Data.Extensible.Product
   , module Data.Extensible.Record
   , module Data.Extensible.Sum
