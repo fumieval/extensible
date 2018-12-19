@@ -44,6 +44,18 @@ class Wrapper (h :: k -> *) where
   -- @_Wrapper :: Iso' (h v) (Repr h v)@
   --
   _Wrapper :: (Functor f, Profunctor p) => Optic' p f (h v) (Repr h v)
+  _Wrapper = dimap unwrap (fmap wrap)
+  {-# INLINE _Wrapper #-}
+
+  wrap :: Repr h v -> h v
+  wrap = review _Wrapper
+  {-# INLINE wrap #-}
+
+  unwrap :: h v -> Repr h v
+  unwrap = view _Wrapper
+  {-# INLINE unwrap #-}
+
+  {-# MINIMAL wrap, unwrap | _Wrapper #-}
 
 -- | Restricted version of '_Wrapper'.
 -- It is useful for eliminating ambiguousness.
@@ -53,8 +65,10 @@ _WrapperAs _ = _Wrapper
 
 instance Wrapper Identity where
   type Repr Identity a = a
-  _Wrapper = dimap runIdentity (fmap Identity)
-  {-# INLINE _Wrapper #-}
+  unwrap = runIdentity
+  {-# INLINE unwrap #-}
+  wrap = Identity
+  {-# INLINE wrap #-}
 
 instance Wrapper Maybe where
   type Repr Maybe a = Maybe a
@@ -91,13 +105,17 @@ instance (Functor f, Wrapper g) => Wrapper (Comp f g) where
 
 instance Wrapper (Const a) where
   type Repr (Const a) b = a
-  _Wrapper = dimap getConst (fmap Const)
-  {-# INLINE _Wrapper #-}
+  wrap = Const
+  {-# INLINE wrap #-}
+  unwrap = getConst
+  {-# INLINE unwrap #-}
 
 instance Wrapper Proxy where
   type Repr Proxy x = ()
-  _Wrapper = dimap (const ()) (fmap (const Proxy))
-  {-# INLINE _Wrapper #-}
+  wrap _ = Proxy
+  {-# INLINE wrap #-}
+  unwrap _ = ()
+  {-# INLINE unwrap #-}
 
 -- | Poly-kinded product
 data Prod f g a = Prod (f a) (g a)
@@ -108,8 +126,10 @@ instance (Hashable (f a), Hashable (g a)) => Hashable (Prod f g a)
 
 instance (Wrapper f, Wrapper g) => Wrapper (Prod f g) where
   type Repr (Prod f g) a = (Repr f a, Repr g a)
-  _Wrapper = dimap (\(Prod f g) -> (view _Wrapper f, view _Wrapper g))
-    $ fmap (\(a, b) -> review _Wrapper a `Prod` review _Wrapper b)
+  unwrap (Prod f g) = (unwrap f, unwrap g)
+  {-# INLINE unwrap #-}
+  wrap (f, g) = wrap f `Prod` wrap g
+  {-# INLINE wrap #-}
 
 instance (Semigroup (f a), Semigroup (g a)) => Semigroup (Prod f g a) where
   Prod a b <> Prod c d = Prod (a <> c) (b <> d)
