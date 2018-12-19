@@ -17,6 +17,7 @@ module Data.Extensible.Product (
   , nil
   , (<:)
   , (<!)
+  , (=<:)
   , hlength
   , type (++)
   , happend
@@ -61,6 +62,7 @@ module Data.Extensible.Product (
   , hrepeatFor) where
 
 import Data.Extensible.Internal
+import Data.Extensible.Internal.Rig (review)
 import Data.Extensible.Struct
 import Data.Extensible.Sum
 #if !MIN_VERSION_base(4,8,0)
@@ -76,6 +78,11 @@ import Data.Extensible.Wrapper
 (<:) x = fromHList . HList.HCons x . toHList
 {-# INLINE (<:) #-}
 infixr 0 <:
+
+(=<:) :: Wrapper h => Repr h x -> h :* xs -> h :* (x ': xs)
+(=<:) = (<:) . review _Wrapper
+{-# INLINE (=<:) #-}
+infixr 0 =<:
 
 -- | Strict version of ('<:').
 (<!) :: h x -> h :* xs -> h :* (x ': xs)
