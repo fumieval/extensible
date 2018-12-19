@@ -26,7 +26,6 @@ import Data.Profunctor.Unsafe (Profunctor(..))
 import Data.Functor.Identity (Identity(..))
 import Data.Extensible.Internal.Rig
 import Data.Hashable
-import Data.Semigroup
 import Data.Text.Prettyprint.Doc
 import GHC.Generics (Generic)
 import Language.Haskell.TH.Lift

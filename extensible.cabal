@@ -84,7 +84,6 @@ library
     , profunctors
     , resourcet
     , QuickCheck
-    , semigroups
     , StateVar
     , tagged
     , template-haskell

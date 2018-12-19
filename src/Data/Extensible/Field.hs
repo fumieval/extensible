@@ -70,7 +70,6 @@ import Data.Profunctor.Unsafe
 import Data.Extensible.Wrapper
 import Data.Functor.Identity
 import Data.Hashable
-import Data.Semigroup
 import Data.String
 import Data.Text.Prettyprint.Doc
 import Data.Typeable (Typeable)

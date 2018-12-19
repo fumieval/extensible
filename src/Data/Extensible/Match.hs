@@ -23,7 +23,6 @@ import Data.Extensible.Sum
 import Data.Extensible.Wrapper
 import Data.Typeable (Typeable)
 import Data.Profunctor.Unsafe
-import Data.Semigroup
 import GHC.Generics (Generic)
 
 -- | Retrieve the contents so that they matches and pass both to the given function.

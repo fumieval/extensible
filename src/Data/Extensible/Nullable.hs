@@ -27,7 +27,6 @@ import Data.Typeable (Typeable)
 import Data.Extensible.Wrapper
 import qualified Data.Extensible.Struct as S
 import Data.Profunctor.Unsafe
-import Data.Semigroup
 import GHC.Generics (Generic)
 import Language.Haskell.TH.Lift
 import Language.Haskell.TH (appE, conE)

@@ -20,10 +20,7 @@
 -- Also includes orphan instances.
 -----------------------------------------------------------------------
 module Data.Extensible.Dictionary (library, WrapForall, Instance1, And) where
-import Control.Applicative
 import Control.DeepSeq
-import Control.Monad.Trans
-import Control.Monad.Trans.Cont
 import qualified Data.Aeson as J
 import qualified Data.Csv as Csv
 import qualified Data.ByteString.Char8 as BC
@@ -40,12 +37,7 @@ import Data.Extensible.Wrapper
 import Data.Functor.Identity
 import Data.Hashable
 import qualified Data.HashMap.Strict as HM
-import Data.Semigroup
 import Data.Text.Prettyprint.Doc
-import Data.Typeable
-#if __GLASGOW_HASKELL__ >= 800
-import Data.Kind
-#endif
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Unboxed as U
@@ -393,6 +385,3 @@ instance (U.Unbox a) => G.Vector U.Vector (Const' a b) where
 
 instance (U.Unbox a) => U.Unbox (Const' a b)
 #endif
-
-proxyApp :: Proxy f -> Proxy a -> Proxy (f a)
-proxyApp _ _ = Proxy

@@ -27,7 +27,6 @@ import Data.Extensible.Product
 import Data.Extensible.Internal.Rig
 import Data.Extensible.Nullable
 import Data.Extensible.Wrapper
-import Data.Semigroup
 
 -- | @'TangleT' h xs m@ is the monad of computations that may depend on the elements in 'xs'.
 newtype TangleT h xs m a = TangleT
