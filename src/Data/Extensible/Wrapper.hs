@@ -136,7 +136,7 @@ instance (Semigroup (f a), Semigroup (g a)) => Semigroup (Prod f g a) where
 
 instance (Monoid (f a), Monoid (g a)) => Monoid (Prod f g a) where
   mempty = Prod mempty mempty
-  Prod a b `mappend` Prod c d = Prod (mappend a c) (mappend b d)
+  mappend = (<>)
 
 instance (Arbitrary (f a), Arbitrary (g a)) => Arbitrary (Prod f g a) where
   arbitrary = Prod <$> arbitrary <*> arbitrary

@@ -41,13 +41,13 @@ instance Wrapper h => Wrapper (Nullable h) where
   _Wrapper = withIso _Wrapper $ \f g -> dimap (fmap f . getNullable) (fmap (Nullable . fmap g))
 
 instance Semigroup (h x) => Semigroup (Nullable h x) where
-  (<>) = mappend
+  Nullable (Just a) <> Nullable (Just b) = Nullable (Just (a <> b))
+  a@(Nullable (Just _)) <> _ = a
+  _ <> b = b
 
 instance Semigroup (h x) => Monoid (Nullable h x) where
   mempty = Nullable Nothing
-  mappend (Nullable (Just a)) (Nullable (Just b)) = Nullable (Just (a <> b))
-  mappend a@(Nullable (Just _)) _ = a
-  mappend _ b = b
+  mappend = (<>)
 
 instance Lift (h a) => Lift (Nullable h a) where
   lift = appE (conE 'Nullable) . lift . getNullable

@@ -183,7 +183,7 @@ bupdate i (BitProd r) a = BitProd $ r .&. mask
     offset = bitOffsetAt (Proxy :: Proxy r) (Proxy :: Proxy h) (Proxy :: Proxy xs) $ getMemberId i
 {-# INLINE bupdate #-}
 
-bitOffsetAt :: forall r h xs. Forall (Instance1 (FromBits r) h) xs
+bitOffsetAt :: forall k r h xs. Forall (Instance1 (FromBits r) h) xs
   => Proxy (r :: *) -> Proxy (h :: k -> *) -> Proxy (xs :: [k]) -> Int -> Int
 bitOffsetAt _ ph _ = henumerateFor
   (Proxy :: Proxy (Instance1 (FromBits r) h))

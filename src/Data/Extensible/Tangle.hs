@@ -41,7 +41,7 @@ instance (Monad m, Semigroup a) => Semigroup (TangleT h xs m a) where
 
 instance (Monad m, Monoid a) => Monoid (TangleT h xs m a) where
   mempty = pure mempty
-  mappend = liftA2 mappend
+  mappend = (<>)
 
 -- | Hitch an element associated to the 'FieldName' through a wrapper.
 lasso :: forall k v m h xs. (Monad m, Associate k v xs, Wrapper h)
