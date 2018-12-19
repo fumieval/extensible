@@ -1,3 +1,11 @@
+0.5
+-------------------------------------------------
+* GHC older than 8.4 is no longer supported
+* Removed `Const'`
+* `Data.Extensible.Plain` is no longer exported from `Data.Extensible`
+* Added `wrap` and `unwrap` to `Wrapper`
+* Added `(=<:)`
+
 0.4.10.1
 -------------------------------------------------
 * Fixed build on GHC 8.6
