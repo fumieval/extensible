@@ -240,6 +240,8 @@ happend (HProduct lhs) (HProduct rhs) = runST $ primitive $ \s0 ->
       case unsafeFreezeSmallArray# a s3 of { (# s4, frz #) ->
       (# s4, HProduct frz #) }}}}
 
+infixr 5 `happend`
+
 unsafeMembership :: Int -> Membership xs x
 unsafeMembership = unsafeCoerce#
 
