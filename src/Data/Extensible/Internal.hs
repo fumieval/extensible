@@ -184,7 +184,7 @@ type family Head (xs :: [k]) :: k where
 
 -- | FindType types
 type family FindType (x :: k) (xs :: [k]) :: [Nat] where
-  FindType x (x ': xs) = 0 ': FindType x xs
+  FindType x (x ': xs) = 0 ': MapSucc (FindType x xs)
   FindType x (y ': ys) = MapSucc (FindType x ys)
   FindType x '[] = '[]
 
