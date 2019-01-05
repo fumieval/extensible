@@ -52,6 +52,7 @@ library
     Data.Extensible.Struct
     Data.Extensible.Sum
     Data.Extensible.Tangle
+    Data.Extensible.Util
     Data.Extensible.Wrapper
     Data.Extensible.TH
   default-extensions: TypeOperators
