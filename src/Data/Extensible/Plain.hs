@@ -18,7 +18,6 @@ module Data.Extensible.Plain (
   , (<%|)
   , accessing
   ) where
-import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
 import Data.Extensible.Class
 import Data.Extensible.Product

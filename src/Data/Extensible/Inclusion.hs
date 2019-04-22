@@ -32,8 +32,8 @@ import Data.Constraint
 import Data.Extensible.Class
 import Data.Extensible.Product
 import Data.Extensible.Sum
-import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
+import Data.Proxy
 
 -- | Unicode alias for 'Include'
 type xs ⊆ ys = Include ys xs
@@ -59,7 +59,7 @@ spread (EmbedAt i h) = views (pieceAt i) EmbedAt inclusion h
 ------------------------------------------------------------------
 
 type family Associated' (xs :: [Assoc k v]) (t :: Assoc k v) :: Constraint where
-  Associated' xs (k ':> v) = Associate k v xs
+  Associated' xs (k ':> v) = Lookup xs k v
 
 -- | @'Associated' xs (k ':> v)@ is equivalent to @'Associate' k v xs@
 class Associated' xs t => Associated xs t where

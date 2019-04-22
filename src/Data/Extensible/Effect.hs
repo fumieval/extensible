@@ -89,37 +89,36 @@ import Control.Monad.Trans.State.Strict
 import Control.Monad.Trans.Cont (ContT(..))
 import Data.Extensible.Field
 import Data.Extensible.Inclusion
-import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
 import Data.Extensible.Product
 import Data.Extensible.Class
 import Data.Functor.Identity
 import Data.Profunctor.Unsafe -- Trustworthy since 7.8
-import Data.Typeable (Typeable)
+import Data.Type.Equality
+import Type.Membership
 
 -- | A unit of named effects. This is a variant of @(':|')@ specialised for
 -- 'Type -> Type'.
 data Instruction (xs :: [Assoc k (* -> *)]) a where
-  Instruction :: !(Membership xs kv) -> AssocValue kv a -> Instruction xs a
-  deriving Typeable
+  Instruction :: !(Membership xs kv) -> TargetOf kv a -> Instruction xs a
 
 -- | The extensible operational monad
 type Eff xs = Skeleton (Instruction xs)
 
 -- | Lift an instruction onto an 'Eff' action.
-liftEff :: forall s t xs a. Associate s t xs => Proxy s -> t a -> Eff xs a
+liftEff :: forall s t xs a. Lookup xs s t => Proxy s -> t a -> Eff xs a
 liftEff p x = liftsEff p x id
 {-# INLINE liftEff #-}
 
 -- | Lift an instruction onto an 'Eff' action and apply a function to the result.
-liftsEff :: forall s t xs a r. Associate s t xs
+liftsEff :: forall s t xs a r. Lookup xs s t
   => Proxy s -> t a -> (a -> r) -> Eff xs r
 liftsEff _ x k = boned
   $ Instruction (association :: Membership xs (s ':> t)) x :>>= return . k
 {-# INLINE liftsEff #-}
 
 -- | Censor a specific type of effects in an action.
-hoistEff :: forall s t xs a. Associate s t xs => Proxy s -> (forall x. t x -> t x) -> Eff xs a -> Eff xs a
+hoistEff :: forall s t xs a. Lookup xs s t => Proxy s -> (forall x. t x -> t x) -> Eff xs a -> Eff xs a
 hoistEff _ f = hoistSkeleton $ \(Instruction i t) -> case compareMembership (association :: Membership xs (s ':> t)) i of
   Right Refl -> Instruction i (f t)
   _ -> Instruction i t
@@ -145,7 +144,7 @@ peelEff :: forall k t xs a r
 peelEff pass ret wrap = go where
   go m = case debone m of
     Return a -> ret a
-    Instruction i t :>>= k -> leadership i
+    Instruction i t :>>= k -> testMembership i
       (\Refl -> wrap t (go . k))
       (\j -> pass (Instruction j t) (go . k))
 {-# INLINE peelEff #-}
@@ -192,13 +191,12 @@ leaveEff m = case debone m of
 retractEff :: forall k m a. Monad m => Eff '[k >: m] a -> m a
 retractEff m = case debone m of
   Return a -> return a
-  Instruction i t :>>= k -> leadership i
+  Instruction i t :>>= k -> testMembership i
     (\Refl -> t >>= retractEff . k)
     $ error "Impossible"
 
 -- | Transformation between effects
 newtype Interpreter f g = Interpreter { runInterpreter :: forall a. g a -> f a }
-  deriving Typeable
 
 -- | Process an 'Eff' action using a record of 'Interpreter's.
 handleEff :: RecordOf (Interpreter m) xs -> Eff xs a -> MonadView m (Eff xs) a
@@ -237,7 +235,7 @@ peelAction :: forall k ps q xs a r
 peelAction pass ret wrap = go where
   go m = case debone m of
     Return a -> ret a
-    Instruction i t :>>= k -> leadership i
+    Instruction i t :>>= k -> testMembership i
       (\Refl -> case t of
         (_ :: Action ps q x) ->
           let run :: forall t. Function t ((q -> r) -> r) -> Action t q x -> r
@@ -253,7 +251,7 @@ peelAction0 :: forall k ps q xs a. Function ps (Eff xs q) -- ^ Handle the foremo
 peelAction0 wrap = go where
   go m = case debone m of
     Return a -> return a
-    Instruction i t :>>= k -> leadership i
+    Instruction i t :>>= k -> testMembership i
       (\Refl -> case t of
         (_ :: Action ps q x) ->
           let run :: forall t. Function t (Eff xs q) -> Action t q x -> Eff xs a
@@ -268,19 +266,19 @@ peelAction0 wrap = go where
 type ReaderEff = (:~:)
 
 -- | Fetch the environment.
-askEff :: forall k r xs. Associate k (ReaderEff r) xs
+askEff :: forall k r xs. Lookup xs k (ReaderEff r)
   => Proxy k -> Eff xs r
 askEff p = liftEff p Refl
 {-# INLINE askEff #-}
 
 -- | Pass the environment to a function.
-asksEff :: forall k r xs a. Associate k (ReaderEff r) xs
+asksEff :: forall k r xs a. Lookup xs k (ReaderEff r)
   => Proxy k -> (r -> a) -> Eff xs a
 asksEff p = liftsEff p Refl
 {-# INLINE asksEff #-}
 
 -- | Modify the enviroment locally.
-localEff :: forall k r xs a. Associate k (ReaderEff r) xs
+localEff :: forall k r xs a. Lookup xs k (ReaderEff r)
   => Proxy k -> (r -> r) -> Eff xs a -> Eff xs a
 localEff _ f = go where
   go m = case debone m of
@@ -298,31 +296,31 @@ runReaderEff m r = peelEff0 return (\Refl k -> k r) m
 {-# INLINE runReaderEff #-}
 
 -- | Get the current state.
-getEff :: forall k s xs. Associate k (State s) xs
+getEff :: forall k s xs. Lookup xs k (State s)
   => Proxy k -> Eff xs s
 getEff k = liftEff k get
 {-# INLINE getEff #-}
 
 -- | Pass the current state to a function.
-getsEff :: forall k s a xs. Associate k (State s) xs
+getsEff :: forall k s a xs. Lookup xs k (State s)
   => Proxy k -> (s -> a) -> Eff xs a
 getsEff k = liftsEff k get
 {-# INLINE getsEff #-}
 
 -- | Replace the state with a new value.
-putEff :: forall k s xs. Associate k (State s) xs
+putEff :: forall k s xs. Lookup xs k (State s)
   => Proxy k -> s -> Eff xs ()
 putEff k = liftEff k . put
 {-# INLINE putEff #-}
 
 -- | Modify the state.
-modifyEff :: forall k s xs. Associate k (State s) xs
+modifyEff :: forall k s xs. Lookup xs k (State s)
   => Proxy k -> (s -> s) -> Eff xs ()
 modifyEff k f = liftEff k $ state $ \s -> ((), f s)
 {-# INLINE modifyEff #-}
 
 -- | Lift a state modification function.
-stateEff :: forall k s xs a. Associate k (State s) xs
+stateEff :: forall k s xs a. Lookup xs k (State s)
   => Proxy k -> (s -> (a, s)) -> Eff xs a
 stateEff k = liftEff k . state
 {-# INLINE stateEff #-}
@@ -349,19 +347,19 @@ evalStateEff = peelEff1 (const . return) contState
 type WriterEff w = (,) w
 
 -- | Write the second element and return the first element.
-writerEff :: forall k w xs a. (Associate k (WriterEff w) xs)
+writerEff :: forall k w xs a. (Lookup xs k (WriterEff w))
   => Proxy k -> (a, w) -> Eff xs a
 writerEff k (a, w) = liftEff k (w, a)
 {-# INLINE writerEff #-}
 
 -- | Write a value.
-tellEff :: forall k w xs. (Associate k (WriterEff w) xs)
+tellEff :: forall k w xs. (Lookup xs k (WriterEff w))
   => Proxy k -> w -> Eff xs ()
 tellEff k w = liftEff k (w, ())
 {-# INLINE tellEff #-}
 
 -- | Squash the outputs into one step and return it.
-listenEff :: forall k w xs a. (Associate k (WriterEff w) xs, Monoid w)
+listenEff :: forall k w xs a. (Lookup xs k (WriterEff w), Monoid w)
   => Proxy k -> Eff xs a -> Eff xs (a, w)
 listenEff p = go mempty where
   go w m = case debone m of
@@ -373,7 +371,7 @@ listenEff p = go mempty where
 {-# INLINE listenEff #-}
 
 -- | Modify the output using the function in the result.
-passEff :: forall k w xs a. (Associate k (WriterEff w) xs, Monoid w)
+passEff :: forall k w xs a. (Lookup xs k (WriterEff w), Monoid w)
   => Proxy k -> Eff xs (a, w -> w) -> Eff xs a
 passEff p = go mempty where
   go w m = case debone m of
@@ -401,7 +399,7 @@ execWriterEff = peelEff1 (const return) contWriter `flip` mempty
 type MaybeEff = Const ()
 
 -- | Break out of the computation. Similar to 'Nothing'.
-nothingEff :: Associate k MaybeEff xs => Proxy k -> Eff xs a
+nothingEff :: Lookup xs k MaybeEff => Proxy k -> Eff xs a
 nothingEff = flip throwEff ()
 
 -- | Run an effect which may fail in the name of @k@.
@@ -413,12 +411,12 @@ runMaybeEff = peelEff0 (return . Just) $ \_ _ -> return Nothing
 type EitherEff = Const
 
 -- | Throw an exception @e@, throwing the rest of the computation away.
-throwEff :: Associate k (EitherEff e) xs => Proxy k -> e -> Eff xs a
+throwEff :: Lookup xs k (EitherEff e) => Proxy k -> e -> Eff xs a
 throwEff k = liftEff k . Const
 {-# INLINE throwEff #-}
 
 -- | Attach a handler for an exception.
-catchEff :: forall k e xs a. (Associate k (EitherEff e) xs)
+catchEff :: forall k e xs a. (Lookup xs k (EitherEff e))
   => Proxy k -> Eff xs a -> (e -> Eff xs a) -> Eff xs a
 catchEff _ m0 handler = go m0 where
   go m = case debone m of
@@ -434,7 +432,7 @@ runEitherEff = peelEff0 (return . Right) $ \(Const e) _ -> return $ Left e
 {-# INLINE runEitherEff #-}
 
 -- | Put a milestone on a computation.
-tickEff :: Associate k Identity xs => Proxy k -> Eff xs ()
+tickEff :: Lookup xs k Identity => Proxy k -> Eff xs ()
 tickEff k = liftEff k $ Identity ()
 {-# INLINE tickEff #-}
 
@@ -443,12 +441,12 @@ runIterEff :: Eff (k >: Identity ': xs) a
   -> Eff xs (Either a (Eff (k >: Identity ': xs) a))
 runIterEff m = case debone m of
   Return a -> return (Left a)
-  Instruction i t :>>= k -> leadership i
+  Instruction i t :>>= k -> testMembership i
     (\Refl -> return $ Right $ k $ runIdentity t)
     $ \j -> boned $ Instruction j t :>>= runIterEff . k
 
 -- | Place a continuation-passing action.
-contEff :: Associate k (ContT r m) xs => Proxy k
+contEff :: Lookup xs k (ContT r m) => Proxy k
   -> ((a -> m r) -> m r) -> Eff xs a
 contEff k = liftEff k . ContT
 
@@ -458,6 +456,6 @@ runContEff :: forall k r xs a. Eff (k >: ContT r (Eff xs) ': xs) a
   -> Eff xs r
 runContEff m cont = case debone m of
   Return a -> cont a
-  Instruction i t :>>= k -> leadership i
+  Instruction i t :>>= k -> testMembership i
     (\Refl -> runContT t (flip runContEff cont . k))
     $ \j -> boned $ Instruction j t :>>= flip runContEff cont . k

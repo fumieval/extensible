@@ -15,8 +15,6 @@ module Data.Extensible.TH (mkField
   , decEffectSuite
   , customDecEffects) where
 
-import Data.Proxy
-import Data.Extensible.Internal
 import Data.Extensible.Class (itemAssoc)
 import Data.Extensible.Effect
 import Data.Extensible.Field
@@ -24,6 +22,7 @@ import Data.List (nub)
 import Language.Haskell.TH
 import Data.Char
 import Control.Monad
+import Type.Membership
 
 -- | Generate fields using 'itemAssoc'.
 -- @'mkField' "foo Bar"@ defines:
@@ -186,7 +185,7 @@ associateT :: Type -- key
   -> Type -- type
   -> Name -- variable
   -> Type
-associateT nameT t xs = ConT ''Associate `AppT` nameT `AppT` t `AppT` VarT xs
+associateT nameT t xs = ConT ''Lookup `AppT` VarT xs `AppT` nameT `AppT` t
 
 effClause :: Type -- effect key
   -> Int -- number of arguments

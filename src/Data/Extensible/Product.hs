@@ -61,13 +61,12 @@ module Data.Extensible.Product (
   , htabulateFor
   , hrepeatFor) where
 
-import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig (review)
 import Data.Extensible.Struct
 import Data.Extensible.Sum
 import Data.Extensible.Class
-import qualified Data.Extensible.HList as HList
 import Data.Extensible.Wrapper
+import qualified Type.Membership.HList as HList
 
 -- | O(n) Prepend an element onto a product.
 -- Expressions like @a <: b <: c <: nil@ are transformed to a single 'fromHList'.

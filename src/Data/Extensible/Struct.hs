@@ -46,26 +46,24 @@ module Data.Extensible.Struct (
   , toHList) where
 
 import GHC.Prim
+import Control.Comonad
 import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Primitive
 import Control.Monad.ST
 import Data.Constraint
 import Data.Extensible.Class
-import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
 import Data.Extensible.Wrapper
-import Control.Comonad
 import Data.Profunctor.Rep
 import Data.Profunctor.Sieve
+import Data.Proxy
 import qualified Data.StateVar as V
-import Data.Typeable (Typeable)
-import qualified Data.Extensible.HList as L
 import GHC.Types
+import qualified Type.Membership.HList as L
 
 -- | Mutable type-indexed struct.
 data Struct s (h :: k -> *) (xs :: [k]) = Struct (SmallMutableArray# s Any)
-  deriving Typeable
 
 -- | Write a value in a 'Struct'.
 set :: PrimMonad m => Struct (PrimState m) h xs -> Membership xs x -> h x -> m ()
@@ -137,7 +135,7 @@ instance (s ~ RealWorld, Wrapper h) => V.HasUpdate (WrappedPointer s h a) a a wh
   WrappedPointer s i $~! f = liftIO $ void $ atomicModify'_ s i $ over _Wrapper f
 
 -- | Get a 'WrappedPointer' from a name.
-(-$>) :: forall k h xs v s. (Associate k v xs) => Struct s h xs -> Proxy k -> WrappedPointer s h (Repr h (k ':> v))
+(-$>) :: forall k h xs v s. (Lookup xs k v) => Struct s h xs -> Proxy k -> WrappedPointer s h (Repr h (k ':> v))
 s -$> _ = WrappedPointer s (association :: Membership xs (k ':> v))
 {-# INLINE (-$>) #-}
 

@@ -35,14 +35,21 @@ module Data.Extensible.Field (
   , matchWithField
   , matchField
   -- * Key / value
+  , KeyOf
+  , proxyKeyOf
+  , TargetOf
+  , proxyTargetOf
+  , KeyIs
+  , TargetIs
+  , KeyTargetAre
+  -- * deprecated
   , AssocKey
   , AssocValue
+  , ValueIs
   , KeyValue
   , proxyAssocKey
-  , proxyAssocValue
   , stringAssocKey
-  , KeyIs
-  , ValueIs
+  , proxyAssocValue
   -- * Internal
   , LabelPhantom
   , Labelling
@@ -59,7 +66,6 @@ import Data.Extensible.Class
 import Data.Extensible.Sum
 import Data.Extensible.Match
 import Data.Extensible.Product
-import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
 import Data.Kind
 import Data.Profunctor.Unsafe
@@ -68,7 +74,6 @@ import Data.Functor.Identity
 import Data.Hashable
 import Data.String
 import Data.Text.Prettyprint.Doc
-import Data.Typeable (Typeable)
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Unboxed as U
@@ -78,54 +83,18 @@ import GHC.TypeLits hiding (Nat)
 import Language.Haskell.TH.Lift
 import Language.Haskell.TH (appE, conE)
 import Test.QuickCheck.Arbitrary
-
--- | Take the type of the key
-type family AssocKey (kv :: Assoc k v) :: k where
-  AssocKey (k ':> v) = k
-
--- | Proxy-level 'AssocKey'. This is useful when using 'symbolVal'.
-proxyAssocKey :: proxy kv -> Proxy (AssocKey kv)
-proxyAssocKey _ = Proxy
-
--- | Proxy-level 'AssocValue'.
-proxyAssocValue :: proxy kv -> Proxy (AssocValue kv)
-proxyAssocValue _ = Proxy
-
--- | Get a string from a proxy of @'Assoc' 'Symbol' v@.
-stringAssocKey :: (IsString a, KnownSymbol (AssocKey kv)) => proxy kv -> a
-stringAssocKey = fromString . symbolVal . proxyAssocKey
-{-# INLINE stringAssocKey #-}
-
--- | Take the type of the value
-type family AssocValue (kv :: Assoc k v) :: v where
-  AssocValue (k ':> v) = v
-
--- | Combined constraint for 'Assoc'
-class (pk (AssocKey kv), pv (AssocValue kv)) => KeyValue pk pv kv where
-
-instance (pk k, pv v) => KeyValue pk pv (k ':> v)
-
--- | Constraint applied to 'AssocKey'
-class (pk (AssocKey kv)) => KeyIs pk kv where
-
-instance (pk k) => KeyIs pk (k ':> v)
-
--- | Constraint applied to 'AssocValue'
-class (pv (AssocValue kv)) => ValueIs pv kv where
-
-instance (pv v) => ValueIs pv (k ':> v)
-
+import Type.Membership
 
 -- | A @'Field' h (k ':> v)@ is @h v@ annotated with the field name @k@.
 --
 -- @'Field' :: (v -> *) -> Assoc k v -> *@
 --
 newtype Field (h :: v -> Type) (kv :: Assoc k v)
-  = Field { getField :: h (AssocValue kv) }
+  = Field { getField :: h (TargetOf kv) }
 
-  deriving (Typeable, Generic)
+  deriving (Generic)
 
-#define ND_Field(c) deriving instance c (h (AssocValue kv)) => c (Field h kv)
+#define ND_Field(c) deriving instance c (h (TargetOf kv)) => c (Field h kv)
 
 ND_Field(Eq)
 ND_Field(Ord)
@@ -149,10 +118,10 @@ ND_Field(Csv.ToField)
 ND_Field(J.FromJSON)
 ND_Field(J.ToJSON)
 
-newtype instance U.MVector s (Field h x) = MV_Field (U.MVector s (h (AssocValue x)))
-newtype instance U.Vector (Field h x) = V_Field (U.Vector (h (AssocValue x)))
+newtype instance U.MVector s (Field h x) = MV_Field (U.MVector s (h (TargetOf x)))
+newtype instance U.Vector (Field h x) = V_Field (U.Vector (h (TargetOf x)))
 
-instance (U.Unbox (h (AssocValue x))) => M.MVector U.MVector (Field h x) where
+instance (U.Unbox (h (TargetOf x))) => M.MVector U.MVector (Field h x) where
   {-# INLINE basicLength #-}
   {-# INLINE basicUnsafeSlice #-}
   {-# INLINE basicOverlaps #-}
@@ -181,7 +150,7 @@ instance (U.Unbox (h (AssocValue x))) => M.MVector U.MVector (Field h x) where
   basicUnsafeMove (MV_Field v1) (MV_Field v2) = M.basicUnsafeMove v1 v2
   basicUnsafeGrow (MV_Field v) n = MV_Field <$> M.basicUnsafeGrow v n
 
-instance (U.Unbox (h (AssocValue x))) => G.Vector U.Vector (Field h x) where
+instance (U.Unbox (h (TargetOf x))) => G.Vector U.Vector (Field h x) where
   {-# INLINE basicUnsafeFreeze #-}
   {-# INLINE basicUnsafeThaw #-}
   {-# INLINE basicLength #-}
@@ -194,24 +163,24 @@ instance (U.Unbox (h (AssocValue x))) => G.Vector U.Vector (Field h x) where
   basicUnsafeIndexM (V_Field v) i = Field <$> G.basicUnsafeIndexM v i
   basicUnsafeCopy (MV_Field mv) (V_Field v) = G.basicUnsafeCopy mv v
 
-instance (U.Unbox (h (AssocValue x))) => U.Unbox (Field h x)
+instance (U.Unbox (h (TargetOf x))) => U.Unbox (Field h x)
 
-instance Lift (h (AssocValue x)) => Lift (Field h x) where
+instance Lift (h (TargetOf x)) => Lift (Field h x) where
   lift = appE (conE 'Field) . lift . getField
 
 -- | Lift a function for the content.
-liftField :: (g (AssocValue kv) -> h (AssocValue kv)) -> Field g kv -> Field h kv
+liftField :: (g (TargetOf kv) -> h (TargetOf kv)) -> Field g kv -> Field h kv
 liftField = coerce
 {-# INLINE liftField #-}
 
 -- | Lift a function for the content.
-liftField2 :: (f (AssocValue kv) -> g (AssocValue kv) -> h (AssocValue kv))
+liftField2 :: (f (TargetOf kv) -> g (TargetOf kv) -> h (TargetOf kv))
     -> Field f kv -> Field g kv -> Field h kv
 liftField2 = coerce
 {-# INLINE liftField2 #-}
 
 instance Wrapper h => Wrapper (Field h) where
-  type Repr (Field h) kv = Repr h (AssocValue kv)
+  type Repr (Field h) kv = Repr h (TargetOf kv)
   _Wrapper = dimap getField (fmap Field) . _Wrapper
   {-# INLINE _Wrapper #-}
 
@@ -277,7 +246,7 @@ matchField = matchWithField runMatch
 type FieldOptic k = forall kind. forall f p t xs (h :: kind -> Type) (v :: kind).
   (Extensible f p t
   , ExtensibleConstr t (Field h) xs (k ':> v)
-  , Associate k v xs
+  , Lookup xs k v
   , Labelling k p
   , Wrapper h)
   => Optic' p f (t (Field h) xs) (Repr h v)
@@ -340,3 +309,27 @@ infix 1 @:>
 (@==) = (@=)
 {-# INLINE (@==) #-}
 infix 1 @==
+
+type AssocKey kv = KeyOf kv
+{-# DEPRECATED AssocKey "Use KeyOf instead" #-}
+
+type AssocValue kv = TargetOf kv
+{-# DEPRECATED AssocValue "Use TargetOf instead" #-}
+
+type ValueIs = TargetIs
+{-# DEPRECATED ValueIs "Use TargetIs instead" #-}
+
+type KeyValue = KeyTargetAre
+{-# DEPRECATED KeyValue "Use KeyTargetAre instead" #-}
+
+proxyAssocKey :: proxy kv -> Proxy (KeyOf kv)
+proxyAssocKey = proxyKeyOf
+{-# INLINE proxyAssocKey #-}
+
+proxyAssocValue :: proxy kv -> Proxy (TargetOf kv)
+proxyAssocValue = proxyTargetOf
+{-# INLINE proxyAssocValue #-}
+
+stringAssocKey :: (IsString a, KnownSymbol (KeyOf kv)) => proxy kv -> a
+stringAssocKey = stringKeyOf
+{-# INLINE stringAssocKey #-}

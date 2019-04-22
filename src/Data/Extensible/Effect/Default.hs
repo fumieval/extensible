@@ -30,7 +30,6 @@ module Data.Extensible.Effect.Default (
 ) where
 import Control.Applicative
 import Data.Extensible.Effect
-import Data.Extensible.Internal
 import Control.Monad.Except
 import Control.Monad.Catch
 import Control.Monad.Reader.Class
@@ -40,19 +39,21 @@ import Control.Monad.State.Strict
 import Control.Monad.Trans.Resource
 #endif
 import Control.Monad.Writer.Class
+import Data.Type.Equality
+import Type.Membership
 
-instance (MonadIO m, Associate "IO" m xs) => MonadIO (Eff xs) where
+instance (MonadIO m, Lookup xs "IO" m) => MonadIO (Eff xs) where
   liftIO = liftEff (Proxy :: Proxy "IO") . liftIO
 
 #if MIN_VERSION_resourcet(1,2,0)
-instance (MonadResource m, Associate "IO" m xs) => MonadResource (Eff xs) where
+instance (MonadResource m, Lookup xs "IO" m) => MonadResource (Eff xs) where
   liftResourceT = liftEff (Proxy :: Proxy "IO") . liftResourceT
 #endif
 
-instance (MonadThrow m, Associate "IO" m xs) => MonadThrow (Eff xs) where
+instance (MonadThrow m, Lookup xs "IO" m) => MonadThrow (Eff xs) where
   throwM = liftEff (Proxy :: Proxy "IO") . throwM
 
-instance (MonadCatch m, Associate "IO" m xs) => MonadCatch (Eff xs) where
+instance (MonadCatch m, Lookup xs "IO" m) => MonadCatch (Eff xs) where
   catch m0 h = go m0 where
     go m = case debone m of
       Return a -> return a
@@ -63,7 +64,7 @@ instance (MonadCatch m, Associate "IO" m xs) => MonadCatch (Eff xs) where
 pReader :: Proxy "Reader"
 pReader = Proxy
 
-instance Associate "Reader" ((:~:) r) xs => MonadReader r (Eff xs) where
+instance Lookup xs "Reader" ((:~:) r) => MonadReader r (Eff xs) where
   ask = askEff pReader
   local = localEff pReader
   reader = asksEff pReader
@@ -71,7 +72,7 @@ instance Associate "Reader" ((:~:) r) xs => MonadReader r (Eff xs) where
 pState :: Proxy "State"
 pState = Proxy
 
-instance Associate "State" (State s) xs => MonadState s (Eff xs) where
+instance Lookup xs "State" (State s) => MonadState s (Eff xs) where
   get = getEff pState
   put = putEff pState
   state = stateEff pState
@@ -79,7 +80,7 @@ instance Associate "State" (State s) xs => MonadState s (Eff xs) where
 pWriter :: Proxy "Writer"
 pWriter = Proxy
 
-instance (Monoid w, Associate "Writer" ((,) w) xs) => MonadWriter w (Eff xs) where
+instance (Monoid w, Lookup xs "Writer" ((,) w)) => MonadWriter w (Eff xs) where
   writer = writerEff pWriter
   tell = tellEff pWriter
   listen = listenEff pWriter
@@ -88,16 +89,16 @@ instance (Monoid w, Associate "Writer" ((,) w) xs) => MonadWriter w (Eff xs) whe
 pEither :: Proxy "Either"
 pEither = Proxy
 
-instance (Associate "Either" (Const e) xs) => MonadError e (Eff xs) where
+instance (Lookup xs "Either" (Const e)) => MonadError e (Eff xs) where
   throwError = throwEff pEither
   catchError = catchEff pEither
 
 -- | A bit dubious
-instance (Monoid e, Associate "Either" (Const e) xs) => Alternative (Eff xs) where
+instance (Monoid e, Lookup xs "Either" (Const e)) => Alternative (Eff xs) where
   empty = throwError mempty
   p <|> q = catchError p (const q)
 
-instance (Monoid e, Associate "Either" (Const e) xs) => MonadPlus (Eff xs) where
+instance (Monoid e, Lookup xs "Either" (Const e)) => MonadPlus (Eff xs) where
   mzero = empty
   mplus = (<|>)
 

@@ -44,7 +44,7 @@ instance (Monad m, Monoid a) => Monoid (TangleT h xs m a) where
   mappend = (<>)
 
 -- | Hitch an element associated to the 'FieldName' through a wrapper.
-lasso :: forall k v m h xs. (Monad m, Associate k v xs, Wrapper h)
+lasso :: forall k v m h xs. (Monad m, Lookup xs k v, Wrapper h)
   => FieldName k -> TangleT h xs m (Repr h (k ':> v))
 lasso _ = view _Wrapper <$> hitchAt (association :: Membership xs (k ':> v))
 {-# INLINE lasso #-}

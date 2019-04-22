@@ -30,7 +30,7 @@ instance k ~ l => IsLabel k (Proxy l) where
 訊 = itemAssoc
 
 instance (Extensible f p e
-  , Associate k v xs
+  , Lookup xs k v
   , Labelling k p
   , Wrapper h
   , ExtensibleConstr e (Field h) xs (k ':> v)

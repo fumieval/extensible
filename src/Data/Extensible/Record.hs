@@ -12,14 +12,14 @@
 module Data.Extensible.Record (IsRecord(..), toRecord, fromRecord, record, deriveIsRecord) where
 
 import Language.Haskell.TH
-import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
-import Data.Extensible.HList
 import Data.Extensible.Product
 import Data.Extensible.Field
 import Data.Functor.Identity
 import Data.Profunctor
 import GHC.TypeLits
+import Type.Membership
+import Type.Membership.HList
 
 -- | The class of types that can be converted to/from a 'Record'.
 class IsRecord a where

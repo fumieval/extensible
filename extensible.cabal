@@ -39,9 +39,7 @@ library
     Data.Extensible.Effect
     Data.Extensible.Effect.Default
     Data.Extensible.GetOpt
-    Data.Extensible.HList
     Data.Extensible.Inclusion
-    Data.Extensible.Internal
     Data.Extensible.Internal.Rig
     Data.Extensible.Label
     Data.Extensible.Match
@@ -77,6 +75,7 @@ library
     , exceptions
     , ghc-prim
     , hashable
+    , membership
     , monad-skeleton >= 0.1.2
     , mtl
     , prettyprinter

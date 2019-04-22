@@ -26,7 +26,6 @@ import Data.Extensible.Class
 import Data.Extensible.Field
 import Data.Extensible.Product
 import Data.Extensible.Sum
-import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig
 import Data.Extensible.Nullable
 import Data.Constraint
@@ -41,11 +40,13 @@ import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector as V
 import qualified Data.Text as T
+import Data.Type.Equality
 import qualified Language.Haskell.TH.Lift as TH
 import Language.Haskell.TH hiding (Type)
 import GHC.TypeLits
 import Test.QuickCheck.Arbitrary
 import Test.QuickCheck.Gen
+import Type.Membership
 
 -- | Reify a collection of dictionaries, as you wish.
 library :: forall c xs. Forall c xs => Comp Dict c :* xs
@@ -131,7 +132,7 @@ instance WrapForall U.Unbox h (x ': xs) => G.Vector U.Vector (h :* (x ': xs)) wh
   basicUnsafeThaw (V_Product v) = fmap MV_Product
     $ hgenerateFor (Proxy :: Proxy (Instance1 U.Unbox h))
     $ \m -> Comp <$> G.basicUnsafeThaw (hlookupC m v)
-  basicLength (V_Product v) = G.basicLength $ getComp $ hindex v here
+  basicLength (V_Product v) = G.basicLength $ getComp $ hindex v leadership
   basicUnsafeSlice i n (V_Product v) = V_Product
     $ htabulateFor (Proxy :: Proxy (Instance1 U.Unbox h))
     $ \m -> Comp $ G.basicUnsafeSlice i n (hlookupC m v)
@@ -141,7 +142,7 @@ instance WrapForall U.Unbox h (x ': xs) => G.Vector U.Vector (h :* (x ': xs)) wh
     = henumerateFor (Proxy :: Proxy (Instance1 U.Unbox h)) (Proxy :: Proxy (x ': xs)) ((>>) . \i -> G.basicUnsafeCopy (hlookupC i v) (hlookupC i w)) (return ())
 
 instance WrapForall U.Unbox h (x ': xs) => M.MVector U.MVector (h :* (x ': xs)) where
-  basicLength (MV_Product v) = M.basicLength $ getComp $ hindex v here
+  basicLength (MV_Product v) = M.basicLength $ getComp $ hindex v leadership
   basicUnsafeSlice i n (MV_Product v) = MV_Product
     $ htabulateFor (Proxy :: Proxy (Instance1 U.Unbox h))
     $ \m -> Comp $ M.basicUnsafeSlice i n (hlookupC m v)
@@ -189,8 +190,8 @@ instance WrapForall Csv.FromField h xs => Csv.FromRecord (h :* xs) where
   parseRecord rec = hgenerateFor (Proxy :: Proxy (Instance1 Csv.FromField h))
     $ \i -> G.indexM rec (getMemberId i) >>= Csv.parseField
 
-instance Forall (KeyValue KnownSymbol (Instance1 Csv.FromField h)) xs => Csv.FromNamedRecord (Field h :* xs) where
-  parseNamedRecord rec = hgenerateFor (Proxy :: Proxy (KeyValue KnownSymbol (Instance1 Csv.FromField h)))
+instance Forall (KeyTargetAre KnownSymbol (Instance1 Csv.FromField h)) xs => Csv.FromNamedRecord (Field h :* xs) where
+  parseNamedRecord rec = hgenerateFor (Proxy :: Proxy (KeyTargetAre KnownSymbol (Instance1 Csv.FromField h)))
     $ \i -> rec Csv..: BC.pack (symbolVal (proxyAssocKey i)) >>= Csv.parseField
 
 instance WrapForall Csv.ToField h xs => Csv.ToRecord (h :* xs) where
@@ -198,33 +199,33 @@ instance WrapForall Csv.ToField h xs => Csv.ToRecord (h :* xs) where
     . hfoldrWithIndexFor (Proxy :: Proxy (Instance1 Csv.ToField h))
       (\_ v -> (:) $ Csv.toField v) []
 
-instance Forall (KeyValue KnownSymbol (Instance1 Csv.ToField h)) xs => Csv.ToNamedRecord (Field h :* xs) where
-  toNamedRecord = hfoldlWithIndexFor (Proxy :: Proxy (KeyValue KnownSymbol (Instance1 Csv.ToField h)))
+instance Forall (KeyTargetAre KnownSymbol (Instance1 Csv.ToField h)) xs => Csv.ToNamedRecord (Field h :* xs) where
+  toNamedRecord = hfoldlWithIndexFor (Proxy :: Proxy (KeyTargetAre KnownSymbol (Instance1 Csv.ToField h)))
     (\k m v -> HM.insert (BC.pack (symbolVal (proxyAssocKey k))) (Csv.toField v) m)
     HM.empty
 
 -- | @'parseJSON' 'J.Null'@ is called for missing fields.
-instance Forall (KeyValue KnownSymbol (Instance1 J.FromJSON h)) xs => J.FromJSON (Field h :* xs) where
+instance Forall (KeyTargetAre KnownSymbol (Instance1 J.FromJSON h)) xs => J.FromJSON (Field h :* xs) where
   parseJSON = J.withObject "Object" $ \v -> hgenerateFor
-    (Proxy :: Proxy (KeyValue KnownSymbol (Instance1 J.FromJSON h)))
+    (Proxy :: Proxy (KeyTargetAre KnownSymbol (Instance1 J.FromJSON h)))
     $ \m -> let k = symbolVal (proxyAssocKey m)
       in fmap Field $ J.parseJSON $ maybe J.Null id $ HM.lookup (T.pack k) v
 
-instance Forall (KeyValue KnownSymbol (Instance1 J.ToJSON h)) xs => J.ToJSON (Field h :* xs) where
+instance Forall (KeyTargetAre KnownSymbol (Instance1 J.ToJSON h)) xs => J.ToJSON (Field h :* xs) where
   toJSON = J.Object . hfoldlWithIndexFor
-    (Proxy :: Proxy (KeyValue KnownSymbol (Instance1 J.ToJSON h)))
+    (Proxy :: Proxy (KeyTargetAre KnownSymbol (Instance1 J.ToJSON h)))
     (\k m v -> HM.insert (T.pack (symbolVal (proxyAssocKey k))) (J.toJSON v) m)
     HM.empty
 
-instance Forall (KeyValue KnownSymbol (Instance1 J.FromJSON h)) xs => J.FromJSON (Nullable (Field h) :* xs) where
+instance Forall (KeyTargetAre KnownSymbol (Instance1 J.FromJSON h)) xs => J.FromJSON (Nullable (Field h) :* xs) where
   parseJSON = J.withObject "Object" $ \v -> hgenerateFor
-    (Proxy :: Proxy (KeyValue KnownSymbol (Instance1 J.FromJSON h)))
+    (Proxy :: Proxy (KeyTargetAre KnownSymbol (Instance1 J.FromJSON h)))
     $ \m -> let k = symbolVal (proxyAssocKey m)
       in fmap Nullable $ traverse J.parseJSON $ HM.lookup (T.pack k) v
 
-instance Forall (KeyValue KnownSymbol (Instance1 J.ToJSON h)) xs => J.ToJSON (Nullable (Field h) :* xs) where
+instance Forall (KeyTargetAre KnownSymbol (Instance1 J.ToJSON h)) xs => J.ToJSON (Nullable (Field h) :* xs) where
   toJSON = J.Object . hfoldlWithIndexFor
-    (Proxy :: Proxy (KeyValue KnownSymbol (Instance1 J.ToJSON h)))
+    (Proxy :: Proxy (KeyTargetAre KnownSymbol (Instance1 J.ToJSON h)))
     (\k m (Nullable v) -> maybe id (HM.insert (T.pack $ symbolVal $ proxyAssocKey k) . J.toJSON) v m)
     HM.empty
 

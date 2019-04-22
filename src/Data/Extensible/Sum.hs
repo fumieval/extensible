@@ -23,10 +23,11 @@ module Data.Extensible.Sum (
   , embedAssoc
   ) where
 
-import Data.Extensible.Internal
-import Data.Typeable
 import Data.Extensible.Class
 import Data.Profunctor
+import Data.Proxy
+import Data.Type.Equality
+import Type.Membership
 
 -- | The extensible sum type
 --
@@ -34,7 +35,6 @@ import Data.Profunctor
 --
 data (h :: k -> *) :| (s :: [k]) where
   EmbedAt :: !(Membership xs x) -> h x -> h :| xs
-deriving instance Typeable (:|)
 
 instance Enum (Proxy :| xs) where
   fromEnum (EmbedAt m _) = fromIntegral $ getMemberId m
@@ -71,7 +71,7 @@ strikeAt q (EmbedAt p h) = case compareMembership p q of
     -> (h :| xs -> r)
     -> h :| (x ': xs)
     -> r
-(<:|) r c = \(EmbedAt i h) -> leadership i
+(<:|) r c = \(EmbedAt i h) -> testMembership i
   (\Refl -> r h)
   (\j -> c (EmbedAt j h))
 infixr 1 <:|
@@ -82,7 +82,7 @@ exhaust :: h :| '[] -> r
 exhaust _ = error "Impossible"
 
 -- | Embed a value, but focuses on its key.
-embedAssoc :: Associate k a xs => h (k ':> a) -> h :| xs
+embedAssoc :: Lookup xs k a => h (k ':> a) -> h :| xs
 embedAssoc = EmbedAt association
 {-# INLINE embedAssoc #-}
 

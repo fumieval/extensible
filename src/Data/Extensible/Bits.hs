@@ -27,7 +27,6 @@ import Data.Bits
 import Data.Extensible.Class
 import Data.Extensible.Dictionary
 import Data.Extensible.Product
-import Data.Extensible.Internal (getMemberId)
 import Data.Extensible.Field
 import Data.Functor.Identity
 import Data.Hashable
@@ -135,8 +134,8 @@ instance FromBits r a => FromBits r (Const a b) where
   fromBits = Const . fromBits
   toBits = toBits . getConst
 
-instance (Bits r, FromBits r (h (AssocValue x))) => FromBits r (Field h x) where
-  type BitWidth (Field h x) = BitWidth (h (AssocValue x))
+instance (Bits r, FromBits r (h (TargetOf x))) => FromBits r (Field h x) where
+  type BitWidth (Field h x) = BitWidth (h (TargetOf x))
   fromBits = Field . fromBits
   toBits = toBits . getField
 

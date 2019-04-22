@@ -25,7 +25,6 @@ module Data.Extensible.Class (
   , leadership
   -- * Member
   , Member(..)
-  , remember
   , type (∈)
   , FindType
   -- * Generation
@@ -35,18 +34,18 @@ module Data.Extensible.Class (
   -- * Association
   , Assoc(..)
   , type (>:)
-  , Associate(..)
-  , FindAssoc
-  -- * Sugar
-  , Elaborate
-  , Elaborated(..)
+  , Lookup(..)
+  , Associate
+  -- * Misc
+  , Head
+  , Last
   ) where
 import Data.Constraint
-import Data.Extensible.HList
-import Data.Extensible.Internal
 import Data.Extensible.Internal.Rig (Optic')
 import Data.Extensible.Wrapper
 import Data.Profunctor
+import Type.Membership
+import Type.Membership.Internal
 
 -- | This class allows us to use 'pieceAt' for both sums and products.
 class (Functor f, Profunctor p) => Extensible f p (t :: (k -> *) -> [k] -> *) where
@@ -60,7 +59,7 @@ piece = pieceAt membership
 {-# INLINE piece #-}
 
 -- | Like 'piece', but reckon membership from its key.
-pieceAssoc :: (Associate k v xs, Extensible f p t, ExtensibleConstr t h xs (k ':> v)) => Optic' p f (t h xs) (h (k ':> v))
+pieceAssoc :: (Lookup xs k v, Extensible f p t, ExtensibleConstr t h xs (k ':> v)) => Optic' p f (t h xs) (h (k ':> v))
 pieceAssoc = pieceAt association
 {-# INLINE pieceAssoc #-}
 
@@ -75,7 +74,7 @@ item p = piece . _WrapperAs p
 {-# INLINE item #-}
 
 -- | Access an element specified by the key type through a wrapper.
-itemAssoc :: (Wrapper h, Extensible f p t, Associate k v xs, ExtensibleConstr t h xs (k ':> v))
+itemAssoc :: (Wrapper h, Extensible f p t, Lookup xs k v, ExtensibleConstr t h xs (k ':> v))
   => proxy k -> Optic' p f (t h xs) (Repr h (k ':> v))
 itemAssoc p = pieceAssoc . _WrapperAs (proxyKey p)
 {-# INLINE itemAssoc #-}
@@ -84,52 +83,14 @@ proxyKey :: proxy k -> Proxy (k ':> v)
 proxyKey _ = Proxy
 {-# INLINE proxyKey #-}
 
--- | Every type-level list is an instance of 'Generate'.
-class Generate (xs :: [k]) where
-  -- | Enumerate all possible 'Membership's of @xs@.
-  henumerate :: (forall x. Membership xs x -> r -> r) -> r -> r
+-- | First element
+type family Head (xs :: [k]) :: k where
+  Head (x ': xs) = x
 
-  -- | Count the number of memberships.
-  hcount :: proxy xs -> Int
+-- | Last element
+type family Last (x :: [k]) :: k where
+  Last '[x] = x
+  Last (x ': xs) = Last xs
 
-  -- | Enumerate 'Membership's and construct an 'HList'.
-  hgenerateList :: Applicative f
-    => (forall x. Membership xs x -> f (h x)) -> f (HList h xs)
-
-instance Generate '[] where
-  henumerate _ r = r
-
-  hcount _ = 0
-
-  hgenerateList _ = pure HNil
-
-instance Generate xs => Generate (x ': xs) where
-  henumerate f r = f here $ henumerate (f . navNext) r
-
-  hcount _ = 1 + hcount (Proxy :: Proxy xs)
-
-  -- | Enumerate 'Membership's and construct an 'HList'.
-  hgenerateList f = HCons <$> f here <*> hgenerateList (f . navNext)
-
--- | Every element in @xs@ satisfies @c@
-class (ForallF c xs, Generate xs) => Forall (c :: k -> Constraint) (xs :: [k]) where
-  -- | Enumerate all possible 'Membership's of @xs@ with an additional context.
-  henumerateFor :: proxy c -> proxy' xs -> (forall x. c x => Membership xs x -> r -> r) -> r -> r
-
-  hgenerateListFor :: Applicative f
-    => proxy c -> (forall x. c x => Membership xs x -> f (h x)) -> f (HList h xs)
-
-instance Forall c '[] where
-  henumerateFor _ _ _ r = r
-
-  hgenerateListFor _ _ = pure HNil
-
-instance (c x, Forall c xs) => Forall c (x ': xs) where
-  henumerateFor p _ f r = f here $ henumerateFor p (Proxy :: Proxy xs) (f . navNext) r
-
-  hgenerateListFor p f = HCons <$> f here <*> hgenerateListFor p (f . navNext)
-
--- | HACK: Without this, the constraints are not propagated well.
-type family ForallF (c :: k -> Constraint) (xs :: [k]) :: Constraint where
-  ForallF c '[] = ()
-  ForallF c (x ': xs) = (c x, Forall c xs)
+type Associate k v xs = Lookup xs k v
+{-# DEPRECATED Associate "Use Lookup instead" #-}
