@@ -48,6 +48,7 @@ library
     Data.Extensible.Nullable
     Data.Extensible.Plain
     Data.Extensible.Product
+    Data.Extensible.Promote
     Data.Extensible.Record
     Data.Extensible.Struct
     Data.Extensible.Sum
