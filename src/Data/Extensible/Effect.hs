@@ -73,6 +73,7 @@ module Data.Extensible.Effect (
   , throwEff
   , catchEff
   , runEitherEff
+  , mapLeftEff
   -- ** Iter
   , Identity
   , tickEff
@@ -85,6 +86,7 @@ module Data.Extensible.Effect (
   ) where
 
 import Control.Applicative
+import Data.Bifunctor (first)
 import Control.Monad.Skeleton
 import Control.Monad.Trans.State.Strict
 import Control.Monad.Trans.Cont (ContT(..))
@@ -436,6 +438,15 @@ runEitherEff = peelEff0 (return . Right) $ \(Const e) _ -> return $ Left e
 tickEff :: Lookup xs k Identity => Proxy k -> Eff xs ()
 tickEff k = liftEff k $ Identity ()
 {-# INLINE tickEff #-}
+
+mapHeadEff :: (forall x. s x -> t x) -> Eff ((k >: s) ': xs) a -> Eff ((k' >: t) ': xs) a
+mapHeadEff f = hoistSkeleton $ \(Instruction i t) -> leadership i 
+  (\Refl -> Instruction here $ f t) 
+  (\j -> Instruction (navNext j) t)
+
+-- | Take a function and applies it to an Either effect iff the effect takes the form Left _.
+mapLeftEff :: (e -> e') -> Eff ((k >: EitherEff e) ': xs) a -> Eff ((k >: EitherEff e') ': xs) a
+mapLeftEff f = mapHeadEff (first f)
 
 -- | Run a computation until the first call of 'tickEff'.
 runIterEff :: Eff (k >: Identity ': xs) a
