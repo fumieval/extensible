@@ -27,11 +27,14 @@ module Data.Extensible.Effect.Default (
   , runMaybeDef
   , EitherDef
   , runEitherDef
+  , ContDef
+  , runContDef
 ) where
 import Control.Applicative
 import Data.Extensible.Effect
 import Control.Monad.Except
 import Control.Monad.Catch
+import Control.Monad.Cont
 import Control.Monad.Reader.Class
 import Control.Monad.Skeleton
 import Control.Monad.State.Strict
@@ -102,6 +105,12 @@ instance (Monoid e, Lookup xs "Either" (Const e)) => MonadPlus (Eff xs) where
   mzero = empty
   mplus = (<|>)
 
+pCont :: Proxy "Cont"
+pCont = Proxy
+
+instance MonadCont (Eff ((ContDef r (Eff xs)) ': xs)) where
+  callCC = callCCEff pCont
+
 -- | mtl-compatible reader
 type ReaderDef r = "Reader" >: ReaderEff r
 
@@ -156,3 +165,11 @@ type EitherDef e = "Either" >: EitherEff e
 runEitherDef :: Eff (EitherDef e ': xs) a -> Eff xs (Either e a)
 runEitherDef = runEitherEff
 {-# INLINE runEitherDef #-}
+
+-- | mtl-compatible continuation
+type ContDef r m = "Cont" >: ContT r m
+
+-- | 'runContEff' specialised for the 'MonadCont' instance.
+runContDef :: Eff (ContDef r (Eff xs) ': xs) a -> (a -> Eff xs r) -> Eff xs r
+runContDef = runContEff
+{-# INLINE runContDef #-}
