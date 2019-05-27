@@ -81,6 +81,7 @@ module Data.Extensible.Effect (
   , ContT
   , contEff
   , runContEff
+  , callCCEff
   ) where
 
 import Control.Applicative
@@ -459,3 +460,10 @@ runContEff m cont = case debone m of
   Instruction i t :>>= k -> testMembership i
     (\Refl -> runContT t (flip runContEff cont . k))
     $ \j -> boned $ Instruction j t :>>= flip runContEff cont . k
+
+-- | Call a function with the current continuation as its argument
+callCCEff :: Proxy k -> ((a -> Eff ((k >: ContT r (Eff xs)) : xs) b) -> Eff ((k >: ContT r (Eff xs)) : xs) a) -> Eff ((k >: ContT r (Eff xs)) : xs) a
+callCCEff k f = contHead k . ContT $ \c -> runContEff (f (\x -> contHead k . ContT $ \_ -> c x)) c
+  where
+    contHead :: Proxy k -> ContT r (Eff xs) a -> Eff ((k >: ContT r (Eff xs)) ': xs) a
+    contHead _ c = boned $ Instruction here c :>>= return
