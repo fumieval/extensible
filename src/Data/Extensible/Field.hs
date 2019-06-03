@@ -325,11 +325,14 @@ type KeyValue = KeyTargetAre
 proxyAssocKey :: proxy kv -> Proxy (KeyOf kv)
 proxyAssocKey = proxyKeyOf
 {-# INLINE proxyAssocKey #-}
+{-# DEPRECATED proxyAssocKey "Use proxyKeyOf instead" #-}
 
 proxyAssocValue :: proxy kv -> Proxy (TargetOf kv)
 proxyAssocValue = proxyTargetOf
 {-# INLINE proxyAssocValue #-}
+{-# DEPRECATED proxyAssocValue "Use proxyTargetOf instead" #-}
 
 stringAssocKey :: (IsString a, KnownSymbol (KeyOf kv)) => proxy kv -> a
 stringAssocKey = stringKeyOf
 {-# INLINE stringAssocKey #-}
+{-# DEPRECATED stringAssocKey "Use stringKeyOf instead" #-}
