@@ -37,6 +37,7 @@ module Data.Extensible.Field (
   -- * Key / value
   , KeyOf
   , proxyKeyOf
+  , stringKeyOf
   , TargetOf
   , proxyTargetOf
   , KeyIs
