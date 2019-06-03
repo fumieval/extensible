@@ -1,3 +1,12 @@
+0.5.1
+-------------------------------------------------
+* Split `Data.Extensible.HList` and `Data.Extensible.Internal` to the
+  `membership` package
+* `AssocKey`, `AssocValue`, `ValueIs`, `KeyValue` and their related combinators
+  are deprecated. Use ones from `membership`
+* `IsRecord` now has a generic default implementation
+* Deprecated `deriveIsRecord`
+
 0.5
 -------------------------------------------------
 * GHC older than 8.4 is no longer supported
