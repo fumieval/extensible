@@ -1,5 +1,8 @@
 {-# LANGUAGE UndecidableInstances, ScopedTypeVariables, MultiParamTypeClasses, TypeFamilies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving, DeriveGeneric #-}
+#if __GLASGOW_HASKELL__ < 806
+{-# LANGUAGE TypeInType #-}
+#endif
 -----------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Bits
@@ -31,6 +34,7 @@ import Data.Extensible.Field
 import Data.Functor.Identity
 import Data.Hashable
 import Data.Ix
+import Data.Kind (Type)
 import Data.Profunctor.Rep
 import Data.Profunctor.Sieve
 import Data.Proxy
@@ -41,7 +45,7 @@ import GHC.Generics (Generic)
 import GHC.TypeLits
 
 -- | Bit-vector product. It has similar interface as @(:*)@ but fields are packed into @r@.
-newtype BitProd r (h :: k -> *) (xs :: [k]) = BitProd { unBitProd :: r }
+newtype BitProd r (h :: k -> Type) (xs :: [k]) = BitProd { unBitProd :: r }
   deriving (Eq, Ord, Enum, Bounded, Ix, Generic, Hashable, Storable)
 
 instance (Forall (Instance1 Show h) xs, BitFields r h xs) => Show (BitProd r h xs) where
@@ -183,7 +187,7 @@ bupdate i (BitProd r) a = BitProd $ r .&. mask
 {-# INLINE bupdate #-}
 
 bitOffsetAt :: forall k r h xs. Forall (Instance1 (FromBits r) h) xs
-  => Proxy (r :: *) -> Proxy (h :: k -> *) -> Proxy (xs :: [k]) -> Int -> Int
+  => Proxy (r :: Type) -> Proxy (h :: k -> Type) -> Proxy (xs :: [k]) -> Int -> Int
 bitOffsetAt _ ph _ = henumerateFor
   (Proxy :: Proxy (Instance1 (FromBits r) h))
   (Proxy :: Proxy xs)
