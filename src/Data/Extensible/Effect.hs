@@ -440,9 +440,9 @@ tickEff k = liftEff k $ Identity ()
 {-# INLINE tickEff #-}
 
 mapHeadEff :: (forall x. s x -> t x) -> Eff ((k >: s) ': xs) a -> Eff ((k' >: t) ': xs) a
-mapHeadEff f = hoistSkeleton $ \(Instruction i t) -> leadership i 
-  (\Refl -> Instruction here $ f t) 
-  (\j -> Instruction (navNext j) t)
+mapHeadEff f = hoistSkeleton $ \(Instruction i t) -> testMembership i 
+  (\Refl -> Instruction leadership $ f t) 
+  (\j -> Instruction (nextMembership j) t)
 
 -- | Take a function and applies it to an Either effect iff the effect takes the form Left _.
 mapLeftEff :: (e -> e') -> Eff ((k >: EitherEff e) ': xs) a -> Eff ((k >: EitherEff e') ': xs) a
@@ -477,4 +477,4 @@ callCCEff :: Proxy k -> ((a -> Eff ((k >: ContT r (Eff xs)) : xs) b) -> Eff ((k 
 callCCEff k f = contHead k . ContT $ \c -> runContEff (f (\x -> contHead k . ContT $ \_ -> c x)) c
   where
     contHead :: Proxy k -> ContT r (Eff xs) a -> Eff ((k >: ContT r (Eff xs)) ': xs) a
-    contHead _ c = boned $ Instruction here c :>>= return
+    contHead _ c = boned $ Instruction leadership c :>>= return
