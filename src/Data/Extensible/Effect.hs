@@ -73,6 +73,7 @@ module Data.Extensible.Effect (
   , throwEff
   , catchEff
   , runEitherEff
+  , mapLeftEff
   -- ** Iter
   , Identity
   , tickEff
@@ -81,9 +82,11 @@ module Data.Extensible.Effect (
   , ContT
   , contEff
   , runContEff
+  , callCCEff
   ) where
 
 import Control.Applicative
+import Data.Bifunctor (first)
 import Control.Monad.Skeleton
 import Control.Monad.Trans.State.Strict
 import Control.Monad.Trans.Cont (ContT(..))
@@ -436,6 +439,15 @@ tickEff :: Lookup xs k Identity => Proxy k -> Eff xs ()
 tickEff k = liftEff k $ Identity ()
 {-# INLINE tickEff #-}
 
+mapHeadEff :: (forall x. s x -> t x) -> Eff ((k >: s) ': xs) a -> Eff ((k' >: t) ': xs) a
+mapHeadEff f = hoistSkeleton $ \(Instruction i t) -> testMembership i 
+  (\Refl -> Instruction leadership $ f t) 
+  (\j -> Instruction (nextMembership j) t)
+
+-- | Take a function and applies it to an Either effect iff the effect takes the form Left _.
+mapLeftEff :: (e -> e') -> Eff ((k >: EitherEff e) ': xs) a -> Eff ((k >: EitherEff e') ': xs) a
+mapLeftEff f = mapHeadEff (first f)
+
 -- | Run a computation until the first call of 'tickEff'.
 runIterEff :: Eff (k >: Identity ': xs) a
   -> Eff xs (Either a (Eff (k >: Identity ': xs) a))
@@ -459,3 +471,10 @@ runContEff m cont = case debone m of
   Instruction i t :>>= k -> testMembership i
     (\Refl -> runContT t (flip runContEff cont . k))
     $ \j -> boned $ Instruction j t :>>= flip runContEff cont . k
+
+-- | Call a function with the current continuation as its argument
+callCCEff :: Proxy k -> ((a -> Eff ((k >: ContT r (Eff xs)) : xs) b) -> Eff ((k >: ContT r (Eff xs)) : xs) a) -> Eff ((k >: ContT r (Eff xs)) : xs) a
+callCCEff k f = contHead k . ContT $ \c -> runContEff (f (\x -> contHead k . ContT $ \_ -> c x)) c
+  where
+    contHead :: Proxy k -> ContT r (Eff xs) a -> Eff ((k >: ContT r (Eff xs)) ': xs) a
+    contHead _ c = boned $ Instruction leadership c :>>= return
