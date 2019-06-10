@@ -33,9 +33,9 @@ instance (Extensible f p e
   , Lookup xs k v
   , Labelling k p
   , Wrapper h
-  , ExtensibleConstr e (Field h) xs (k ':> v)
+  , ExtensibleConstr e xs (Field h) (k ':> v)
   , rep ~ Repr h v
-  , s ~ e (Field h) xs
+  , s ~ e xs (Field h)
   , s ~ t
   , rep ~ rep'
   )

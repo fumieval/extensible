@@ -26,7 +26,7 @@ import Data.Profunctor.Unsafe
 import GHC.Generics (Generic)
 
 -- | Retrieve the contents so that they matches and pass both to the given function.
-matchWith :: (forall x. f x -> g x -> r) -> f :* xs -> g :| xs -> r
+matchWith :: (forall x. f x -> g x -> r) -> xs :& f -> xs :/ g -> r
 matchWith f p = \(EmbedAt i h) -> views (pieceAt i) f p h
 {-# INLINE matchWith #-}
 
@@ -36,12 +36,12 @@ mapMatch f = Match #. (f.) .# runMatch
 {-# INLINE mapMatch #-}
 
 -- | /O(1)/ Perform pattern matching.
-match :: Match h a :* xs -> h :| xs -> a
+match :: xs :& Match h a -> xs :/ h -> a
 match = matchWith runMatch
 {-# INLINE match #-}
 
 -- | Flipped `match`
-caseOf :: h :| xs -> Match h a :* xs -> a
+caseOf :: xs :/ h -> xs :& Match h a -> a
 caseOf = flip match
 {-# INLINE caseOf #-}
 infix 0 `caseOf`

@@ -58,22 +58,22 @@ mapNullable f = Nullable #. fmap f .# getNullable
 {-# INLINE mapNullable #-}
 
 -- | The inverse of 'inclusion'.
-coinclusion :: (Include ys xs, Generate ys) => Nullable (Membership xs) :* ys
+coinclusion :: (Include ys xs, Generate ys) => ys :& Nullable (Membership xs)
 coinclusion = S.hfrozen $ do
   s <- S.newRepeat $ Nullable Nothing
   hfoldrWithIndex
     (\i m cont -> S.set s m (Nullable $ Just i) >> cont) (return s) inclusion
 
 -- | A product filled with @'Nullable' 'Nothing'@
-vacancy :: Generate xs => Nullable h :* xs
+vacancy :: Generate xs => xs :& Nullable h
 vacancy = hrepeat $ Nullable Nothing
 
 -- | Extend a product and fill missing fields by 'Null'.
-wrench :: (Generate ys, xs ⊆ ys) => h :* xs -> Nullable h :* ys
+wrench :: (Generate ys, xs ⊆ ys) => xs :& h -> ys :& Nullable h
 wrench xs = mapNullable (flip hlookup xs) `hmap` coinclusion
 {-# INLINE wrench #-}
 
 -- | Narrow the range of the sum, if possible.
-retrench :: (Generate ys, xs ⊆ ys) => h :| ys -> Nullable ((:|) h) xs
+retrench :: (Generate ys, xs ⊆ ys) => ys :/ h -> Nullable ((:/) xs) h
 retrench (EmbedAt i h) = views (pieceAt i) (mapNullable (`EmbedAt`h)) coinclusion
 {-# INLINE retrench #-}

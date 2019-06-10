@@ -28,10 +28,10 @@ import Data.Coerce
 import Data.Profunctor.Unsafe
 
 -- | Alias for plain products
-type AllOf xs = Identity :* xs
+type AllOf xs = xs :& Identity
 
 -- | Alias for plain sums
-type OneOf xs = Identity :| xs
+type OneOf xs = xs :/ Identity
 
 -- | /O(log n)/ Add a plain value to a product.
 (<%) :: x -> AllOf xs -> AllOf (x ': xs)
@@ -55,6 +55,6 @@ bury = embed .# Identity
 infixr 1 <%|
 
 -- | An accessor for newtype constructors.
-accessing :: (Coercible x a, x ∈ xs, Extensible f p t, ExtensibleConstr t Identity xs x) => (a -> x) -> Optic' p f (t Identity xs) a
+accessing :: (Coercible x a, x ∈ xs, Extensible f p t, ExtensibleConstr t xs Identity x) => (a -> x) -> Optic' p f (t xs Identity) a
 accessing c = piece . _Wrapper . dimap coerce (fmap c)
 {-# INLINE accessing #-}

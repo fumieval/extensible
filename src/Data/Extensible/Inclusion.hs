@@ -42,17 +42,17 @@ type xs ⊆ ys = Include ys xs
 type Include ys = Forall (Member ys)
 
 -- | Reify the inclusion of type level sets.
-inclusion :: forall xs ys. Include ys xs => Membership ys :* xs
+inclusion :: forall xs ys. Include ys xs => xs :& Membership ys
 inclusion = hrepeatFor (Proxy :: Proxy (Member ys)) membership
 {-# INLINABLE inclusion #-}
 
 -- | /O(n)/ Select some elements.
-shrink :: (xs ⊆ ys) => h :* ys -> h :* xs
+shrink :: (xs ⊆ ys) => ys :& h -> xs :& h
 shrink h = hmap (hindex h) inclusion
 {-# INLINE shrink #-}
 
 -- | /O(1)/ Embed to a larger union.
-spread :: (xs ⊆ ys) => h :| xs -> h :| ys
+spread :: (xs ⊆ ys) => xs :/ h -> ys :/ h
 spread (EmbedAt i h) = views (pieceAt i) EmbedAt inclusion h
 {-# INLINE spread #-}
 
@@ -72,16 +72,16 @@ instance (Associated' xs t, t ~ (k ':> v)) => Associated xs t where
 type IncludeAssoc ys = Forall (Associated ys)
 
 -- | Reify the inclusion of type level sets.
-inclusionAssoc :: forall xs ys. IncludeAssoc ys xs => Membership ys :* xs
+inclusionAssoc :: forall xs ys. IncludeAssoc ys xs => xs :& Membership ys
 inclusionAssoc = hrepeatFor (Proxy :: Proxy (Associated ys)) getAssociation
 {-# INLINABLE inclusionAssoc #-}
 
 -- | /O(n)/ Select some elements.
-shrinkAssoc :: (IncludeAssoc ys xs) => h :* ys -> h :* xs
+shrinkAssoc :: (IncludeAssoc ys xs) => ys :& h -> xs :& h
 shrinkAssoc h = hmap (hindex h) inclusionAssoc
 {-# INLINE shrinkAssoc #-}
 
 -- | /O(1)/ Embed to a larger union.
-spreadAssoc :: (IncludeAssoc ys xs) => h :| xs -> h :| ys
+spreadAssoc :: (IncludeAssoc ys xs) => xs :/ h -> ys :/ h
 spreadAssoc (EmbedAt i h) = views (pieceAt i) EmbedAt inclusionAssoc h
 {-# INLINE spreadAssoc #-}

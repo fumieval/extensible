@@ -13,7 +13,8 @@
 --
 ------------------------------------------------------------------------
 module Data.Extensible.Sum (
-   (:|)(..)
+  (:/)(..)
+  , (:|)
   , hoist
   , embed
   , strike
@@ -33,34 +34,37 @@ import Type.Membership
 --
 -- @(:|) :: (k -> *) -> [k] -> *@
 --
-data (h :: k -> *) :| (s :: [k]) where
-  EmbedAt :: !(Membership xs x) -> h x -> h :| xs
+data (xs :: [k]) :/ (h :: k -> *) where
+  EmbedAt :: !(Membership xs x) -> h x -> xs :/ h
 
-instance Enum (Proxy :| xs) where
+type h :| xs = xs :/ h
+{-# DEPRECATED (:|) "Use :/ instead" #-}
+
+instance Enum (xs :/ Proxy) where
   fromEnum (EmbedAt m _) = fromIntegral $ getMemberId m
   toEnum i = reifyMembership (fromIntegral i) $ \m -> EmbedAt m Proxy
 
-instance (Last xs ∈ xs) => Bounded (Proxy :| xs) where
+instance (Last xs ∈ xs) => Bounded (xs :/ Proxy) where
   minBound = reifyMembership 0 $ \m -> EmbedAt m Proxy
   maxBound = EmbedAt (membership :: Membership xs (Last xs)) Proxy
 
 -- | Change the wrapper.
-hoist :: (forall x. g x -> h x) -> g :| xs -> h :| xs
+hoist :: (forall x. g x -> h x) -> xs :/ g -> xs :/ h
 hoist f (EmbedAt p h) = EmbedAt p (f h)
 {-# INLINE hoist #-}
 
 -- | /O(1)/ lift a value.
-embed :: (x ∈ xs) => h x -> h :| xs
+embed :: (x ∈ xs) => h x -> xs :/ h
 embed = EmbedAt membership
 {-# INLINE embed #-}
 
 -- | Try to extract something you want.
-strike :: forall h x xs. (x ∈ xs) => h :| xs -> Maybe (h x)
+strike :: forall h x xs. (x ∈ xs) => xs :/ h -> Maybe (h x)
 strike = strikeAt membership
 {-# INLINE strike #-}
 
 -- | Try to extract something you want.
-strikeAt :: forall h x xs. Membership xs x -> h :| xs -> Maybe (h x)
+strikeAt :: forall h x xs. Membership xs x -> xs :/ h -> Maybe (h x)
 strikeAt q (EmbedAt p h) = case compareMembership p q of
   Right Refl -> Just h
   _ -> Nothing
@@ -68,8 +72,8 @@ strikeAt q (EmbedAt p h) = case compareMembership p q of
 
 -- | /O(1)/ Naive pattern match
 (<:|) :: (h x -> r)
-    -> (h :| xs -> r)
-    -> h :| (x ': xs)
+    -> (xs :/ h -> r)
+    -> (x ': xs) :/ h
     -> r
 (<:|) r c = \(EmbedAt i h) -> testMembership i
   (\Refl -> r h)
@@ -78,15 +82,15 @@ infixr 1 <:|
 {-# INLINE (<:|) #-}
 
 -- | There is no empty union.
-exhaust :: h :| '[] -> r
+exhaust :: '[] :/ h -> r
 exhaust _ = error "Impossible"
 
 -- | Embed a value, but focuses on its key.
-embedAssoc :: Lookup xs k a => h (k ':> a) -> h :| xs
+embedAssoc :: Lookup xs k a => h (k ':> a) -> xs :/ h
 embedAssoc = EmbedAt association
 {-# INLINE embedAssoc #-}
 
-instance (Applicative f, Choice p) => Extensible f p (:|) where
+instance (Applicative f, Choice p) => Extensible f p (:/) where
   pieceAt m = dimap (\t@(EmbedAt i h) -> case compareMembership i m of
     Right Refl -> Right h
     Left _ -> Left t) (either pure (fmap (EmbedAt m))) . right'

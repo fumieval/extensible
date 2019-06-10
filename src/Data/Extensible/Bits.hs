@@ -45,10 +45,10 @@ import GHC.Generics (Generic)
 import GHC.TypeLits
 
 -- | Bit-vector product. It has similar interface as @(:*)@ but fields are packed into @r@.
-newtype BitProd r (h :: k -> Type) (xs :: [k]) = BitProd { unBitProd :: r }
+newtype BitProd r (xs :: [k]) (h :: k -> Type) = BitProd { unBitProd :: r }
   deriving (Eq, Ord, Enum, Bounded, Ix, Generic, Hashable, Storable)
 
-instance (Forall (Instance1 Show h) xs, BitFields r h xs) => Show (BitProd r h xs) where
+instance (Forall (Instance1 Show h) xs, BitFields r xs h) => Show (BitProd r xs h) where
   showsPrec d x = showParen (d > 10)
     $ showString "toBitProd " . showsPrec 11 (fromBitProd x)
 
@@ -143,41 +143,41 @@ instance (Bits r, FromBits r (h (TargetOf x))) => FromBits r (Field h x) where
   fromBits = Field . fromBits
   toBits = toBits . getField
 
-instance (Bits r, KnownNat (TotalBits h xs)) => FromBits r (BitProd r h xs) where
-  type BitWidth (BitProd r h xs) = TotalBits h xs
+instance (Bits r, KnownNat (TotalBits h xs)) => FromBits r (BitProd r xs h) where
+  type BitWidth (BitProd r xs h) = TotalBits h xs
   fromBits = BitProd
   toBits = unBitProd
 
 -- | Fields are instances of 'FromBits' and fit in the representation.
-type BitFields r h xs = (FromBits r r
+type BitFields r xs h = (FromBits r r
   , TotalBits h xs <= BitWidth r
   , Forall (Instance1 (FromBits r) h) xs)
 
 -- | Convert a normal extensible record into a bit record.
-toBitProd :: forall r h xs. BitFields r h xs => h :* xs -> BitProd r h xs
+toBitProd :: forall r xs h. BitFields r xs h => xs :& h -> BitProd r xs h
 toBitProd p = hfoldrWithIndexFor (Proxy :: Proxy (Instance1 (FromBits r) h))
   (\i v f r -> f $! bupdate i r v) id p (BitProd zeroBits)
 {-# INLINE toBitProd #-}
 
 -- | Convert a normal extensible record into a bit record.
-fromBitProd :: forall r h xs. BitFields r h xs => BitProd r h xs -> h :* xs
+fromBitProd :: forall r xs h. BitFields r xs h => BitProd r xs h -> xs :& h
 fromBitProd p = htabulateFor (Proxy :: Proxy (Instance1 (FromBits r) h))
   $ flip blookup p
 {-# INLINE fromBitProd #-}
 
 -- | 'hlookup' for 'BitProd'
-blookup :: forall x r h xs.
-  (BitFields r h xs, FromBits r (h x))
-  => Membership xs x -> BitProd r h xs -> h x
+blookup :: forall x r xs h.
+  (BitFields r xs h, FromBits r (h x))
+  => Membership xs x -> BitProd r xs h -> h x
 blookup i (BitProd r) = fromBits $ unsafeShiftR r
   $ bitOffsetAt (Proxy :: Proxy r) (Proxy :: Proxy h) (Proxy :: Proxy xs)
   $ getMemberId i
 {-# INLINE blookup #-}
 
 -- | Update a field of a 'BitProd'.
-bupdate :: forall x r h xs.
-  (BitFields r h xs, FromBits r (h x))
-  => Membership xs x -> BitProd r h xs -> h x -> BitProd r h xs
+bupdate :: forall x r xs h.
+  (BitFields r xs h, FromBits r (h x))
+  => Membership xs x -> BitProd r xs h -> h x -> BitProd r xs h
 bupdate i (BitProd r) a = BitProd $ r .&. mask
   .|. unsafeShiftL (toBits a) offset
   where
@@ -201,13 +201,13 @@ proxyBitWidth :: Proxy h -> proxy x -> Proxy (BitWidth (h x))
 proxyBitWidth _ _ = Proxy
 
 -- | Bit-packed record
-type BitRecordOf r h = BitProd r (Field h)
+type BitRecordOf r h xs = BitProd r xs (Field h)
 
 -- | Bit-packed record
-type BitRecord r = BitRecordOf r Identity
+type BitRecord r xs = BitRecordOf r Identity xs
 
 instance (Corepresentable p, Comonad (Corep p), Functor f) => Extensible f p (BitProd r) where
-  type ExtensibleConstr (BitProd r) h xs x
-    = (BitFields r h xs, FromBits r (h x))
+  type ExtensibleConstr (BitProd r) xs h x
+    = (BitFields r xs h, FromBits r (h x))
   pieceAt i pafb = cotabulate $ \ws -> bupdate i (extract ws) <$> cosieve pafb (blookup i <$> ws)
   {-# INLINE pieceAt #-}

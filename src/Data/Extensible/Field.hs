@@ -200,19 +200,19 @@ instance (KnownSymbol k, Pretty (h v)) => Pretty (Field h (k ':> v)) where
 --
 -- @RecordOf :: (v -> *) -> [Assoc k v] -> *@
 --
-type RecordOf h = (:*) (Field h)
+type RecordOf h xs = xs :& Field h
 
 -- | The dual of 'RecordOf'
 --
 -- @VariantOf :: (v -> *) -> [Assoc k v] -> *@
 --
-type VariantOf h = (:|) (Field h)
+type VariantOf h xs = xs :/ Field h
 
 -- | Simple record
-type Record = RecordOf Identity
+type Record xs = RecordOf Identity xs
 
 -- | Simple variant
-type Variant = VariantOf Identity
+type Variant xs = VariantOf Identity xs
 
 -- | An empty 'Record'.
 emptyRecord :: Record '[]
@@ -246,21 +246,21 @@ matchField = matchWithField runMatch
 --
 type FieldOptic k = forall kind. forall f p t xs (h :: kind -> Type) (v :: kind).
   (Extensible f p t
-  , ExtensibleConstr t (Field h) xs (k ':> v)
+  , ExtensibleConstr t xs (Field h) (k ':> v)
   , Lookup xs k v
   , Labelling k p
   , Wrapper h)
-  => Optic' p f (t (Field h) xs) (Repr h v)
+  => Optic' p f (t xs (Field h)) (Repr h v)
 
 -- | The trivial inextensible data type
-data Inextensible (h :: k -> Type) (xs :: [k])
+data Inextensible (xs :: [k]) (h :: k -> Type)
 
 instance (Functor f, Profunctor p) => Extensible f p Inextensible where
   pieceAt _ _ = error "Impossible"
 
 -- | When you see this type as an argument, it expects a 'FieldLens'.
 -- This type is used to resolve the name of the field internally.
-type FieldName k = Optic' (LabelPhantom k) Proxy (Inextensible (Field Proxy) '[k ':> ()]) ()
+type FieldName k = Optic' (LabelPhantom k) Proxy (Inextensible '[k ':> ()] (Field Proxy)) ()
 
 -- | Signifies a field name internally
 type family Labelling s p :: Constraint where

@@ -32,6 +32,7 @@ module Data.Extensible.Struct (
   , atomicModify_
   , atomicModify'_
   -- * Immutable product
+  , (:&)
   , (:*)
   , unsafeFreeze
   , newFrom
@@ -200,23 +201,26 @@ newFromHList l = do
 
 -- | The type of extensible products.
 --
--- @(:*) :: (k -> *) -> [k] -> *@
+-- @(:&) :: [k] -> (k -> *) -> *@
 --
-data (h :: k -> *) :* (s :: [k]) = HProduct (SmallArray# Any)
+data (s :: [k]) :& (h :: k -> *) = HProduct (SmallArray# Any)
+
+type h :* xs = xs :& h
+{-# DEPRECATED (:*) "Use :& instead" #-}
 
 -- | Turn 'Struct' into an immutable product. The original 'Struct' may not be used.
-unsafeFreeze :: PrimMonad m => Struct (PrimState m) h xs -> m (h :* xs)
+unsafeFreeze :: PrimMonad m => Struct (PrimState m) h xs -> m (xs :& h)
 unsafeFreeze (Struct m) = primitive $ \s -> case unsafeFreezeSmallArray# m s of
   (# s', a #) -> (# s', HProduct a #)
 {-# INLINE unsafeFreeze #-}
 
 -- | Create a new 'Struct' from a product.
-thaw :: PrimMonad m => h :* xs -> m (Struct (PrimState m) h xs)
+thaw :: PrimMonad m => xs :& h -> m (Struct (PrimState m) h xs)
 thaw (HProduct ar) = primitive $ \s -> case thawSmallArray# ar 0# (sizeofSmallArray# ar) s of
   (# s', m #) -> (# s', Struct m #)
 
 -- | The size of a product.
-hlength :: h :* xs -> Int
+hlength :: xs :& h -> Int
 hlength (HProduct ar) = I# (sizeofSmallArray# ar)
 {-# INLINE hlength #-}
 
@@ -228,7 +232,7 @@ type family (++) (xs :: [k]) (ys :: [k]) :: [k] where
 infixr 5 ++
 
 -- | Combine products.
-happend :: (h :* xs) -> (h :* ys) -> (h :* (xs ++ ys))
+happend :: xs :& h -> ys :& h -> (xs ++ ys) :& h
 happend (HProduct lhs) (HProduct rhs) = runST $ primitive $ \s0 ->
   let lhsSz = sizeofSmallArray# lhs
       rhsSz = sizeofSmallArray# rhs
@@ -244,13 +248,13 @@ unsafeMembership :: Int -> Membership xs x
 unsafeMembership = unsafeCoerce#
 
 -- | Right-associative fold of a product.
-hfoldrWithIndex :: (forall x. Membership xs x -> h x -> r -> r) -> r -> h :* xs -> r
+hfoldrWithIndex :: (forall x. Membership xs x -> h x -> r -> r) -> r -> xs :& h -> r
 hfoldrWithIndex f r p = foldr
   (\i -> let m = unsafeMembership i in f m (hlookup m p)) r [0..hlength p - 1]
 {-# INLINE hfoldrWithIndex #-}
 
 -- | Convert a product into an 'HList'.
-toHList :: forall h xs. h :* xs -> L.HList h xs
+toHList :: forall h xs. xs :& h -> L.HList h xs
 toHList p = go 0 where
   go :: Int -> L.HList h xs
   go i
@@ -265,7 +269,7 @@ toHList p = go 0 where
 
 -- | Create a new 'Struct' using the contents of a product.
 newFrom :: forall g h m xs. (PrimMonad m)
-  => g :* xs
+  => xs :& g
   -> (forall x. Membership xs x -> g x -> h x)
   -> m (Struct (PrimState m) h xs)
 newFrom hp@(HProduct ar) k = do
@@ -294,18 +298,18 @@ newFrom hp@(HProduct ar) k = do
   . newFrom (hfrozen (newForDict d p f)) g = newForDict d p (\i -> g i (f i)) #-}
 
 -- | Get an element in a product.
-hlookup :: Membership xs x -> h :* xs -> h x
+hlookup :: Membership xs x -> xs :& h -> h x
 hlookup (getMemberId -> I# i) (HProduct ar) = case indexSmallArray# ar i of
   (# a #) -> unsafeCoerce# a
 {-# INLINE hlookup #-}
 
 -- | Create a product from an 'ST' action which returns a 'Struct'.
-hfrozen :: (forall s. ST s (Struct s h xs)) -> h :* xs
+hfrozen :: (forall s. ST s (Struct s h xs)) -> xs :& h
 hfrozen m = runST $ m >>= unsafeFreeze
 {-# INLINE[0] hfrozen #-}
 
 -- | Turn a product into a 'Struct' temporarily.
-hmodify :: (forall s. Struct s h xs -> ST s ()) -> h :* xs -> h :* xs
+hmodify :: (forall s. Struct s h xs -> ST s ()) -> xs :& h -> xs :& h
 hmodify f m = runST $ do
   s <- thaw m
   f s
@@ -315,9 +319,9 @@ hmodify f m = runST $ do
 {-# RULES "hmodify/batch" forall
   (a :: forall s. Struct s h xs -> ST s ())
   (b :: forall s. Struct s h xs -> ST s ())
-  (x :: h :* xs). hmodify b (hmodify a x) = hmodify (\s -> a s >> b s) x  #-}
+  (x :: xs :& h). hmodify b (hmodify a x) = hmodify (\s -> a s >> b s) x  #-}
 
-instance (Corepresentable p, Comonad (Corep p), Functor f) => Extensible f p (:*) where
+instance (Corepresentable p, Comonad (Corep p), Functor f) => Extensible f p (:&) where
   -- | A lens for a value in a known position.
   pieceAt i pafb = cotabulate $ \ws -> sbt (extract ws) <$> cosieve pafb (hlookup i <$> ws) where
     sbt xs !x = hmodify (\s -> set s i x) xs
