@@ -103,9 +103,9 @@ tvName (KindedTV n _) = n
 deriveIsRecord :: Name -> DecsQ
 deriveIsRecord name = reify name >>= \case
 #if MIN_VERSION_template_haskell(2,11,0)
-  TyConI (DataD _ _ vars _ [RecC conName vst] _) -> do
+  TyConI (DataD _ _ vars _ [RecC cName vst] _) -> do
 #else
-  TyConI (DataD _ _ vars [RecC conName vst] _) -> do
+  TyConI (DataD _ _ vars [RecC cName vst] _) -> do
 #endif
     let names = [x | (x, _, _) <- vst]
     newNames <- traverse (newName . nameBase) names
@@ -126,11 +126,11 @@ deriveIsRecord name = reify name >>= \case
             vst
         , FunD 'recordFromList [Clause
             [shape2Pat $ fmap (\x -> ConP 'Field [ConP 'Identity [VarP x]]) newNames]
-            (NormalB $ RecConE conName [(n, VarE n') | (n, n') <- zip names newNames])
+            (NormalB $ RecConE cName [(n, VarE n') | (n, n') <- zip names newNames])
             []
             ]
         , FunD 'recordToList [Clause
-            [ConP conName (map VarP newNames)]
+            [ConP cName (map VarP newNames)]
             (NormalB $ shape2Exp [AppE (ConE 'Field)
                 $ AppE (ConE 'Identity)
                 $ VarE n

@@ -192,7 +192,7 @@ instance WrapForall Csv.FromField h xs => Csv.FromRecord (h :* xs) where
 
 instance Forall (KeyTargetAre KnownSymbol (Instance1 Csv.FromField h)) xs => Csv.FromNamedRecord (Field h :* xs) where
   parseNamedRecord rec = hgenerateFor (Proxy :: Proxy (KeyTargetAre KnownSymbol (Instance1 Csv.FromField h)))
-    $ \i -> rec Csv..: BC.pack (symbolVal (proxyAssocKey i)) >>= Csv.parseField
+    $ \i -> rec Csv..: BC.pack (symbolVal (proxyKeyOf i)) >>= Csv.parseField
 
 instance WrapForall Csv.ToField h xs => Csv.ToRecord (h :* xs) where
   toRecord = V.fromList
@@ -201,32 +201,32 @@ instance WrapForall Csv.ToField h xs => Csv.ToRecord (h :* xs) where
 
 instance Forall (KeyTargetAre KnownSymbol (Instance1 Csv.ToField h)) xs => Csv.ToNamedRecord (Field h :* xs) where
   toNamedRecord = hfoldlWithIndexFor (Proxy :: Proxy (KeyTargetAre KnownSymbol (Instance1 Csv.ToField h)))
-    (\k m v -> HM.insert (BC.pack (symbolVal (proxyAssocKey k))) (Csv.toField v) m)
+    (\k m v -> HM.insert (BC.pack (symbolVal (proxyKeyOf k))) (Csv.toField v) m)
     HM.empty
 
 -- | @'parseJSON' 'J.Null'@ is called for missing fields.
 instance Forall (KeyTargetAre KnownSymbol (Instance1 J.FromJSON h)) xs => J.FromJSON (Field h :* xs) where
   parseJSON = J.withObject "Object" $ \v -> hgenerateFor
     (Proxy :: Proxy (KeyTargetAre KnownSymbol (Instance1 J.FromJSON h)))
-    $ \m -> let k = symbolVal (proxyAssocKey m)
+    $ \m -> let k = symbolVal (proxyKeyOf m)
       in fmap Field $ J.parseJSON $ maybe J.Null id $ HM.lookup (T.pack k) v
 
 instance Forall (KeyTargetAre KnownSymbol (Instance1 J.ToJSON h)) xs => J.ToJSON (Field h :* xs) where
   toJSON = J.Object . hfoldlWithIndexFor
     (Proxy :: Proxy (KeyTargetAre KnownSymbol (Instance1 J.ToJSON h)))
-    (\k m v -> HM.insert (T.pack (symbolVal (proxyAssocKey k))) (J.toJSON v) m)
+    (\k m v -> HM.insert (T.pack (symbolVal (proxyKeyOf k))) (J.toJSON v) m)
     HM.empty
 
 instance Forall (KeyTargetAre KnownSymbol (Instance1 J.FromJSON h)) xs => J.FromJSON (Nullable (Field h) :* xs) where
   parseJSON = J.withObject "Object" $ \v -> hgenerateFor
     (Proxy :: Proxy (KeyTargetAre KnownSymbol (Instance1 J.FromJSON h)))
-    $ \m -> let k = symbolVal (proxyAssocKey m)
+    $ \m -> let k = symbolVal (proxyKeyOf m)
       in fmap Nullable $ traverse J.parseJSON $ HM.lookup (T.pack k) v
 
 instance Forall (KeyTargetAre KnownSymbol (Instance1 J.ToJSON h)) xs => J.ToJSON (Nullable (Field h) :* xs) where
   toJSON = J.Object . hfoldlWithIndexFor
     (Proxy :: Proxy (KeyTargetAre KnownSymbol (Instance1 J.ToJSON h)))
-    (\k m (Nullable v) -> maybe id (HM.insert (T.pack $ symbolVal $ proxyAssocKey k) . J.toJSON) v m)
+    (\k m (Nullable v) -> maybe id (HM.insert (T.pack $ symbolVal $ proxyKeyOf k) . J.toJSON) v m)
     HM.empty
 
 instance WrapForall Show h xs => Show (h :| xs) where
