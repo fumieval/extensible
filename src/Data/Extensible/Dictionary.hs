@@ -5,6 +5,7 @@
 {-# LANGUAGE UndecidableSuperClasses #-}
 {-# LANGUAGE TypeInType #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE InstanceSigs #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 -----------------------------------------------------------------------
 -- |
@@ -20,6 +21,8 @@
 module Data.Extensible.Dictionary (library, WrapForall, Instance1, And) where
 import Control.DeepSeq
 import qualified Data.Aeson as J
+import Data.Barbie
+import qualified Data.Barbie.Constraints as B
 import qualified Data.Csv as Csv
 import qualified Data.ByteString.Char8 as BC
 import Data.Extensible.Class
@@ -32,6 +35,7 @@ import Data.Constraint
 import Data.Extensible.Struct
 import Data.Extensible.Wrapper
 import Data.Functor.Identity
+import Data.Functor.Product
 import Data.Hashable
 import qualified Data.HashMap.Strict as HM
 import Data.Text.Prettyprint.Doc
@@ -76,6 +80,7 @@ instance WrapForall Pretty h xs => Pretty (xs :& h) where
     $ henumerateFor (Proxy :: Proxy (Instance1 Pretty h)) (Proxy :: Proxy xs)
     (\i r -> pretty (hlookup i xs) : r)
     []
+
 
 instance WrapForall Eq h xs => Eq (xs :& h) where
   xs == ys = henumerateFor (Proxy :: Proxy (Instance1 Eq h)) (Proxy :: Proxy xs)
@@ -337,3 +342,31 @@ instance (U.Unbox a) => G.Vector U.Vector (Identity a) where
 instance (U.Unbox a) => U.Unbox (Identity a)
 
 #endif
+
+instance FunctorB ((:&) xs) where
+  bmap = hmap
+
+instance FunctorB ((:/) xs) where
+  bmap = hoist
+
+instance TraversableB ((:&) xs) where
+  btraverse = htraverse
+
+instance TraversableB ((:/) xs) where
+  btraverse f (EmbedAt i x) = EmbedAt i <$> f x
+
+instance Generate xs => ProductB ((:&) xs) where
+  bprod = hzipWith Pair
+  buniq = hrepeat
+
+instance ConstraintsB ((:&) xs) where
+  type AllB c ((:&) xs) = Forall c xs
+  baddDicts = bprod bdicts
+
+instance ConstraintsB ((:/) xs) where
+  type AllB c ((:/) xs) = Forall c xs
+  baddDicts (EmbedAt i x) = EmbedAt i (Pair (hlookup i bdicts) x)
+
+instance Generate xs => ProductBC ((:&) xs) where
+  bdicts :: forall c ys. Forall c ys => ys :& B.Dict c
+  bdicts = hrepeatFor (Proxy :: Proxy c) $ B.Dict
