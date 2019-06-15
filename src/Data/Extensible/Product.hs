@@ -1,6 +1,8 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE Trustworthy #-}
 {-# LANGUAGE ViewPatterns, ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE MultiParamTypeClasses, UndecidableInstances #-}
 -----------------------------------------------------------------------------
 -- |
@@ -25,6 +27,7 @@ module Data.Extensible.Product (
   , hmap
   , hmapWithIndex
   , hmapWithIndexFor
+  , hmapWithIndexWith
   , hzipWith
   , hzipWith3
   , hfoldMap
@@ -39,6 +42,11 @@ module Data.Extensible.Product (
   , hfoldMapWithIndexFor
   , hfoldrWithIndexFor
   , hfoldlWithIndexFor
+  -- * Constraind fold without proxies
+  , hfoldMapWith
+  , hfoldMapWithIndexWith
+  , hfoldrWithIndexWith
+  , hfoldlWithIndexWith
   -- * Evaluating
   , hforce
   -- * Update
@@ -60,7 +68,10 @@ module Data.Extensible.Product (
   , Forall(..)
   , hgenerateFor
   , htabulateFor
-  , hrepeatFor) where
+  , hrepeatFor
+  , hgenerateWith
+  , htabulateWith
+  , hrepeatWith) where
 
 import Data.Extensible.Internal.Rig (review)
 import Data.Extensible.Struct
@@ -117,6 +128,11 @@ hmapWithIndexFor :: Forall c xs
 hmapWithIndexFor c t p = hfrozen $ newFor c $ \i -> t i $ hlookup i p
 {-# INLINE hmapWithIndexFor #-}
 
+hmapWithIndexWith :: forall c xs g h. Forall c xs
+  => (forall x. c x => Membership xs x -> g x -> h x)
+  -> xs :& g -> xs :& h
+hmapWithIndexWith = hmapWithIndexFor (Proxy @ c)
+
 -- | Transform every element in a product, preserving the order.
 --
 -- @
@@ -161,11 +177,22 @@ hfoldrWithIndexFor :: forall c xs h r proxy. (Forall c xs) => proxy c
 hfoldrWithIndexFor p f r xs = henumerateFor p (Proxy :: Proxy xs) (\i -> f i (hlookup i xs)) r
 {-# INLINE hfoldrWithIndexFor #-}
 
+hfoldrWithIndexWith :: forall c xs h r. (Forall c xs)
+  => (forall x. c x => Membership xs x -> h x -> r -> r) -> r -> xs :& h -> r
+hfoldrWithIndexWith f r xs = henumerateFor (Proxy @ c) (Proxy @ xs) (\i -> f i (hlookup i xs)) r
+{-# INLINE hfoldrWithIndexWith #-}
+
 -- | Constrained 'hfoldlWithIndex'
 hfoldlWithIndexFor :: (Forall c xs) => proxy c
   -> (forall x. c x => Membership xs x -> r -> h x -> r) -> r -> xs :& h -> r
 hfoldlWithIndexFor p f r xs = hfoldrWithIndexFor p (\i x c a -> c $! f i a x) id xs r
 {-# INLINE hfoldlWithIndexFor #-}
+
+-- | Constrained 'hfoldlWithIndex'
+hfoldlWithIndexWith :: forall c xs h r. (Forall c xs)
+  => (forall x. c x => Membership xs x -> r -> h x -> r) -> r -> xs :& h -> r
+hfoldlWithIndexWith f r xs = hfoldrWithIndexWith @c (\i x c a -> c $! f i a x) id xs r
+{-# INLINE hfoldlWithIndexWith #-}
 
 -- | 'hfoldMapWithIndex' with a constraint for each element.
 hfoldMapWithIndexFor :: (Forall c xs, Monoid a) => proxy c
@@ -173,11 +200,23 @@ hfoldMapWithIndexFor :: (Forall c xs, Monoid a) => proxy c
 hfoldMapWithIndexFor p f = hfoldrWithIndexFor p (\i -> mappend . f i) mempty
 {-# INLINE hfoldMapWithIndexFor #-}
 
+-- | 'hfoldMapWithIndex' with a constraint for each element.
+hfoldMapWithIndexWith :: forall c xs h a. (Forall c xs, Monoid a)
+  => (forall x. c x => Membership xs x -> h x -> a) -> xs :& h -> a
+hfoldMapWithIndexWith f = hfoldrWithIndexWith @c (\i -> mappend . f i) mempty
+{-# INLINE hfoldMapWithIndexWith #-}
+
 -- | Constrained 'hfoldMap'
 hfoldMapFor :: (Forall c xs, Monoid a) => proxy c
   -> (forall x. c x => h x -> a) -> xs :& h -> a
 hfoldMapFor p f = hfoldMapWithIndexFor p (const f)
 {-# INLINE hfoldMapFor #-}
+
+-- | Constrained 'hfoldMap'
+hfoldMapWith :: forall c xs h a. (Forall c xs, Monoid a)
+  => (forall x. c x => h x -> a) -> xs :& h -> a
+hfoldMapWith f = hfoldMapWithIndexFor (Proxy @ c) (const f)
+{-# INLINE hfoldMapWith #-}
 
 -- | Traverse all elements and combine the result sequentially.
 -- @
@@ -237,16 +276,32 @@ htabulateFor :: Forall c xs => proxy c -> (forall x. c x => Membership xs x -> h
 htabulateFor p f = hfrozen $ newFor p f
 {-# INLINE htabulateFor #-}
 
+-- | Pure version of 'hgenerateFor'.
+htabulateWith :: forall c xs h. Forall c xs => (forall x. c x => Membership xs x -> h x) -> xs :& h
+htabulateWith f = hfrozen $ newFor (Proxy @ c) f
+{-# INLINE htabulateWith #-}
+
 -- | A product filled with the specified value.
 hrepeatFor :: Forall c xs => proxy c -> (forall x. c x => h x) -> xs :& h
 hrepeatFor p f = htabulateFor p (const f)
 {-# INLINE hrepeatFor #-}
+
+-- | A product filled with the specified value.
+hrepeatWith :: forall c xs h. Forall c xs => (forall x. c x => h x) -> xs :& h
+hrepeatWith f = htabulateFor (Proxy @ c) (const f)
+{-# INLINE hrepeatWith #-}
 
 -- | 'Applicative' version of 'htabulateFor'.
 hgenerateFor :: (Forall c xs, Applicative f)
   => proxy c -> (forall x. c x => Membership xs x -> f (h x)) -> f (xs :& h)
 hgenerateFor p f = fmap fromHList $ hgenerateListFor p f
 {-# INLINE hgenerateFor #-}
+
+-- | 'Applicative' version of 'htabulateFor'.
+hgenerateWith :: forall c xs f h. (Forall c xs, Applicative f)
+  => (forall x. c x => Membership xs x -> f (h x)) -> f (xs :& h)
+hgenerateWith f = fmap fromHList $ hgenerateListFor (Proxy @ c) f
+{-# INLINE hgenerateWith #-}
 
 -- | Accumulate sums on a product.
 haccumMap :: Foldable f

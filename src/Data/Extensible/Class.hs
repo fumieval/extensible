@@ -1,4 +1,6 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE MultiParamTypeClasses, UndecidableInstances, ScopedTypeVariables, TypeFamilies #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
 -----------------------------------------------------------------------------
 -- |
@@ -17,6 +19,7 @@ module Data.Extensible.Class (
   , itemAt
   , item
   , itemAssoc
+  , itemKey
   -- * Membership
   , Membership
   , mkMembership
@@ -78,6 +81,12 @@ itemAssoc :: (Wrapper h, Extensible f p t, Lookup xs k v, ExtensibleConstr t xs 
   => proxy k -> Optic' p f (t xs h) (Repr h (k ':> v))
 itemAssoc p = pieceAssoc . _WrapperAs (proxyKey p)
 {-# INLINE itemAssoc #-}
+
+-- | Access an element specified by the key type through a wrapper.
+itemKey :: forall k v xs h f p t. (Wrapper h, Extensible f p t, Lookup xs k v, ExtensibleConstr t xs h (k ':> v))
+  => Optic' p f (t xs h) (Repr h (k ':> v))
+itemKey = pieceAssoc . _WrapperAs (Proxy @ (k ':> v))
+{-# INLINE itemKey #-}
 
 proxyKey :: proxy k -> Proxy (k ':> v)
 proxyKey _ = Proxy
