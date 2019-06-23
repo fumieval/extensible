@@ -14,7 +14,8 @@ module Data.Extensible.Nullable (
   , wrench
   , retrench
   , Nullable(..)
-  , mapNullable) where
+  , mapNullable
+  , fromNullable) where
 
 import Control.DeepSeq (NFData)
 import Data.Extensible.Class
@@ -27,6 +28,7 @@ import Data.Typeable (Typeable)
 import Data.Extensible.Wrapper
 import qualified Data.Extensible.Struct as S
 import Data.Profunctor.Unsafe
+import Data.Maybe (fromMaybe)
 import GHC.Generics (Generic)
 import Language.Haskell.TH.Lift
 import Language.Haskell.TH (appE, conE)
@@ -77,3 +79,6 @@ wrench xs = mapNullable (flip hlookup xs) `hmap` coinclusion
 retrench :: (Generate ys, xs ⊆ ys) => h :| ys -> Nullable ((:|) h) xs
 retrench (EmbedAt i h) = views (pieceAt i) (mapNullable (`EmbedAt`h)) coinclusion
 {-# INLINE retrench #-}
+
+fromNullable :: h :* xs -> Nullable h :* xs -> h :* xs
+fromNullable def = hmapWithIndex $ \m x -> fromMaybe (hlookup m def) (getNullable x)
