@@ -1,3 +1,13 @@
+0.6
+-------------------------------------------------
+* Added a MonadCont instance for Eff
+* `(:*)` and `(:|)` are deprecated in favour of `(:&)` and `(:*)` where their
+  type parameters are flipped
+* Flipped the type parameters of `BitProd` and `TangleT`
+* Added `itemKey`, `hmapWithIndexWith`, `hfoldMapWith`, `hfoldMapWithIndexWith`,
+  `hfoldrWithIndexWith`, `hfoldlWithIndexWith`, `hrepeatWith`, `htabulateWith`,
+  and `hgenerateWith`
+
 0.5.1
 -------------------------------------------------
 * Split `Data.Extensible.HList` and `Data.Extensible.Internal` to the
