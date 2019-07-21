@@ -26,8 +26,6 @@ module Data.Extensible.Product (
   , happend
   , hmap
   , hmapWithIndex
-  , hmapWithIndexFor
-  , hmapWithIndexWith
   , hzipWith
   , hzipWith3
   , hfoldMap
@@ -38,6 +36,7 @@ module Data.Extensible.Product (
   , htraverseWithIndex
   , hsequence
   -- * Constrained fold
+  , hmapWithIndexFor
   , hfoldMapFor
   , hfoldMapWithIndexFor
   , hfoldrWithIndexFor
@@ -47,6 +46,7 @@ module Data.Extensible.Product (
   , hfoldMapWithIndexWith
   , hfoldrWithIndexWith
   , hfoldlWithIndexWith
+  , hmapWithIndexWith
   -- * Evaluating
   , hforce
   -- * Update
