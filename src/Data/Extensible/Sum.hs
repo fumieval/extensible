@@ -32,7 +32,7 @@ import Type.Membership
 
 -- | The extensible sum type
 --
--- @(:|) :: (k -> *) -> [k] -> *@
+-- @(:/) :: (k -> *) -> [k] -> *@
 --
 data (xs :: [k]) :/ (h :: k -> *) where
   EmbedAt :: !(Membership xs x) -> h x -> xs :/ h
