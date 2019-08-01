@@ -238,8 +238,8 @@ matchField = matchWithField runMatch
 -- for 'Variant's.
 --
 -- @
--- 'FieldOptic' "foo" = Associate "foo" a xs => Lens' ('Record' xs) a
--- 'FieldOptic' "foo" = Associate "foo" a xs => Prism' ('Variant' xs) a
+-- 'FieldOptic' "foo" = Lookup xs "foo" a => Lens' ('Record' xs) a
+-- 'FieldOptic' "foo" = Lookup xs "foo" a => Prism' ('Variant' xs) a
 -- @
 --
 -- 'FieldOptic's can be generated using 'mkField' defined in the "Data.Extensible.TH" module.
