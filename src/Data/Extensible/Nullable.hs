@@ -81,5 +81,6 @@ retrench (EmbedAt i h) = views (pieceAt i) (mapNullable (`EmbedAt`h)) coinclusio
 {-# INLINE retrench #-}
 
 -- | 'fromMaybe' for 'Nullable'.
-fromNullable :: h :* xs -> Nullable h :* xs -> h :* xs
-fromNullable def = hmapWithIndex $ \m x -> fromMaybe (hlookup m def) (getNullable x)
+fromNullable :: h x -> Nullable h x -> h x
+fromNullable def = fromMaybe def . getNullable
+{-# INLINE fromNullable #-}
