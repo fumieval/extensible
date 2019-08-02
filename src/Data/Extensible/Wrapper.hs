@@ -36,7 +36,7 @@ import Test.QuickCheck.Arbitrary
 -- | The extensible data types should take @k -> *@ as a parameter.
 -- This class allows us to take a shortcut for direct representation.
 class Wrapper (h :: k -> *) where
-  -- | @'Repr' h v@ is the actual representation of @h v@.
+  -- | @'Repr' h v@ is the user-facing representation of @h v@.
   type Repr h (v :: k) :: *
 
   -- | This is an isomorphism between @h v@ and @'Repr' h v@.

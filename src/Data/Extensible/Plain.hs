@@ -33,7 +33,7 @@ type AllOf xs = xs :& Identity
 -- | Alias for plain sums
 type OneOf xs = xs :/ Identity
 
--- | /O(log n)/ Add a plain value to a product.
+-- | Add a plain value to a product.
 (<%) :: x -> AllOf xs -> AllOf (x ': xs)
 (<%) = (<:) .# Identity
 {-# INLINE (<%) #-}

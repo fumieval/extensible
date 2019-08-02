@@ -14,8 +14,10 @@ module Data.Extensible.Label where
 
 import Data.Extensible.Class
 import Data.Extensible.Field
+import Data.Extensible.Product (hlookup)
 import Data.Proxy
 import GHC.OverloadedLabels
+import GHC.Records
 import Data.Extensible.Wrapper
 
 instance k ~ l => IsLabel k (Proxy l) where
@@ -28,6 +30,10 @@ instance k ~ l => IsLabel k (Proxy l) where
 -- | Specialised version of 'itemAssoc'.
 訊 :: Proxy k -> FieldOptic k
 訊 = itemAssoc
+
+-- | Specialised version of 'itemAssoc'. Stands for "eXtensible LaBel"
+xlb :: Proxy k -> FieldOptic k
+xlb = itemAssoc
 
 instance (Extensible f p e
   , Lookup xs k v
@@ -45,3 +51,6 @@ instance (Extensible f p e
 #else
   fromLabel _ = itemAssoc (Proxy :: Proxy k)
 #endif
+
+instance (Lookup xs k v, Wrapper h, Repr h v ~ a) => HasField k (RecordOf h xs) a where
+  getField = unwrap . hlookup (association :: Membership xs (k >: v))

@@ -1,3 +1,9 @@
+0.6.1
+-------------------------------------------------
+* Added `fromNullable`
+* Added `xlb`
+* Added `HasField` instance for `RecordOf`
+
 0.6
 -------------------------------------------------
 * Added a MonadCont instance for Eff
