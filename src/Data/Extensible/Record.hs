@@ -13,9 +13,8 @@
 --
 -- Bidirectional conversion from/to records
 ------------------------------------------------------------------------
-module Data.Extensible.Record (IsRecord(..), toRecord, fromRecord, record, deriveIsRecord) where
+module Data.Extensible.Record (IsRecord(..), toRecord, fromRecord, record) where
 
-import Language.Haskell.TH
 import Data.Extensible.Internal.Rig
 import Data.Extensible.Product
 import Data.Extensible.Field
@@ -93,58 +92,3 @@ record :: (IsRecord a, Functor f, Profunctor p)
   => Optic' p f a (Record (RecFields a))
 record = dimap toRecord (fmap fromRecord)
 {-# INLINE record #-}
-
-tvName :: TyVarBndr -> Name
-tvName (PlainTV n) = n
-tvName (KindedTV n _) = n
-
-{-# DEPRECATED deriveIsRecord "Use the generic default methods instead" #-}
--- | Create an 'IsRecord' instance for a normal record declaration.
-deriveIsRecord :: Name -> DecsQ
-deriveIsRecord name = reify name >>= \case
-#if MIN_VERSION_template_haskell(2,11,0)
-  TyConI (DataD _ _ vars _ [RecC cName vst] _) -> do
-#else
-  TyConI (DataD _ _ vars [RecC cName vst] _) -> do
-#endif
-    let names = [x | (x, _, _) <- vst]
-    newNames <- traverse (newName . nameBase) names
-    let tvmap = [(tvName tv, VarT (mkName $ "p" ++ show i)) | (i, tv) <- zip [0 :: Int ..] vars]
-    let ty = foldl AppT (ConT name) $ map snd tvmap
-    let refineTV (VarT t) | Just t' <- lookup t tvmap = t'
-        refineTV (AppT a b) = refineTV a `AppT` refineTV b
-        refineTV t = t
-    return
-#if MIN_VERSION_template_haskell(2,11,0)
-      [InstanceD Nothing [] (ConT ''IsRecord `AppT` ty)
-#else
-      [InstanceD [] (ConT ''IsRecord `AppT` ty)
-#endif
-        [ TySynInstD ''RecFields $ TySynEqn [ty] $ foldr
-            (\(v, _, t) r -> PromotedConsT `AppT` (PromotedT '(:>) `AppT` LitT (StrTyLit $ nameBase v) `AppT` refineTV t) `AppT` r)
-            PromotedNilT
-            vst
-        , FunD 'recordFromList [Clause
-            [shape2Pat $ fmap (\x -> ConP 'Field [ConP 'Identity [VarP x]]) newNames]
-            (NormalB $ RecConE cName [(n, VarE n') | (n, n') <- zip names newNames])
-            []
-            ]
-        , FunD 'recordToList [Clause
-            [ConP cName (map VarP newNames)]
-            (NormalB $ shape2Exp [AppE (ConE 'Field)
-                $ AppE (ConE 'Identity)
-                $ VarE n
-              | n <- newNames])
-            []
-            ]
-        ]
-      ]
-  info -> fail $ "deriveIsRecord: Unsupported " ++ show info
-
-shape2Pat :: [Pat] -> Pat
-shape2Pat [] = ConP 'HNil []
-shape2Pat (x : xs) = ConP 'HCons [x, shape2Pat xs]
-
-shape2Exp :: [Exp] -> Exp
-shape2Exp [] = ConE 'HNil
-shape2Exp (x : xs) = ConE 'HCons `AppE` x `AppE` shape2Exp xs
