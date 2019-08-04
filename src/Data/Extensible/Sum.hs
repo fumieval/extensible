@@ -25,6 +25,7 @@ module Data.Extensible.Sum (
   ) where
 
 import Data.Extensible.Class
+import Data.Kind (Type)
 import Data.Profunctor
 import Data.Proxy
 import Data.Type.Equality
@@ -32,9 +33,9 @@ import Type.Membership
 
 -- | The extensible sum type
 --
--- @(:/) :: [k] -> (k -> *) -> *@
+-- @(:/) :: [k] -> (k -> Type) -> Type@
 --
-data (xs :: [k]) :/ (h :: k -> *) where
+data (xs :: [k]) :/ (h :: k -> Type) where
   EmbedAt :: !(Membership xs x) -> h x -> xs :/ h
 
 type h :| xs = xs :/ h

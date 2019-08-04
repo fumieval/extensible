@@ -26,6 +26,7 @@ import Data.Profunctor.Unsafe (Profunctor(..))
 import Data.Functor.Identity (Identity(..))
 import Data.Extensible.Internal.Rig
 import Data.Hashable
+import Data.Kind (Type)
 import Data.Text.Prettyprint.Doc
 import GHC.Generics (Generic)
 import Language.Haskell.TH.Lift
@@ -33,11 +34,11 @@ import Language.Haskell.TH (conE, appE)
 import Test.QuickCheck.Arbitrary
 
 
--- | The extensible data types should take @k -> *@ as a parameter.
+-- | The extensible data types should take @k -> Type@ as a parameter.
 -- This class allows us to take a shortcut for direct representation.
-class Wrapper (h :: k -> *) where
+class Wrapper (h :: k -> Type) where
   -- | @'Repr' h v@ is the user-facing representation of @h v@.
-  type Repr h (v :: k) :: *
+  type Repr h (v :: k) :: Type
 
   -- | This is an isomorphism between @h v@ and @'Repr' h v@.
   --
@@ -83,7 +84,7 @@ instance Wrapper [] where
   _Wrapper = id
 
 -- | Poly-kinded composition
-newtype Comp (f :: j -> *) (g :: i -> j) (a :: i) = Comp { getComp :: f (g a) }
+newtype Comp (f :: j -> Type) (g :: i -> j) (a :: i) = Comp { getComp :: f (g a) }
   deriving (Show, Eq, Ord, Typeable, NFData, Generic, Semigroup, Monoid, Arbitrary, Hashable, Pretty)
 
 deriving instance (Functor f, Functor g) => Functor (Comp f g)

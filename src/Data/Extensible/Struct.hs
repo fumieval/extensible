@@ -59,12 +59,13 @@ import Data.Extensible.Wrapper
 import Data.Profunctor.Rep
 import Data.Profunctor.Sieve
 import Data.Proxy
+import Data.Kind (Type)
 import qualified Data.StateVar as V
 import GHC.Types
 import qualified Type.Membership.HList as L
 
 -- | Mutable type-indexed struct.
-data Struct s (h :: k -> *) (xs :: [k]) = Struct (SmallMutableArray# s Any)
+data Struct s (h :: k -> Type) (xs :: [k]) = Struct (SmallMutableArray# s Any)
 
 -- | Write a value in a 'Struct'.
 set :: PrimMonad m => Struct (PrimState m) h xs -> Membership xs x -> h x -> m ()

@@ -19,6 +19,7 @@ import Data.Extensible.Internal.Rig
 import Data.Extensible.Product
 import Data.Extensible.Field
 import Data.Functor.Identity
+import Data.Kind (Type)
 import Data.Profunctor
 import GHC.Generics
 import GHC.TypeLits
@@ -27,15 +28,17 @@ import Type.Membership.HList
 
 -- | The class of types that can be converted to/from a 'Record'.
 class IsRecord a where
-  type RecFields a :: [Assoc Symbol *]
+  type RecFields a :: [Assoc Symbol Type]
   recordFromList :: HList (Field Identity) (RecFields a) -> a
   recordToList :: a -> HList (Field Identity) (RecFields a)
 
   type RecFields a = GRecFields (Rep a) '[]
-  default recordFromList :: (Generic a, GIsRecord (Rep a) '[], GRecFields (Rep a) '[] ~ RecFields a) => HList (Field Identity) (RecFields a) -> a
+  default recordFromList :: (Generic a, GIsRecord (Rep a) '[], GRecFields (Rep a) '[] ~ RecFields a)
+    => HList (Field Identity) (RecFields a) -> a
   recordFromList xs = recordFromList' xs (\x (HNil :: HList (Field Identity) '[]) -> to x)
 
-  default recordToList :: (Generic a, GIsRecord (Rep a) '[], GRecFields (Rep a) '[] ~ RecFields a) => a -> HList (Field Identity) (RecFields a)
+  default recordToList :: (Generic a, GIsRecord (Rep a) '[], GRecFields (Rep a) '[] ~ RecFields a)
+    => a -> HList (Field Identity) (RecFields a)
   recordToList x = recordToList' (from x) HNil
 
 instance IsRecord () where
@@ -45,7 +48,7 @@ instance IsRecord () where
 
 -- | The class of types that can be converted to/from a 'Record'.
 class GIsRecord f r where
-  type GRecFields f (r :: [Assoc Symbol *]) :: [Assoc Symbol *]
+  type GRecFields f (r :: [Assoc Symbol Type]) :: [Assoc Symbol Type]
   recordFromList' :: HList (Field Identity) (GRecFields f r) -> (f x -> HList (Field Identity) r -> cont) -> cont
   recordToList' :: f x -> HList (Field Identity) r -> HList (Field Identity) (GRecFields f r)
 

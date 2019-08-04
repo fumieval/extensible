@@ -95,6 +95,7 @@ import Data.Extensible.Inclusion
 import Data.Extensible.Internal.Rig
 import Data.Extensible.Product
 import Data.Extensible.Class
+import Data.Kind (Type)
 import Data.Functor.Identity
 import Data.Profunctor.Unsafe -- Trustworthy since 7.8
 import Data.Type.Equality
@@ -102,7 +103,7 @@ import Type.Membership
 
 -- | A unit of named effects. This is a variant of @(':|')@ specialised for
 -- 'Type -> Type'.
-data Instruction (xs :: [Assoc k (* -> *)]) a where
+data Instruction (xs :: [Assoc k (Type -> Type)]) a where
   Instruction :: !(Membership xs kv) -> TargetOf kv a -> Instruction xs a
 
 -- | The extensible operational monad
@@ -208,12 +209,12 @@ handleEff hs m = case debone m of
   Return a -> Return a
 
 -- | Anonymous representation of instructions.
-data Action (args :: [*]) a r where
+data Action (args :: [Type]) a r where
   AResult :: Action '[] a a
   AArgument :: x -> Action xs a r -> Action (x ': xs) a r
 
 -- | @'Function' [a, b, c] r@ is @a -> b -> c -> r@
-type family Function args r :: * where
+type family Function args r :: Type where
   Function '[] r = r
   Function (x ': xs) r = x -> Function xs r
 
@@ -440,8 +441,8 @@ tickEff k = liftEff k $ Identity ()
 {-# INLINE tickEff #-}
 
 mapHeadEff :: (forall x. s x -> t x) -> Eff ((k >: s) ': xs) a -> Eff ((k' >: t) ': xs) a
-mapHeadEff f = hoistSkeleton $ \(Instruction i t) -> testMembership i 
-  (\Refl -> Instruction leadership $ f t) 
+mapHeadEff f = hoistSkeleton $ \(Instruction i t) -> testMembership i
+  (\Refl -> Instruction leadership $ f t)
   (\j -> Instruction (nextMembership j) t)
 
 -- | Take a function and applies it to an Either effect iff the effect takes the form Left _.

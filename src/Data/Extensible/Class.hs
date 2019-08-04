@@ -46,13 +46,14 @@ module Data.Extensible.Class (
 import Data.Constraint
 import Data.Extensible.Internal.Rig (Optic')
 import Data.Extensible.Wrapper
+import Data.Kind
 import Data.Profunctor
 import Type.Membership
 import Type.Membership.Internal
 
 -- | This class allows us to use 'pieceAt' for both sums and products.
-class (Functor f, Profunctor p) => Extensible f p (t :: [k] -> (k -> *) -> *) where
-  type ExtensibleConstr t (xs :: [k]) (h :: k -> *) (x :: k) :: Constraint
+class (Functor f, Profunctor p) => Extensible f p (t :: [k] -> (k -> Type) -> Type) where
+  type ExtensibleConstr t (xs :: [k]) (h :: k -> Type) (x :: k) :: Constraint
   type ExtensibleConstr t xs h x = ()
   pieceAt :: ExtensibleConstr t xs h x => Membership xs x -> Optic' p f (t xs h) (h x)
 
