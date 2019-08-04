@@ -2,7 +2,9 @@
 -------------------------------------------------
 * Added `fromNullable`
 * Added `xlb`
-* Added `HasField` instance for `RecordOf`
+* Added a `HasField` instance for `RecordOf`
+* Removed `deriveIsRecord`
+* Supported GHC 8.8
 
 0.6
 -------------------------------------------------
