@@ -33,6 +33,10 @@ flag barbies
   default: False
   description: "define instances for barbies"
 
+flag cassava
+  default: True
+  description: "define instances for cassava"
+
 library
   exposed-modules:
     Data.Extensible
@@ -70,7 +74,6 @@ library
   build-depends:       base >= 4.8 && <5
     , aeson
     , bytestring
-    , cassava
     , comonad
     , constraints
     , deepseq
@@ -93,6 +96,9 @@ library
   if flag(barbies)
     build-depends: barbies
     cpp-options: -DBARBIES
+  if flag(cassava)
+    build-depends: cassava
+    cpp-options: -DCASSAVA
   hs-source-dirs:      src
   ghc-options: -Wall -Wcompat
   default-language:    Haskell2010

@@ -62,7 +62,9 @@ import Data.Coerce
 #if __GLASGOW_HASKELL__ < 802
 import Data.Constraint
 #endif
+#ifdef CASSAVA
 import qualified Data.Csv as Csv
+#endif
 import Data.Extensible.Class
 import Data.Extensible.Sum
 import Data.Extensible.Match
@@ -114,10 +116,12 @@ ND_Field(Bounded)
 ND_Field(NFData)
 ND_Field(Arbitrary)
 ND_Field(Hashable)
-ND_Field(Csv.FromField)
-ND_Field(Csv.ToField)
 ND_Field(J.FromJSON)
 ND_Field(J.ToJSON)
+#ifdef CASSAVA
+ND_Field(Csv.FromField)
+ND_Field(Csv.ToField)
+#endif
 
 newtype instance U.MVector s (Field h x) = MV_Field (U.MVector s (h (TargetOf x)))
 newtype instance U.Vector (Field h x) = V_Field (U.Vector (h (TargetOf x)))

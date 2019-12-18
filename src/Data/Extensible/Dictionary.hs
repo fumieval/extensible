@@ -21,8 +21,11 @@
 module Data.Extensible.Dictionary (library, WrapForall, Instance1, And) where
 import Control.DeepSeq
 import qualified Data.Aeson as J
+#ifdef CASSAVA
 import qualified Data.Csv as Csv
 import qualified Data.ByteString.Char8 as BC
+import qualified Data.Vector as V
+#endif
 import Data.Extensible.Class
 import Data.Extensible.Field
 import Data.Extensible.Product
@@ -39,7 +42,6 @@ import Data.Text.Prettyprint.Doc
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Unboxed as U
-import qualified Data.Vector as V
 import qualified Data.Text as T
 import Data.Type.Equality
 import qualified Language.Haskell.TH.Lift as TH
@@ -194,6 +196,7 @@ instance WrapForall NFData h xs => NFData (xs :& h) where
     (\i -> deepseq (hlookup i xs)) ()
   {-# INLINE rnf #-}
 
+#ifdef CASSAVA
 instance WrapForall Csv.FromField h xs => Csv.FromRecord (xs :& h) where
   parseRecord rec = hgenerateFor (Proxy :: Proxy (Instance1 Csv.FromField h))
     $ \i -> G.indexM rec (getMemberId i) >>= Csv.parseField
@@ -211,6 +214,7 @@ instance Forall (KeyTargetAre KnownSymbol (Instance1 Csv.ToField h)) xs => Csv.T
   toNamedRecord = hfoldlWithIndexFor (Proxy :: Proxy (KeyTargetAre KnownSymbol (Instance1 Csv.ToField h)))
     (\k m v -> HM.insert (BC.pack (symbolVal (proxyKeyOf k))) (Csv.toField v) m)
     HM.empty
+#endif
 
 -- | @'parseJSON' 'J.Null'@ is called for missing fields.
 instance Forall (KeyTargetAre KnownSymbol (Instance1 J.FromJSON h)) xs => J.FromJSON (xs :& Field h) where
