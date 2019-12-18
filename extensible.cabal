@@ -12,7 +12,7 @@ license-file:        LICENSE
 author:              Fumiaki Kinoshita
 maintainer:          Fumiaki Kinoshita <fumiexcel@gmail.com>
 copyright:           Copyright (c) 2017 Fumiaki Kinoshita
-category:            Data, Records, Monads
+category:            Data, Records
 build-type:          Simple
 stability:           experimental
 Tested-With:         GHC == 8.4.4, GHC == 8.6.3
@@ -29,6 +29,10 @@ source-repository head
   type: git
   location: https://github.com/fumieval/extensible.git
 
+flag barbies
+  default: False
+  description: "define instances for barbies"
+
 library
   exposed-modules:
     Data.Extensible
@@ -36,8 +40,6 @@ library
     Data.Extensible.Class
     Data.Extensible.Dictionary
     Data.Extensible.Field
-    Data.Extensible.Effect
-    Data.Extensible.Effect.Default
     Data.Extensible.GetOpt
     Data.Extensible.Inclusion
     Data.Extensible.Internal.Rig
@@ -50,8 +52,8 @@ library
     Data.Extensible.Struct
     Data.Extensible.Sum
     Data.Extensible.Tangle
-    Data.Extensible.Wrapper
     Data.Extensible.TH
+    Data.Extensible.Wrapper
   default-extensions: TypeOperators
     , DeriveDataTypeable
     , DeriveGeneric
@@ -67,22 +69,18 @@ library
     , CPP
   build-depends:       base >= 4.8 && <5
     , aeson
-    , barbies
     , bytestring
     , cassava
     , comonad
     , constraints
     , deepseq
-    , exceptions
     , ghc-prim
     , hashable
     , membership
     , monad-skeleton >= 0.1.2
-    , mtl
     , prettyprinter
     , primitive
     , profunctors
-    , resourcet
     , QuickCheck
     , StateVar
     , tagged
@@ -92,15 +90,11 @@ library
     , transformers
     , unordered-containers
     , vector
+  if flag(barbies)
+    build-depends: barbies
+    cpp-options: -DBARBIES
   hs-source-dirs:      src
   ghc-options: -Wall -Wcompat
-  default-language:    Haskell2010
-
-test-suite effects
-  type: exitcode-stdio-1.0
-  main-is: effects.hs
-  build-depends: base, extensible
-  hs-source-dirs: tests
   default-language:    Haskell2010
 
 test-suite bits

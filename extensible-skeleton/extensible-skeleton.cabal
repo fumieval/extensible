@@ -1,0 +1,53 @@
+name:                extensible-skeleton
+version:             0
+synopsis:            Operational-based extensible effect library
+homepage:            https://github.com/fumieval/extensible
+bug-reports:         http://github.com/fumieval/extensible/issues
+description:         See README.md
+license:             BSD3
+license-file:        LICENSE
+author:              Fumiaki Kinoshita
+maintainer:          Fumiaki Kinoshita <fumiexcel@gmail.com>
+copyright:           Copyright (c) 2019 Fumiaki Kinoshita
+category:            Monads
+build-type:          Simple
+stability:           experimental
+Tested-With:         GHC == 8.4.4, GHC == 8.6.3
+
+extra-source-files:
+  examples/*.hs
+  .gitignore
+  .travis.yml
+  README.md
+  CHANGELOG.md
+cabal-version:       >=1.10
+
+source-repository head
+  type: git
+  location: https://github.com/fumieval/extensible.git
+
+library
+  build-depends: base >= 4.8 && <5
+    , extensible, monad-skeleton, resourcet, membership, transformers, mtl
+    , exceptions, profunctors, template-haskell
+  exposed-modules:
+    Data.Extensible.Effect
+    Data.Extensible.Effect.Default
+    Data.Extensible.Effect.TH
+  ghc-options: -Wall
+  hs-source-dirs: src
+  default-extensions:
+    TypeOperators
+    DataKinds
+    PolyKinds
+    GADTs
+    RankNTypes
+    FlexibleContexts
+    FlexibleInstances
+
+test-suite effects
+  type: exitcode-stdio-1.0
+  main-is: effects.hs
+  build-depends: base, extensible
+  hs-source-dirs: tests
+  default-language:    Haskell2010

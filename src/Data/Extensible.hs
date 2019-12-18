@@ -30,7 +30,6 @@
 module Data.Extensible (
   module Data.Extensible.Class
   , module Data.Extensible.Dictionary
-  , module Data.Extensible.Effect
   , module Data.Extensible.Field
   , module Data.Extensible.Inclusion
   , module Data.Extensible.Label
@@ -49,7 +48,6 @@ module Data.Extensible (
 import Data.Extensible.Class
 import Data.Extensible.Dictionary
 import Data.Extensible.Field
-import Data.Extensible.Effect
 import Data.Extensible.Inclusion
 import Data.Extensible.Label
 import Data.Extensible.Match

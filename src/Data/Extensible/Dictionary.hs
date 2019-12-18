@@ -21,8 +21,6 @@
 module Data.Extensible.Dictionary (library, WrapForall, Instance1, And) where
 import Control.DeepSeq
 import qualified Data.Aeson as J
-import Data.Barbie
-import qualified Data.Barbie.Constraints as B
 import qualified Data.Csv as Csv
 import qualified Data.ByteString.Char8 as BC
 import Data.Extensible.Class
@@ -35,7 +33,6 @@ import Data.Constraint
 import Data.Extensible.Struct
 import Data.Extensible.Wrapper
 import Data.Functor.Identity
-import Data.Functor.Product
 import Data.Hashable
 import qualified Data.HashMap.Strict as HM
 import Data.Text.Prettyprint.Doc
@@ -51,6 +48,12 @@ import GHC.TypeLits
 import Test.QuickCheck.Arbitrary
 import Test.QuickCheck.Gen
 import Type.Membership
+
+#ifdef BARBIES
+import Data.Barbie
+import qualified Data.Barbie.Constraints as B
+import Data.Functor.Product
+#endif
 
 -- | Reify a collection of dictionaries, as you wish.
 library :: forall c xs. Forall c xs => xs :& Comp Dict c
@@ -343,6 +346,7 @@ instance (U.Unbox a) => U.Unbox (Identity a)
 
 #endif
 
+#ifdef BARBIES
 instance FunctorB ((:&) xs) where
   bmap = hmap
 
@@ -370,3 +374,4 @@ instance ConstraintsB ((:/) xs) where
 instance Generate xs => ProductBC ((:&) xs) where
   bdicts :: forall c ys. Forall c ys => ys :& B.Dict c
   bdicts = hrepeatFor (Proxy :: Proxy c) $ B.Dict
+#endif
