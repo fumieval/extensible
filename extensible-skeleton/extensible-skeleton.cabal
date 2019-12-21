@@ -1,3 +1,4 @@
+cabal-version:       2.4
 name:                extensible-skeleton
 version:             0
 synopsis:            Operational-based extensible effect library
@@ -15,12 +16,6 @@ stability:           experimental
 Tested-With:         GHC == 8.4.4, GHC == 8.6.3
 
 extra-source-files:
-  examples/*.hs
-  .gitignore
-  .travis.yml
-  README.md
-  CHANGELOG.md
-cabal-version:       >=1.10
 
 source-repository head
   type: git
@@ -28,7 +23,7 @@ source-repository head
 
 library
   build-depends: base >= 4.8 && <5
-    , extensible, monad-skeleton, resourcet, membership, transformers, mtl
+    , extensible >= 0.6.2, monad-skeleton, resourcet, membership, transformers, mtl
     , exceptions, profunctors, template-haskell
   exposed-modules:
     Data.Extensible.Effect
