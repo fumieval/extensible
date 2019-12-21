@@ -39,6 +39,7 @@ library
     RankNTypes
     FlexibleContexts
     FlexibleInstances
+  default-language: Haskell2010
 
 test-suite effects
   type: exitcode-stdio-1.0
