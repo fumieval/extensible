@@ -30,6 +30,7 @@ instance k ~ l => IsLabel k (Proxy l) where
 -- | Specialised version of 'itemAssoc'.
 訊 :: Proxy k -> FieldOptic k
 訊 = itemAssoc
+{-# DEPRECATED 訊 "Use xlb instead" #-}
 
 -- | Specialised version of 'itemAssoc'. Stands for "eXtensible LaBel"
 xlb :: Proxy k -> FieldOptic k

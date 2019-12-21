@@ -1,3 +1,9 @@
+0.7
+-------------------------------------------------
+* Moved `Data.Extensible.Effect` into new `extensible-skeleton` package
+* Instances for barbies and cassava are now optional
+* Deprecated 訊
+
 0.6.1
 -------------------------------------------------
 * Added `fromNullable`
