@@ -1,3 +1,4 @@
+cabal-version:       2.4
 name:                extensible
 version:             0.7
 synopsis:            Extensible, efficient, optics-friendly data types and effects
@@ -23,7 +24,6 @@ extra-source-files:
   .travis.yml
   README.md
   CHANGELOG.md
-cabal-version:       >=1.10
 
 source-repository head
   type: git
