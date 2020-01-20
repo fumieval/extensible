@@ -21,6 +21,7 @@
 module Data.Extensible.Dictionary (library, WrapForall, Instance1, And) where
 import Control.DeepSeq
 import qualified Data.Aeson as J
+import qualified Data.Aeson.Types as J
 #ifdef CASSAVA
 import qualified Data.Csv as Csv
 import qualified Data.ByteString.Char8 as BC
@@ -221,7 +222,7 @@ instance Forall (KeyTargetAre KnownSymbol (Instance1 J.FromJSON h)) xs => J.From
   parseJSON = J.withObject "Object" $ \v -> hgenerateFor
     (Proxy :: Proxy (KeyTargetAre KnownSymbol (Instance1 J.FromJSON h)))
     $ \m -> let k = symbolVal (proxyKeyOf m)
-      in fmap Field $ J.parseJSON $ maybe J.Null id $ HM.lookup (T.pack k) v
+      in fmap Field $ J.prependFailure ("parsing #" ++ k ++ ": ") $ J.parseJSON $ maybe J.Null id $ HM.lookup (T.pack k) v
 
 instance Forall (KeyTargetAre KnownSymbol (Instance1 J.ToJSON h)) xs => J.ToJSON (xs :& Field h) where
   toJSON = J.Object . hfoldlWithIndexFor
