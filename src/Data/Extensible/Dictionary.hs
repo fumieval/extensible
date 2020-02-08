@@ -36,7 +36,6 @@ import Data.Extensible.Nullable
 import Data.Constraint
 import Data.Extensible.Struct
 import Data.Extensible.Wrapper
-import Data.Functor.Identity
 import Data.Hashable
 import qualified Data.HashMap.Strict as HM
 import Data.Text.Prettyprint.Doc
@@ -71,14 +70,6 @@ instance WrapForall Show h xs => Show (xs :& h) where
     $ henumerateFor (Proxy :: Proxy (Instance1 Show h)) (Proxy :: Proxy xs)
     (\i r -> showsPrec 0 (hlookup i xs) . showString " <: " . r)
     (showString "nil")
-
-#if !MIN_VERSION_prettyprinter(1,2,1)
-instance Pretty a => Pretty (Identity a) where
-  pretty = pretty . runIdentity
-
-instance Pretty a => Pretty (Const a b) where
-  pretty = pretty . getConst
-#endif
 
 instance WrapForall Pretty h xs => Pretty (xs :& h) where
   pretty xs = align
@@ -164,9 +155,7 @@ instance WrapForall U.Unbox h (x ': xs) => M.MVector U.MVector ((x ': xs) :& h) 
   basicUnsafeNew n = fmap MV_Product
     $ hgenerateFor (Proxy :: Proxy (Instance1 U.Unbox h))
     (const $ Comp <$> M.basicUnsafeNew n)
-#if MIN_VERSION_vector(0,11,0)
   basicInitialize (MV_Product v) = henumerateFor (Proxy :: Proxy (Instance1 U.Unbox h)) (Proxy :: Proxy (x ': xs)) ((>>) . \i -> M.basicInitialize $ hlookupC i v) (return ())
-#endif
   basicUnsafeReplicate n x = fmap MV_Product
     $ hgenerateFor (Proxy :: Proxy (Instance1 U.Unbox h))
     $ \m -> fmap Comp $ M.basicUnsafeReplicate n $ hlookup m x
@@ -300,56 +289,6 @@ type WrapForall c h = Forall (Instance1 c h)
 -- | Composition for a class and a wrapper
 class c (h x) => Instance1 c h x
 instance c (h x) => Instance1 c h x
-
-#if !MIN_VERSION_vector(0,12,1)
-newtype instance U.MVector s (Identity a) = MV_Identity (U.MVector s a)
-newtype instance U.Vector (Identity a) = V_Identity (U.Vector a)
-
-instance (U.Unbox a) => M.MVector U.MVector (Identity a) where
-  {-# INLINE basicLength #-}
-  {-# INLINE basicUnsafeSlice #-}
-  {-# INLINE basicOverlaps #-}
-  {-# INLINE basicUnsafeNew #-}
-  {-# INLINE basicUnsafeReplicate #-}
-  {-# INLINE basicUnsafeRead #-}
-  {-# INLINE basicUnsafeWrite #-}
-  {-# INLINE basicClear #-}
-  {-# INLINE basicSet #-}
-  {-# INLINE basicUnsafeCopy #-}
-  {-# INLINE basicUnsafeGrow #-}
-  basicLength (MV_Identity v) = M.basicLength v
-  basicUnsafeSlice i n (MV_Identity v) = MV_Identity $ M.basicUnsafeSlice i n v
-  basicOverlaps (MV_Identity v1) (MV_Identity v2) = M.basicOverlaps v1 v2
-  basicUnsafeNew n = MV_Identity <$> M.basicUnsafeNew n
-#if MIN_VERSION_vector(0,11,0)
-  basicInitialize (MV_Identity v) = M.basicInitialize v
-  {-# INLINE basicInitialize #-}
-#endif
-  basicUnsafeReplicate n (Identity x) = MV_Identity <$> M.basicUnsafeReplicate n x
-  basicUnsafeRead (MV_Identity v) i = Identity <$> M.basicUnsafeRead v i
-  basicUnsafeWrite (MV_Identity v) i (Identity x) = M.basicUnsafeWrite v i x
-  basicClear (MV_Identity v) = M.basicClear v
-  basicSet (MV_Identity v) (Identity x) = M.basicSet v x
-  basicUnsafeCopy (MV_Identity v1) (MV_Identity v2) = M.basicUnsafeCopy v1 v2
-  basicUnsafeMove (MV_Identity v1) (MV_Identity v2) = M.basicUnsafeMove v1 v2
-  basicUnsafeGrow (MV_Identity v) n = MV_Identity <$> M.basicUnsafeGrow v n
-
-instance (U.Unbox a) => G.Vector U.Vector (Identity a) where
-  {-# INLINE basicUnsafeFreeze #-}
-  {-# INLINE basicUnsafeThaw #-}
-  {-# INLINE basicLength #-}
-  {-# INLINE basicUnsafeSlice #-}
-  {-# INLINE basicUnsafeIndexM #-}
-  basicUnsafeFreeze (MV_Identity v) = V_Identity <$> G.basicUnsafeFreeze v
-  basicUnsafeThaw (V_Identity v) = MV_Identity <$> G.basicUnsafeThaw v
-  basicLength (V_Identity v) = G.basicLength v
-  basicUnsafeSlice i n (V_Identity v) = V_Identity $ G.basicUnsafeSlice i n v
-  basicUnsafeIndexM (V_Identity v) i = Identity <$> G.basicUnsafeIndexM v i
-  basicUnsafeCopy (MV_Identity mv) (V_Identity v) = G.basicUnsafeCopy mv v
-
-instance (U.Unbox a) => U.Unbox (Identity a)
-
-#endif
 
 #ifdef BARBIES
 instance FunctorB ((:&) xs) where

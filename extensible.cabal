@@ -81,7 +81,7 @@ library
     , hashable
     , membership
     , monad-skeleton >= 0.1.2
-    , prettyprinter
+    , prettyprinter >= 1.2.1 && <2
     , primitive
     , profunctors
     , QuickCheck
@@ -92,7 +92,7 @@ library
     , th-lift
     , transformers
     , unordered-containers
-    , vector
+    , vector >= 0.12.1.2
   if flag(barbies)
     build-depends: barbies
     cpp-options: -DBARBIES
