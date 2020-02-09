@@ -52,8 +52,7 @@ import Test.QuickCheck.Gen
 import Type.Membership
 
 #ifdef BARBIES
-import Data.Barbie
-import qualified Data.Barbie.Constraints as B
+import Barbies
 import Data.Functor.Product
 #endif
 
@@ -303,9 +302,9 @@ instance TraversableB ((:&) xs) where
 instance TraversableB ((:/) xs) where
   btraverse f (EmbedAt i x) = EmbedAt i <$> f x
 
-instance Generate xs => ProductB ((:&) xs) where
+instance Generate xs => ApplicativeB ((:&) xs) where
   bprod = hzipWith Pair
-  buniq = hrepeat
+  bpure = hrepeat
 
 instance ConstraintsB ((:&) xs) where
   type AllB c ((:&) xs) = Forall c xs
@@ -315,7 +314,4 @@ instance ConstraintsB ((:/) xs) where
   type AllB c ((:/) xs) = Forall c xs
   baddDicts (EmbedAt i x) = EmbedAt i (Pair (hlookup i bdicts) x)
 
-instance Generate xs => ProductBC ((:&) xs) where
-  bdicts :: forall c ys. Forall c ys => ys :& B.Dict c
-  bdicts = hrepeatFor (Proxy :: Proxy c) $ B.Dict
 #endif

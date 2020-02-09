@@ -94,7 +94,7 @@ library
     , unordered-containers
     , vector >= 0.12.1.2
   if flag(barbies)
-    build-depends: barbies
+    build-depends: barbies ^>= 2
     cpp-options: -DBARBIES
   if flag(cassava)
     build-depends: cassava

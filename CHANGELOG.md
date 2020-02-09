@@ -3,6 +3,7 @@
 * Removed `vector` and `prettyprinter` orphans
 * Deprecated `Data.Extensible.Tangle`; use [tangle](https://hackage.haskell.org/package/tangle)
 * `parseJSON` gives more informative failure messages on failure
+* Supported `barbies ^>= 2`
 
 0.7
 -------------------------------------------------
