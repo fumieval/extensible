@@ -1,6 +1,6 @@
 cabal-version:       2.4
 name:                extensible
-version:             0.7
+version:             0.7.1
 synopsis:            Extensible, efficient, optics-friendly data types and effects
 homepage:            https://github.com/fumieval/extensible
 bug-reports:         http://github.com/fumieval/extensible/issues
@@ -16,7 +16,7 @@ copyright:           Copyright (c) 2017 Fumiaki Kinoshita
 category:            Data, Records
 build-type:          Simple
 stability:           experimental
-Tested-With:         GHC == 8.4.4, GHC == 8.6.3
+Tested-With:         GHC == 8.4.4, GHC == 8.6.5, GHC == 8.8.2
 
 extra-source-files:
   examples/*.hs
