@@ -2,6 +2,7 @@
 ------------------------------------------------
 * Removed `vector` and `prettyprinter` orphans
 * Deprecated `Data.Extensible.Tangle`; use [tangle](https://hackage.haskell.org/package/tangle)
+* `parseJSON` gives more informative failure messages on failure
 
 0.7
 -------------------------------------------------
