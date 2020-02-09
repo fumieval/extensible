@@ -1,3 +1,8 @@
+0.7.1
+------------------------------------------------
+* Removed `vector` and `prettyprinter` orphans
+* Deprecated `Data.Extensible.Tangle`; use [tangle](https://hackage.haskell.org/package/tangle)
+
 0.7
 -------------------------------------------------
 * Moved `Data.Extensible.Effect` into new `extensible-skeleton` package
