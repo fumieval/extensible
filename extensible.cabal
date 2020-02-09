@@ -21,7 +21,6 @@ Tested-With:         GHC == 8.4.4, GHC == 8.6.3
 extra-source-files:
   examples/*.hs
   .gitignore
-  .travis.yml
   README.md
   CHANGELOG.md
 
