@@ -32,7 +32,6 @@ import Data.Extensible.Wrapper
 newtype TangleT xs h m a = TangleT
   { unTangleT :: RWST (xs :& Comp (TangleT xs h m) h) () (xs :& Nullable h) m a }
   deriving (Functor, Applicative, Monad)
-{-# DEPRECATED TangleT "Use the tangle package instead" #-}
 
 instance MonadTrans (TangleT xs h) where
   lift = TangleT . lift
@@ -49,7 +48,6 @@ lasso :: forall k v m h xs. (Monad m, Lookup xs k v, Wrapper h)
   => FieldName k -> TangleT xs h m (Repr h (k ':> v))
 lasso _ = view _Wrapper <$> hitchAt (association :: Membership xs (k ':> v))
 {-# INLINE lasso #-}
-{-# DEPRECATED lasso "Use the tangle package instead" #-}
 
 -- | Take a value from the tangles. The result is memoized.
 hitchAt :: Monad m => Membership xs x -> TangleT xs h m (h x)
@@ -62,7 +60,6 @@ hitchAt k = TangleT $ do
       a <- unTangleT $ getComp $ hlookup k tangles
       modify $ over (pieceAt k) $ const $ Nullable $ Just a
       return a
-{-# DEPRECATED hitchAt "Use the tangle package instead" #-}
 
 -- | Run a 'TangleT' action and return the result and the calculated values.
 runTangleT :: Monad m
@@ -73,7 +70,6 @@ runTangleT :: Monad m
 runTangleT tangles rec0 (TangleT m) = (\(a, s, _) -> (a, s))
   <$> runRWST m tangles rec0
 {-# INLINE runTangleT #-}
-{-# DEPRECATED runTangleT "Use the tangle package instead" #-}
 
 -- | Run a 'TangleT' action.
 evalTangleT :: Monad m
@@ -83,7 +79,6 @@ evalTangleT :: Monad m
   -> m a
 evalTangleT tangles rec0 (TangleT m) = fst <$> evalRWST m tangles rec0
 {-# INLINE evalTangleT #-}
-{-# DEPRECATED evalTangleT "Use the tangle package instead" #-}
 
 -- | Run tangles and collect all the results as a 'Record'.
 runTangles :: Monad m
