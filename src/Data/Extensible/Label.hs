@@ -21,11 +21,7 @@ import GHC.Records
 import Data.Extensible.Wrapper
 
 instance k ~ l => IsLabel k (Proxy l) where
-#if __GLASGOW_HASKELL__ >= 802
   fromLabel = Proxy
-#else
-  fromLabel _ = Proxy
-#endif
 
 -- | Specialised version of 'itemAssoc'. Stands for "eXtensible LaBel"
 xlb :: Proxy k -> FieldOptic k
@@ -42,11 +38,7 @@ instance (Extensible f p e
   , rep ~ rep'
   )
   => IsLabel k (p rep (f rep') -> p s (f t)) where
-#if __GLASGOW_HASKELL__ >= 802
   fromLabel = itemAssoc (Proxy :: Proxy k)
-#else
-  fromLabel _ = itemAssoc (Proxy :: Proxy k)
-#endif
 
 instance (Lookup xs k v, Wrapper h, Repr h v ~ a) => HasField k (RecordOf h xs) a where
   getField = unwrap . hlookup (association :: Membership xs (k >: v))

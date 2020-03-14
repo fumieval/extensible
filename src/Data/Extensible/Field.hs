@@ -51,9 +51,6 @@ module Data.Extensible.Field (
 import Control.DeepSeq (NFData)
 import qualified Data.Aeson as J
 import Data.Coerce
-#if __GLASGOW_HASKELL__ < 802
-import Data.Constraint
-#endif
 #ifdef CASSAVA
 import qualified Data.Csv as Csv
 #endif
