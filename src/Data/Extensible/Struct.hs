@@ -202,9 +202,9 @@ newFromHList l = do
 
 -- | The type of extensible products.
 --
--- @(:&) :: [k] -> (k -> *) -> *@
+-- @(:&) :: [k] -> (k -> Type) -> Type@
 --
-data (s :: [k]) :& (h :: k -> *) = HProduct (SmallArray# Any)
+data (s :: [k]) :& (h :: k -> Type) = HProduct (SmallArray# Any)
 
 type h :* xs = xs :& h
 {-# DEPRECATED (:*) "Use :& instead" #-}

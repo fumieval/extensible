@@ -79,7 +79,7 @@ import Type.Membership
 
 -- | A @'Field' h (k ':> v)@ is @h v@ annotated with the field name @k@.
 --
--- @'Field' :: (v -> *) -> Assoc k v -> *@
+-- @'Field' :: (v -> Type) -> Assoc k v -> Type@
 --
 newtype Field (h :: v -> Type) (kv :: Assoc k v)
   = Field { getField :: h (TargetOf kv) }
@@ -191,13 +191,13 @@ instance (KnownSymbol k, Pretty (h v)) => Pretty (Field h (k ':> v)) where
 
 -- | The type of records which contain several fields.
 --
--- @RecordOf :: (v -> *) -> [Assoc k v] -> *@
+-- @RecordOf :: (v -> Type) -> [Assoc k v] -> Type@
 --
 type RecordOf h xs = xs :& Field h
 
 -- | The dual of 'RecordOf'
 --
--- @VariantOf :: (v -> *) -> [Assoc k v] -> *@
+-- @VariantOf :: (v -> Type) -> [Assoc k v] -> Type@
 --
 type VariantOf h xs = xs :/ Field h
 
