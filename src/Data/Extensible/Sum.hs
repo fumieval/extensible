@@ -14,7 +14,6 @@
 ------------------------------------------------------------------------
 module Data.Extensible.Sum (
   (:/)(..)
-  , (:|)
   , hoist
   , embed
   , strike
@@ -37,9 +36,6 @@ import Type.Membership
 --
 data (xs :: [k]) :/ (h :: k -> Type) where
   EmbedAt :: !(Membership xs x) -> h x -> xs :/ h
-
-type h :| xs = xs :/ h
-{-# DEPRECATED (:|) "Use :/ instead" #-}
 
 instance Enum (xs :/ Proxy) where
   fromEnum (EmbedAt m _) = fromIntegral $ getMemberId m

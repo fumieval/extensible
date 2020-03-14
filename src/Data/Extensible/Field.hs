@@ -43,14 +43,6 @@ module Data.Extensible.Field (
   , KeyIs
   , TargetIs
   , KeyTargetAre
-  -- * deprecated
-  , AssocKey
-  , AssocValue
-  , ValueIs
-  , KeyValue
-  , proxyAssocKey
-  , stringAssocKey
-  , proxyAssocValue
   -- * Internal
   , LabelPhantom
   , Labelling
@@ -314,30 +306,3 @@ infix 1 @:>
 (@==) = (@=)
 {-# INLINE (@==) #-}
 infix 1 @==
-
-type AssocKey kv = KeyOf kv
-{-# DEPRECATED AssocKey "Use KeyOf instead" #-}
-
-type AssocValue kv = TargetOf kv
-{-# DEPRECATED AssocValue "Use TargetOf instead" #-}
-
-type ValueIs = TargetIs
-{-# DEPRECATED ValueIs "Use TargetIs instead" #-}
-
-type KeyValue = KeyTargetAre
-{-# DEPRECATED KeyValue "Use KeyTargetAre instead" #-}
-
-proxyAssocKey :: proxy kv -> Proxy (KeyOf kv)
-proxyAssocKey = proxyKeyOf
-{-# INLINE proxyAssocKey #-}
-{-# DEPRECATED proxyAssocKey "Use proxyKeyOf instead" #-}
-
-proxyAssocValue :: proxy kv -> Proxy (TargetOf kv)
-proxyAssocValue = proxyTargetOf
-{-# INLINE proxyAssocValue #-}
-{-# DEPRECATED proxyAssocValue "Use proxyTargetOf instead" #-}
-
-stringAssocKey :: (IsString a, KnownSymbol (KeyOf kv)) => proxy kv -> a
-stringAssocKey = stringKeyOf
-{-# INLINE stringAssocKey #-}
-{-# DEPRECATED stringAssocKey "Use stringKeyOf instead" #-}

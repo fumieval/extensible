@@ -38,7 +38,6 @@ module Data.Extensible.Class (
   , Assoc(..)
   , type (>:)
   , Lookup(..)
-  , Associate
   -- * Misc
   , Head
   , Last
@@ -101,6 +100,3 @@ type family Head (xs :: [k]) :: k where
 type family Last (x :: [k]) :: k where
   Last '[x] = x
   Last (x ': xs) = Last xs
-
-type Associate k v xs = Lookup xs k v
-{-# DEPRECATED Associate "Use Lookup instead" #-}

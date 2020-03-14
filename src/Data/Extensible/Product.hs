@@ -16,7 +16,6 @@
 module Data.Extensible.Product (
   -- * Basic operations
   (:&)
-  , (:*)
   , nil
   , (<:)
   , (<!)

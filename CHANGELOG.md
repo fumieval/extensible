@@ -1,3 +1,9 @@
+0.8
+------------------------------------------------
+
+* Removed `Associate`, `AssocKey`, `AssocValue`, `ValueIs`, `KeyIs`, `KeyValue`, `proxyAssocKey`, `proxyAssocValue`, `stringAssokKey`, `xlb`, `:*`, `:|`
+* Reverted deprecation of `Data.Extensible.Tangle`
+
 0.7.1
 ------------------------------------------------
 * Removed `vector` and `prettyprinter` orphans
