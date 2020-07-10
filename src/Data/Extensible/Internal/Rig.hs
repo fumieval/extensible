@@ -47,6 +47,10 @@ over = coerce
 -- | Reifies the structure of 'Iso's
 data Exchange a b s t = Exchange (s -> a) (b -> t)
 
+instance Functor (Exchange a b s) where
+  fmap f (Exchange sa bt) = Exchange sa (f . bt)
+  {-# INLINE fmap #-}
+
 instance Profunctor (Exchange a b) where
   dimap f g (Exchange sa bt) = Exchange (sa . f) (g . bt)
   {-# INLINE dimap #-}
