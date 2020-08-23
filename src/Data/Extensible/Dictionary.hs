@@ -203,6 +203,12 @@ instance Forall (KeyTargetAre KnownSymbol (Instance1 Csv.ToField h)) xs => Csv.T
   toNamedRecord = hfoldlWithIndexFor (Proxy :: Proxy (KeyTargetAre KnownSymbol (Instance1 Csv.ToField h)))
     (\k m v -> HM.insert (BC.pack (symbolVal (proxyKeyOf k))) (Csv.toField v) m)
     HM.empty
+
+instance Forall (KeyIs KnownSymbol) xs => Csv.DefaultOrdered (RecordOf h xs) where
+  headerOrder _ = V.fromList $ henumerateFor
+    (Proxy :: Proxy (KeyIs KnownSymbol))
+    (Proxy :: Proxy xs)
+    (\k r -> stringKeyOf k : r) []
 #endif
 
 -- | @'parseJSON' 'J.Null'@ is called for missing fields.
