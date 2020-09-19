@@ -12,11 +12,11 @@ license:             BSD-3-Clause
 license-file:        LICENSE
 author:              Fumiaki Kinoshita
 maintainer:          Fumiaki Kinoshita <fumiexcel@gmail.com>
-copyright:           Copyright (c) 2017 Fumiaki Kinoshita
+copyright:           Copyright (c) 2017-2020 Fumiaki Kinoshita
 category:            Data, Records
 build-type:          Simple
 stability:           experimental
-Tested-With:         GHC == 8.4.4, GHC == 8.6.5, GHC == 8.8.2
+Tested-With:         GHC == 8.6.5, GHC == 8.8.4, GHC == 8.10.2
 
 extra-source-files:
   examples/*.hs

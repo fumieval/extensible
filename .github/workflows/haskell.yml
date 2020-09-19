@@ -1,6 +1,6 @@
 name: Haskell CI
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   build:
@@ -8,12 +8,16 @@ jobs:
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message, 'ci skip')"
 
+    strategy:
+      matrix:
+        ghc: [ '8.6.5', '8.8.4', '8.10.2' ]
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-haskell@v1
       with:
-        ghc-version: '8.6.5'
-        cabal-version: '3.0'
+        ghc-version: ${{ matrix.ghc }}
+        cabal-version: '3.2'
+
     - name: Install dependencies
       run: |
         cabal update
