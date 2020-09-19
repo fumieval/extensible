@@ -64,6 +64,7 @@ import Data.Profunctor.Unsafe
 import Data.Extensible.Wrapper
 import Data.Functor.Identity
 import Data.Hashable
+import Data.Incremental (Incremental)
 import Data.String
 import Data.Text.Prettyprint.Doc
 import qualified Data.Vector.Generic as G
@@ -111,6 +112,7 @@ ND_Field(J.ToJSON)
 ND_Field(Csv.FromField)
 ND_Field(Csv.ToField)
 #endif
+ND_Field(Incremental)
 
 newtype instance U.MVector s (Field h x) = MV_Field (U.MVector s (h (TargetOf x)))
 newtype instance U.Vector (Field h x) = V_Field (U.Vector (h (TargetOf x)))

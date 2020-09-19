@@ -1,3 +1,8 @@
+0.8.1
+------------------------------------------------
+* Added `DefaultOrdered` and `Incremental` instances to `:&`
+* Added an `Incremental` instance to `Field`
+
 0.8
 ------------------------------------------------
 

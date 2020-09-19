@@ -38,6 +38,9 @@ import Data.Extensible.Struct
 import Data.Extensible.Wrapper
 import Data.Hashable
 import qualified Data.HashMap.Strict as HM
+import Data.Incremental
+import Data.Maybe (isJust)
+import Data.Monoid (Any(..))
 import Data.Text.Prettyprint.Doc
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as M
@@ -321,3 +324,19 @@ instance ConstraintsB ((:/) xs) where
   baddDicts (EmbedAt i x) = EmbedAt i (Pair (hlookup i bdicts) x)
 
 #endif
+
+instance WrapForall Incremental h xs => Incremental (xs :& h) where
+  type Delta (xs :& h) = xs :& WrapDelta h
+  patch r =
+    hmapWithIndexFor
+      (Proxy :: Proxy (Instance1 Incremental h))
+      (\i (WrapDelta d) -> maybe (hlookup i r) (patch (hlookup i r)) d)
+  diff r =
+    check
+      . hmapWithIndexFor
+        (Proxy :: Proxy (Instance1 Incremental h))
+        (\i x -> WrapDelta (diff (hlookup i r) x))
+    where
+      check t
+        | getAny $ hfoldMap (Any . isJust . unwrapDelta) t = Just t
+        | otherwise = Nothing

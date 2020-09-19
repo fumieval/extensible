@@ -1,6 +1,6 @@
 cabal-version:       2.4
 name:                extensible
-version:             0.8
+version:             0.8.1
 synopsis:            Extensible, efficient, optics-friendly data types and effects
 homepage:            https://github.com/fumieval/extensible
 bug-reports:         http://github.com/fumieval/extensible/issues
@@ -79,6 +79,7 @@ library
     , deepseq
     , ghc-prim
     , hashable
+    , incremental >= 0.3.1
     , membership
     , monad-skeleton >= 0.1.2
     , prettyprinter >= 1.2.1 && <2
