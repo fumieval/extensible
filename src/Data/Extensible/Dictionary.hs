@@ -48,6 +48,9 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Text as T
 import Data.Type.Equality
 import qualified Language.Haskell.TH.Lift as TH
+#if MIN_VERSION_template_haskell(2,17,0)
+import qualified Language.Haskell.TH.Syntax as TH
+#endif
 import Language.Haskell.TH hiding (Type)
 import GHC.TypeLits
 import Test.QuickCheck.Arbitrary
@@ -122,6 +125,9 @@ instance TH.Lift a => TH.Lift (Const a b) where
 instance WrapForall TH.Lift h xs => TH.Lift (xs :& h) where
   lift = hfoldrWithIndexFor (Proxy :: Proxy (Instance1 TH.Lift h))
     (\_ x xs -> infixE (Just $ TH.lift x) (varE '(<:)) (Just xs)) (varE 'nil)
+#if MIN_VERSION_template_haskell(2,17,0) 
+  liftTyped e = TH.Code $ TH.TExp <$> TH.lift e
+#endif
 
 newtype instance U.MVector s (xs :& h) = MV_Product (xs :& Comp (U.MVector s) h)
 newtype instance U.Vector (xs :& h) = V_Product (xs :& Comp U.Vector h)
@@ -271,6 +277,9 @@ instance WrapForall TH.Lift h xs => TH.Lift (xs :/ h) where
   lift (EmbedAt i h) = views (pieceAt i)
     (\(Comp Dict) -> conE 'EmbedAt `appE` TH.lift i `appE` TH.lift h)
     (library :: xs :& Comp Dict (Instance1 TH.Lift h))
+#if MIN_VERSION_template_haskell(2,17,0)
+  liftTyped e = TH.Code $ TH.TExp <$> TH.lift e
+#endif
 
 instance WrapForall Arbitrary h xs => Arbitrary (xs :/ h) where
   arbitrary = choose (0, hcount (Proxy :: Proxy xs)) >>= henumerateFor

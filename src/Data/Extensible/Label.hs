@@ -25,7 +25,7 @@ instance k ~ l => IsLabel k (Proxy l) where
 
 -- | Specialised version of 'itemAssoc'. Stands for "eXtensible LaBel"
 xlb :: Proxy k -> FieldOptic k
-xlb = itemAssoc
+xlb t = itemAssoc t
 
 instance (Extensible f p e
   , Lookup xs k v

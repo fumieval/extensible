@@ -74,7 +74,6 @@ import Foreign.Storable (Storable)
 import GHC.Generics (Generic)
 import GHC.TypeLits hiding (Nat)
 import Language.Haskell.TH.Lift
-import Language.Haskell.TH (appE, conE)
 import Test.QuickCheck.Arbitrary
 import Type.Membership
 
@@ -113,6 +112,7 @@ ND_Field(Csv.FromField)
 ND_Field(Csv.ToField)
 #endif
 ND_Field(Incremental)
+ND_Field(Lift)
 
 newtype instance U.MVector s (Field h x) = MV_Field (U.MVector s (h (TargetOf x)))
 newtype instance U.Vector (Field h x) = V_Field (U.Vector (h (TargetOf x)))
@@ -160,9 +160,6 @@ instance (U.Unbox (h (TargetOf x))) => G.Vector U.Vector (Field h x) where
   basicUnsafeCopy (MV_Field mv) (V_Field v) = G.basicUnsafeCopy mv v
 
 instance (U.Unbox (h (TargetOf x))) => U.Unbox (Field h x)
-
-instance Lift (h (TargetOf x)) => Lift (Field h x) where
-  lift = appE (conE 'Field) . lift . getField
 
 -- | Lift a function for the content.
 liftField :: (g (TargetOf kv) -> h (TargetOf kv)) -> Field g kv -> Field h kv

@@ -85,7 +85,7 @@ itemAssoc p = pieceAssoc . _WrapperAs (proxyKey p)
 -- | Access an element specified by the key type through a wrapper.
 itemKey :: forall k v xs h f p t. (Wrapper h, Extensible f p t, Lookup xs k v, ExtensibleConstr t xs h (k ':> v))
   => Optic' p f (t xs h) (Repr h (k ':> v))
-itemKey = pieceAssoc . _WrapperAs (Proxy @ (k ':> v))
+itemKey = pieceAssoc . _WrapperAs (Proxy @(k ':> v))
 {-# INLINE itemKey #-}
 
 proxyKey :: proxy k -> Proxy (k ':> v)

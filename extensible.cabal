@@ -60,6 +60,7 @@ library
   default-extensions: TypeOperators
     , DeriveDataTypeable
     , DeriveGeneric
+    , DeriveLift
     , GeneralizedNewtypeDeriving
     , KindSignatures
     , ConstraintKinds

@@ -130,7 +130,7 @@ hmapWithIndexFor c t p = hfrozen $ newFor c $ \i -> t i $ hlookup i p
 hmapWithIndexWith :: forall c xs g h. Forall c xs
   => (forall x. c x => Membership xs x -> g x -> h x)
   -> xs :& g -> xs :& h
-hmapWithIndexWith = hmapWithIndexFor (Proxy @ c)
+hmapWithIndexWith = hmapWithIndexFor (Proxy @c)
 
 -- | Transform every element in a product, preserving the order.
 --
@@ -178,7 +178,7 @@ hfoldrWithIndexFor p f r xs = henumerateFor p (Proxy :: Proxy xs) (\i -> f i (hl
 
 hfoldrWithIndexWith :: forall c xs h r. (Forall c xs)
   => (forall x. c x => Membership xs x -> h x -> r -> r) -> r -> xs :& h -> r
-hfoldrWithIndexWith f r xs = henumerateFor (Proxy @ c) (Proxy @ xs) (\i -> f i (hlookup i xs)) r
+hfoldrWithIndexWith f r xs = henumerateFor (Proxy @c) (Proxy @xs) (\i -> f i (hlookup i xs)) r
 {-# INLINE hfoldrWithIndexWith #-}
 
 -- | Constrained 'hfoldlWithIndex'
@@ -214,7 +214,7 @@ hfoldMapFor p f = hfoldMapWithIndexFor p (const f)
 -- | Constrained 'hfoldMap'
 hfoldMapWith :: forall c xs h a. (Forall c xs, Monoid a)
   => (forall x. c x => h x -> a) -> xs :& h -> a
-hfoldMapWith f = hfoldMapWithIndexFor (Proxy @ c) (const f)
+hfoldMapWith f = hfoldMapWithIndexFor (Proxy @c) (const f)
 {-# INLINE hfoldMapWith #-}
 
 -- | Traverse all elements and combine the result sequentially.
@@ -277,7 +277,7 @@ htabulateFor p f = hfrozen $ newFor p f
 
 -- | Pure version of 'hgenerateFor'.
 htabulateWith :: forall c xs h. Forall c xs => (forall x. c x => Membership xs x -> h x) -> xs :& h
-htabulateWith f = hfrozen $ newFor (Proxy @ c) f
+htabulateWith f = hfrozen $ newFor (Proxy @c) f
 {-# INLINE htabulateWith #-}
 
 -- | A product filled with the specified value.
@@ -287,7 +287,7 @@ hrepeatFor p f = htabulateFor p (const f)
 
 -- | A product filled with the specified value.
 hrepeatWith :: forall c xs h. Forall c xs => (forall x. c x => h x) -> xs :& h
-hrepeatWith f = htabulateFor (Proxy @ c) (const f)
+hrepeatWith f = htabulateFor (Proxy @c) (const f)
 {-# INLINE hrepeatWith #-}
 
 -- | 'Applicative' version of 'htabulateFor'.
@@ -299,7 +299,7 @@ hgenerateFor p f = fmap fromHList $ hgenerateListFor p f
 -- | 'Applicative' version of 'htabulateFor'.
 hgenerateWith :: forall c xs f h. (Forall c xs, Applicative f)
   => (forall x. c x => Membership xs x -> f (h x)) -> f (xs :& h)
-hgenerateWith f = fmap fromHList $ hgenerateListFor (Proxy @ c) f
+hgenerateWith f = fmap fromHList $ hgenerateListFor (Proxy @c) f
 {-# INLINE hgenerateWith #-}
 
 -- | Accumulate sums on a product.

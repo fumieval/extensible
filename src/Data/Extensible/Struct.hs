@@ -3,7 +3,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE MagicHash, UnboxedTuples #-}
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 ------------------------------------------------------------------------
 -- |
@@ -63,6 +62,9 @@ import Data.Kind (Type)
 import qualified Data.StateVar as V
 import GHC.Types
 import qualified Type.Membership.HList as L
+#if __GLASGOW_HASKELL__ >= 900
+import Unsafe.Coerce
+#endif
 
 -- | Mutable type-indexed struct.
 data Struct s (h :: k -> Type) (xs :: [k]) = Struct (SmallMutableArray# s Any)
