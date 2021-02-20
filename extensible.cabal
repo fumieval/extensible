@@ -1,6 +1,6 @@
 cabal-version:       2.4
 name:                extensible
-version:             0.8.1
+version:             0.8.2
 synopsis:            Extensible, efficient, optics-friendly data types and effects
 homepage:            https://github.com/fumieval/extensible
 bug-reports:         http://github.com/fumieval/extensible/issues
@@ -12,7 +12,7 @@ license:             BSD-3-Clause
 license-file:        LICENSE
 author:              Fumiaki Kinoshita
 maintainer:          Fumiaki Kinoshita <fumiexcel@gmail.com>
-copyright:           Copyright (c) 2017-2020 Fumiaki Kinoshita
+copyright:           Copyright (c) 2017-2021 Fumiaki Kinoshita
 category:            Data, Records
 build-type:          Simple
 stability:           experimental
