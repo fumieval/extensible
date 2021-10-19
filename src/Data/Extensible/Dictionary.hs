@@ -35,9 +35,9 @@ import Data.Extensible.Internal.Rig
 import Data.Extensible.Nullable
 import Data.Constraint
 import Data.Extensible.Struct
-import Data.Extensible.Wrapper
 import Data.Hashable
 import qualified Data.Aeson.KeyMap as KM
+import Data.Functor.Compose
 import qualified Data.HashMap.Strict as HM
 import Data.Incremental
 import Data.Maybe (isJust)
@@ -63,8 +63,8 @@ import Data.Functor.Product
 #endif
 
 -- | Reify a collection of dictionaries, as you wish.
-library :: forall c xs. Forall c xs => xs :& Comp Dict c
-library = hrepeatFor (Proxy :: Proxy c) $ Comp Dict
+library :: forall c xs. Forall c xs => xs :& Compose Dict c
+library = hrepeatFor (Proxy :: Proxy c) $ Compose Dict
 {-# INLINE library #-}
 
 class (f x, g x) => And f g x
@@ -95,8 +95,8 @@ instance (Eq (xs :& h), WrapForall Ord h xs) => Ord (xs :& h) where
   {-# INLINE compare #-}
 
 instance WrapForall Semigroup h xs => Semigroup (xs :& h) where
-  (<>) = hzipWith3 (\(Comp Dict) -> (<>))
-    (library :: xs :& Comp Dict (Instance1 Semigroup h))
+  (<>) = hzipWith3 (\(Compose Dict) -> (<>))
+    (library :: xs :& Compose Dict (Instance1 Semigroup h))
   {-# INLINE (<>) #-}
 
 instance (WrapForall Semigroup h xs, WrapForall Monoid h xs) => Monoid (xs :& h) where
@@ -123,44 +123,44 @@ instance WrapForall TH.Lift h xs => TH.Lift (xs :& h) where
   liftTyped e = TH.TExp <$> TH.lift e
 #endif
 
-newtype instance U.MVector s (xs :& h) = MV_Product (xs :& Comp (U.MVector s) h)
-newtype instance U.Vector (xs :& h) = V_Product (xs :& Comp U.Vector h)
+newtype instance U.MVector s (xs :& h) = MV_Product (xs :& Compose (U.MVector s) h)
+newtype instance U.Vector (xs :& h) = V_Product (xs :& Compose U.Vector h)
 
-hlookupC :: Membership xs a -> xs :& Comp f g -> f (g a)
-hlookupC i = getComp . hlookup i
+hlookupC :: Membership xs a -> xs :& Compose f g -> f (g a)
+hlookupC i = getCompose . hlookup i
 
 instance WrapForall U.Unbox h (x ': xs) => G.Vector U.Vector ((x ': xs) :& h) where
   basicUnsafeFreeze (MV_Product v) = fmap V_Product
     $ hgenerateFor (Proxy :: Proxy (Instance1 U.Unbox h))
-    $ \m -> Comp <$> G.basicUnsafeFreeze (hlookupC m v)
+    $ \m -> Compose <$> G.basicUnsafeFreeze (hlookupC m v)
   basicUnsafeThaw (V_Product v) = fmap MV_Product
     $ hgenerateFor (Proxy :: Proxy (Instance1 U.Unbox h))
-    $ \m -> Comp <$> G.basicUnsafeThaw (hlookupC m v)
-  basicLength (V_Product v) = G.basicLength $ getComp $ hindex v leadership
+    $ \m -> Compose <$> G.basicUnsafeThaw (hlookupC m v)
+  basicLength (V_Product v) = G.basicLength $ getCompose $ hindex v leadership
   basicUnsafeSlice i n (V_Product v) = V_Product
     $ htabulateFor (Proxy :: Proxy (Instance1 U.Unbox h))
-    $ \m -> Comp $ G.basicUnsafeSlice i n (hlookupC m v)
+    $ \m -> Compose $ G.basicUnsafeSlice i n (hlookupC m v)
   basicUnsafeIndexM (V_Product v) i = hgenerateFor (Proxy :: Proxy (Instance1 U.Unbox h))
     $ \m -> G.basicUnsafeIndexM (hlookupC m v) i
   basicUnsafeCopy (MV_Product v) (V_Product w)
     = henumerateFor (Proxy :: Proxy (Instance1 U.Unbox h)) (Proxy :: Proxy (x ': xs)) ((>>) . \i -> G.basicUnsafeCopy (hlookupC i v) (hlookupC i w)) (return ())
 
 instance WrapForall U.Unbox h (x ': xs) => M.MVector U.MVector ((x ': xs) :& h) where
-  basicLength (MV_Product v) = M.basicLength $ getComp $ hindex v leadership
+  basicLength (MV_Product v) = M.basicLength $ getCompose $ hindex v leadership
   basicUnsafeSlice i n (MV_Product v) = MV_Product
     $ htabulateFor (Proxy :: Proxy (Instance1 U.Unbox h))
-    $ \m -> Comp $ M.basicUnsafeSlice i n (hlookupC m v)
+    $ \m -> Compose $ M.basicUnsafeSlice i n (hlookupC m v)
   basicOverlaps (MV_Product v1) (MV_Product v2) = henumerateFor
     (Proxy :: Proxy (Instance1 U.Unbox h)) (Proxy :: Proxy (x ': xs))
     (\i -> (||) $ M.basicOverlaps (hlookupC i v1) (hlookupC i v2))
     False
   basicUnsafeNew n = fmap MV_Product
     $ hgenerateFor (Proxy :: Proxy (Instance1 U.Unbox h))
-    (const $ Comp <$> M.basicUnsafeNew n)
+    (const $ Compose <$> M.basicUnsafeNew n)
   basicInitialize (MV_Product v) = henumerateFor (Proxy :: Proxy (Instance1 U.Unbox h)) (Proxy :: Proxy (x ': xs)) ((>>) . \i -> M.basicInitialize $ hlookupC i v) (return ())
   basicUnsafeReplicate n x = fmap MV_Product
     $ hgenerateFor (Proxy :: Proxy (Instance1 U.Unbox h))
-    $ \m -> fmap Comp $ M.basicUnsafeReplicate n $ hlookup m x
+    $ \m -> fmap Compose $ M.basicUnsafeReplicate n $ hlookup m x
   basicUnsafeRead (MV_Product v) i = hgenerateFor (Proxy :: Proxy (Instance1 U.Unbox h))
     (\m -> M.basicUnsafeRead (hlookupC m v) i)
   basicUnsafeWrite (MV_Product v) i x = henumerateFor (Proxy :: Proxy (Instance1 U.Unbox h)) (Proxy :: Proxy (x ': xs)) ((>>) . \m -> M.basicUnsafeWrite (hlookupC m v) i (hlookup m x)) (return ())
@@ -172,7 +172,7 @@ instance WrapForall U.Unbox h (x ': xs) => M.MVector U.MVector ((x ': xs) :& h) 
     = henumerateFor (Proxy :: Proxy (Instance1 U.Unbox h)) (Proxy :: Proxy (x ': xs)) ((>>) . \i -> M.basicUnsafeMove (hlookupC i v1) (hlookupC i v2)) (return ())
   basicUnsafeGrow (MV_Product v) n = fmap MV_Product
     $ hgenerateFor (Proxy :: Proxy (Instance1 U.Unbox h))
-    $ \i -> Comp <$> M.basicUnsafeGrow (hlookupC i v) n
+    $ \i -> Compose <$> M.basicUnsafeGrow (hlookupC i v) n
 
 instance WrapForall U.Unbox h (x ': xs) => U.Unbox ((x ': xs) :& h)
 
@@ -243,34 +243,34 @@ instance WrapForall Show h xs => Show (xs :/ h) where
   showsPrec d (EmbedAt i h) = showParen (d > 10) $ showString "EmbedAt "
     . showsPrec 11 i
     . showString " "
-    . views (pieceAt i) (\(Comp Dict) -> showsPrec 11 h) (library :: xs :& Comp Dict (Instance1 Show h))
+    . views (pieceAt i) (\(Compose Dict) -> showsPrec 11 h) (library :: xs :& Compose Dict (Instance1 Show h))
 
 instance WrapForall Eq h xs => Eq (xs :/ h) where
   EmbedAt p g == EmbedAt q h = case compareMembership p q of
     Left _ -> False
-    Right Refl -> views (pieceAt p) (\(Comp Dict) -> g == h) (library :: xs :& Comp Dict (Instance1 Eq h))
+    Right Refl -> views (pieceAt p) (\(Compose Dict) -> g == h) (library :: xs :& Compose Dict (Instance1 Eq h))
   {-# INLINE (==) #-}
 
 instance (Eq (xs :/ h), WrapForall Ord h xs) => Ord (xs :/ h) where
   EmbedAt p g `compare` EmbedAt q h = case compareMembership p q of
     Left x -> x
-    Right Refl -> views (pieceAt p) (\(Comp Dict) -> compare g h) (library :: xs :& Comp Dict (Instance1 Ord h))
+    Right Refl -> views (pieceAt p) (\(Compose Dict) -> compare g h) (library :: xs :& Compose Dict (Instance1 Ord h))
   {-# INLINE compare #-}
 
 instance WrapForall NFData h xs => NFData (xs :/ h) where
-  rnf (EmbedAt i h) = views (pieceAt i) (\(Comp Dict) -> rnf h) (library :: xs :& Comp Dict (Instance1 NFData h))
+  rnf (EmbedAt i h) = views (pieceAt i) (\(Compose Dict) -> rnf h) (library :: xs :& Compose Dict (Instance1 NFData h))
   {-# INLINE rnf #-}
 
 instance WrapForall Hashable h xs => Hashable (xs :/ h) where
   hashWithSalt s (EmbedAt i h) = views (pieceAt i)
-    (\(Comp Dict) -> s `hashWithSalt` i `hashWithSalt` h)
-    (library :: xs :& Comp Dict (Instance1 Hashable h))
+    (\(Compose Dict) -> s `hashWithSalt` i `hashWithSalt` h)
+    (library :: xs :& Compose Dict (Instance1 Hashable h))
   {-# INLINE hashWithSalt #-}
 
 instance WrapForall TH.Lift h xs => TH.Lift (xs :/ h) where
   lift (EmbedAt i h) = views (pieceAt i)
-    (\(Comp Dict) -> conE 'EmbedAt `appE` TH.lift i `appE` TH.lift h)
-    (library :: xs :& Comp Dict (Instance1 TH.Lift h))
+    (\(Compose Dict) -> conE 'EmbedAt `appE` TH.lift i `appE` TH.lift h)
+    (library :: xs :& Compose Dict (Instance1 TH.Lift h))
 #if MIN_VERSION_template_haskell(2,17,0)
   liftTyped e = TH.Code $ TH.TExp <$> TH.lift e
 #elif MIN_VERSION_template_haskell(2,16,0)
@@ -286,15 +286,15 @@ instance WrapForall Arbitrary h xs => Arbitrary (xs :/ h) where
         else r (i - 1))
         (error "Impossible")
   shrink (EmbedAt i h) = views (pieceAt i)
-    (\(Comp Dict) -> EmbedAt i <$> shrink h)
-    (library :: xs :& Comp Dict (Instance1 Arbitrary h))
+    (\(Compose Dict) -> EmbedAt i <$> shrink h)
+    (library :: xs :& Compose Dict (Instance1 Arbitrary h))
 
 instance WrapForall Pretty h xs => Pretty (xs :/ h) where
   pretty (EmbedAt i h) = "EmbedAt "
     <> pretty i
     <> " "
-    <> views (pieceAt i) (\(Comp Dict) -> pretty h)
-    (library :: xs :& Comp Dict (Instance1 Pretty h))
+    <> views (pieceAt i) (\(Compose Dict) -> pretty h)
+    (library :: xs :& Compose Dict (Instance1 Pretty h))
 
 -- | Forall upon a wrapper
 type WrapForall c h = Forall (Instance1 c h)

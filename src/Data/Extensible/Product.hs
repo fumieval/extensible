@@ -77,6 +77,7 @@ import Data.Extensible.Struct
 import Data.Extensible.Sum
 import Data.Extensible.Class
 import Data.Extensible.Wrapper
+import Data.Functor.Compose
 import Data.Proxy
 import qualified Type.Membership.HList as HList
 
@@ -221,24 +222,24 @@ hfoldMapWith f = hfoldMapWithIndexFor (Proxy @c) (const f)
 -- @
 -- htraverse (fmap f . g) ≡ fmap (hmap f) . htraverse g
 -- htraverse pure ≡ pure
--- htraverse (Comp . fmap g . f) ≡ Comp . fmap (htraverse g) . htraverse f
+-- htraverse (Compose . fmap g . f) ≡ Compose . fmap (htraverse g) . htraverse f
 -- @
 htraverse :: Applicative f => (forall x. g x -> f (h x)) -> xs :& g -> f (xs :& h)
 htraverse f = fmap fromHList . HList.htraverse f . toHList
 {-# INLINE htraverse #-}
 
 -- | 'sequence' analog for extensible products
-hsequence :: Applicative f => xs :& Comp f h -> f (xs :& h)
-hsequence = htraverse getComp
+hsequence :: Applicative f => xs :& Compose f h -> f (xs :& h)
+hsequence = htraverse getCompose
 {-# INLINE hsequence #-}
 
 -- | The dual of 'htraverse'
-hcollect :: (Functor f, Generate xs) => (a -> xs :& h) -> f a -> xs :& Comp f h
-hcollect f m = htabulate $ \i -> Comp $ fmap (hlookup i . f) m
+hcollect :: (Functor f, Generate xs) => (a -> xs :& h) -> f a -> xs :& Compose f h
+hcollect f m = htabulate $ \i -> Compose $ fmap (hlookup i . f) m
 {-# INLINABLE hcollect #-}
 
 -- | The dual of 'hsequence'
-hdistribute :: (Functor f, Generate xs) => f (xs :& h) -> xs :& Comp f h
+hdistribute :: (Functor f, Generate xs) => f (xs :& h) -> xs :& Compose f h
 hdistribute = hcollect id
 {-# INLINE hdistribute #-}
 
@@ -320,8 +321,8 @@ haccum = haccumMap id
 {-# INLINE haccum #-}
 
 -- | Group sums by type.
-hpartition :: (Foldable f, Generate xs) => (a -> xs :/ h) -> f a -> xs :& Comp [] h
-hpartition f = haccumMap f (\_ x (Comp xs) -> Comp (x:xs)) $ hrepeat $ Comp []
+hpartition :: (Foldable f, Generate xs) => (a -> xs :/ h) -> f a -> xs :& Compose [] h
+hpartition f = haccumMap f (\_ x (Compose xs) -> Compose (x:xs)) $ hrepeat $ Compose []
 {-# INLINE hpartition #-}
 
 -- | Evaluate every element in a product.

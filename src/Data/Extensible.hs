@@ -43,8 +43,10 @@ module Data.Extensible (
   , module Data.Extensible.Wrapper
   , Proxy(..)
   , KnownSymbol
+  , Compose(..)
   ) where
 
+import Data.Functor.Compose
 import Data.Extensible.Class
 import Data.Extensible.Dictionary
 import Data.Extensible.Field

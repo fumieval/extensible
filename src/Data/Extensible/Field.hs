@@ -62,6 +62,7 @@ import Data.Extensible.Internal.Rig
 import Data.Kind
 import Data.Profunctor.Unsafe
 import Data.Extensible.Wrapper
+import Data.Functor.Compose
 import Data.Functor.Identity
 import Data.Hashable
 import Data.Incremental (Incremental)
@@ -287,7 +288,7 @@ infix 1 @=
 --   <: #str \<\@=\> getLine
 --   <: nil
 -- @
-(<@=>) :: (Functor f, Wrapper h) => FieldName k -> f (Repr h v) -> Comp f (Field h) (k ':> v)
+(<@=>) :: (Functor f, Wrapper h) => FieldName k -> f (Repr h v) -> Compose f (Field h) (k ':> v)
 (<@=>) k = comp (k @=)
 {-# INLINE (<@=>) #-}
 infix 1 <@=>

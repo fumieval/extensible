@@ -21,6 +21,7 @@ module Data.Extensible.Tangle
 import Control.Applicative
 import Control.Monad.Trans.RWS.Strict
 import Control.Monad.Trans.Class
+import Data.Functor.Compose
 import Data.Extensible.Class
 import Data.Extensible.Field
 import Data.Extensible.Product
@@ -30,7 +31,7 @@ import Data.Extensible.Wrapper
 
 -- | @'TangleT' h xs m@ is the monad of computations that may depend on the elements in 'xs'.
 newtype TangleT xs h m a = TangleT
-  { unTangleT :: RWST (xs :& Comp (TangleT xs h m) h) () (xs :& Nullable h) m a }
+  { unTangleT :: RWST (xs :& Compose (TangleT xs h m) h) () (xs :& Nullable h) m a }
   deriving (Functor, Applicative, Monad)
 
 instance MonadTrans (TangleT xs h) where
@@ -57,13 +58,13 @@ hitchAt k = TangleT $ do
     Just a -> return a
     Nothing -> do
       tangles <- ask
-      a <- unTangleT $ getComp $ hlookup k tangles
+      a <- unTangleT $ getCompose $ hlookup k tangles
       modify $ over (pieceAt k) $ const $ Nullable $ Just a
       return a
 
 -- | Run a 'TangleT' action and return the result and the calculated values.
 runTangleT :: Monad m
-  => xs :& Comp (TangleT xs h m) h
+  => xs :& Compose (TangleT xs h m) h
   -> xs :& Nullable h
   -> TangleT xs h m a
   -> m (a, xs :& Nullable h)
@@ -73,7 +74,7 @@ runTangleT tangles rec0 (TangleT m) = (\(a, s, _) -> (a, s))
 
 -- | Run a 'TangleT' action.
 evalTangleT :: Monad m
-  => xs :& Comp (TangleT xs h m) h
+  => xs :& Compose (TangleT xs h m) h
   -> xs :& Nullable h
   -> TangleT xs h m a
   -> m a
@@ -82,7 +83,7 @@ evalTangleT tangles rec0 (TangleT m) = fst <$> evalRWST m tangles rec0
 
 -- | Run tangles and collect all the results as a 'Record'.
 runTangles :: Monad m
-  => xs :& Comp (TangleT xs h m) h
+  => xs :& Compose (TangleT xs h m) h
   -> xs :& Nullable h
   -> m (xs :& h)
 runTangles ts vs = evalTangleT ts vs $ htraverseWithIndex (const . hitchAt) vs

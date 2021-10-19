@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveTraversable, StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE PatternSynonyms #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Wrapper
@@ -13,7 +14,9 @@
 module Data.Extensible.Wrapper (
   Wrapper(..)
   , _WrapperAs
-  , Comp(..)
+  , type Comp
+  , pattern Comp
+  , getComp
   , comp
   , Prod(..)
   ) where
@@ -23,13 +26,12 @@ import Control.DeepSeq
 import Data.Typeable (Typeable)
 import Data.Proxy (Proxy(..))
 import Data.Profunctor.Unsafe (Profunctor(..))
+import Data.Functor.Compose
 import Data.Functor.Identity (Identity(..))
 import Data.Extensible.Internal.Rig
 import Data.Hashable
 import Data.Kind (Type)
-import Prettyprinter
 import GHC.Generics (Generic)
-import Language.Haskell.TH.Lift
 import Test.QuickCheck.Arbitrary
 
 
@@ -82,22 +84,25 @@ instance Wrapper [] where
   type Repr [] a = [a]
   _Wrapper = id
 
--- | Poly-kinded composition
-newtype Comp (f :: j -> Type) (g :: i -> j) (a :: i) = Comp { getComp :: f (g a) }
-  deriving (Show, Eq, Ord, Typeable, NFData, Generic, Semigroup, Monoid, Arbitrary, Hashable, Pretty, Lift)
+type Comp = Compose
 
-deriving instance (Functor f, Functor g) => Functor (Comp f g)
-deriving instance (Foldable f, Foldable g) => Foldable (Comp f g)
-deriving instance (Traversable f, Traversable g) => Traversable (Comp f g)
+pattern Comp :: f (g a) -> Compose f g a
+pattern Comp a = Compose a
+{-# DEPRECATED Comp "Use Compose instead" #-}
+
+
+getComp :: Compose f g a -> f (g a)
+getComp = getCompose
+{-# DEPRECATED getComp "Use getCompose instead" #-}
 
 -- | Wrap a result of 'fmap'
-comp :: Functor f => (a -> g b) -> f a -> Comp f g b
-comp f = Comp #. fmap f
+comp :: Functor f => (a -> g b) -> f a -> Compose f g b
+comp f = Compose #. fmap f
 {-# INLINE comp #-}
 
-instance (Functor f, Wrapper g) => Wrapper (Comp f g) where
-  type Repr (Comp f g) x = f (Repr g x)
-  _Wrapper = withIso _Wrapper $ \f g -> dimap (fmap f .# getComp) (fmap (comp g))
+instance (Functor f, Wrapper g) => Wrapper (Compose f g) where
+  type Repr (Compose f g) x = f (Repr g x)
+  _Wrapper = withIso _Wrapper $ \f g -> dimap (fmap f .# getCompose) (fmap (comp g))
   {-# INLINE _Wrapper #-}
 
 instance Wrapper (Const a) where
