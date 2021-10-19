@@ -1,3 +1,10 @@
+0.8.3
+------------------------------------------------
+
+* `Comp` is now a pattern synonym for `Compose`
+* Added missing `liftTyped` implementations
+* Supported aeson-2.0
+
 0.8.1
 ------------------------------------------------
 * Added `DefaultOrdered` and `Incremental` instances to `:&`
