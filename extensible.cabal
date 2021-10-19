@@ -83,7 +83,7 @@ library
     , incremental >= 0.3.1
     , membership
     , monad-skeleton >= 0.1.2
-    , prettyprinter >= 1.2.1 && <2
+    , prettyprinter ^>= 1.7
     , primitive
     , profunctors
     , QuickCheck

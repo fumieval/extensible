@@ -66,7 +66,7 @@ import Data.Functor.Identity
 import Data.Hashable
 import Data.Incremental (Incremental)
 import Data.String
-import Data.Text.Prettyprint.Doc
+import Prettyprinter
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Unboxed as U

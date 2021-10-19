@@ -27,7 +27,7 @@ import Data.Functor.Identity (Identity(..))
 import Data.Extensible.Internal.Rig
 import Data.Hashable
 import Data.Kind (Type)
-import Data.Text.Prettyprint.Doc
+import Prettyprinter
 import GHC.Generics (Generic)
 import Language.Haskell.TH.Lift
 import Language.Haskell.TH (conE, appE)
