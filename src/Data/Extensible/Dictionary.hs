@@ -37,6 +37,7 @@ import Data.Constraint
 import Data.Extensible.Struct
 import Data.Extensible.Wrapper
 import Data.Hashable
+import qualified Data.Aeson.KeyMap as KM
 import qualified Data.HashMap.Strict as HM
 import Data.Incremental
 import Data.Maybe (isJust)
@@ -45,7 +46,6 @@ import Data.Text.Prettyprint.Doc
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Unboxed as U
-import qualified Data.Text as T
 import Data.Type.Equality
 import qualified Language.Haskell.TH.Lift as TH
 #if MIN_VERSION_template_haskell(2,17,0)
@@ -224,26 +224,26 @@ instance Forall (KeyIs KnownSymbol) xs => Csv.DefaultOrdered (RecordOf h xs) whe
 instance Forall (KeyTargetAre KnownSymbol (Instance1 J.FromJSON h)) xs => J.FromJSON (xs :& Field h) where
   parseJSON = J.withObject "Object" $ \v -> hgenerateFor
     (Proxy :: Proxy (KeyTargetAre KnownSymbol (Instance1 J.FromJSON h)))
-    $ \m -> let k = symbolVal (proxyKeyOf m)
-      in fmap Field $ J.prependFailure ("parsing #" ++ k ++ ": ") $ J.parseJSON $ maybe J.Null id $ HM.lookup (T.pack k) v
+    $ \m -> let k = stringKeyOf m
+      in fmap Field $ J.prependFailure ("parsing " ++ show k ++ ": ") $ J.parseJSON $ maybe J.Null id $ KM.lookup k v
 
 instance Forall (KeyTargetAre KnownSymbol (Instance1 J.ToJSON h)) xs => J.ToJSON (xs :& Field h) where
   toJSON = J.Object . hfoldlWithIndexFor
     (Proxy :: Proxy (KeyTargetAre KnownSymbol (Instance1 J.ToJSON h)))
-    (\k m v -> HM.insert (T.pack (symbolVal (proxyKeyOf k))) (J.toJSON v) m)
-    HM.empty
+    (\k m v -> KM.insert (stringKeyOf k) (J.toJSON v) m)
+    KM.empty
 
 instance Forall (KeyTargetAre KnownSymbol (Instance1 J.FromJSON h)) xs => J.FromJSON (xs :& Nullable (Field h)) where
   parseJSON = J.withObject "Object" $ \v -> hgenerateFor
     (Proxy :: Proxy (KeyTargetAre KnownSymbol (Instance1 J.FromJSON h)))
-    $ \m -> let k = symbolVal (proxyKeyOf m)
-      in fmap Nullable $ traverse J.parseJSON $ HM.lookup (T.pack k) v
+    $ \m -> let k = stringKeyOf m
+      in fmap Nullable $ traverse J.parseJSON $ KM.lookup k v
 
 instance Forall (KeyTargetAre KnownSymbol (Instance1 J.ToJSON h)) xs => J.ToJSON (xs :& Nullable (Field h)) where
   toJSON = J.Object . hfoldlWithIndexFor
     (Proxy :: Proxy (KeyTargetAre KnownSymbol (Instance1 J.ToJSON h)))
-    (\k m (Nullable v) -> maybe id (HM.insert (T.pack $ symbolVal $ proxyKeyOf k) . J.toJSON) v m)
-    HM.empty
+    (\k m (Nullable v) -> maybe id (KM.insert (stringKeyOf k) . J.toJSON) v m)
+    KM.empty
 
 instance WrapForall Show h xs => Show (xs :/ h) where
   showsPrec d (EmbedAt i h) = showParen (d > 10) $ showString "EmbedAt "
