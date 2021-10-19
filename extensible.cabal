@@ -16,7 +16,7 @@ copyright:           Copyright (c) 2017-2021 Fumiaki Kinoshita
 category:            Data, Records
 build-type:          Simple
 stability:           experimental
-Tested-With:         GHC == 8.6.5, GHC == 8.8.4, GHC == 8.10.2
+Tested-With:         GHC == 8.6.5, GHC == 8.8.4, GHC == 8.10.4, GHC == 9.0.1
 
 extra-source-files:
   examples/*.hs
