@@ -48,7 +48,7 @@ import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Unboxed as U
 import Data.Type.Equality
 import qualified Language.Haskell.TH.Lift as TH
-#if MIN_VERSION_template_haskell(2,17,0)
+#if MIN_VERSION_template_haskell(2,16,0)
 import qualified Language.Haskell.TH.Syntax as TH
 #endif
 import Language.Haskell.TH hiding (Type)
@@ -114,19 +114,13 @@ instance WrapForall Bounded h xs => Bounded (xs :& h) where
   minBound = hrepeatFor (Proxy :: Proxy (Instance1 Bounded h)) minBound
   maxBound = hrepeatFor (Proxy :: Proxy (Instance1 Bounded h)) maxBound
 
-#if !MIN_VERSION_th_lift(0,7,9)
-instance TH.Lift a => TH.Lift (Identity a) where
-  lift = appE (conE 'Identity) . TH.lift . runIdentity
-
-instance TH.Lift a => TH.Lift (Const a b) where
-  lift = appE (conE 'Const) . TH.lift . getConst
-#endif
-
 instance WrapForall TH.Lift h xs => TH.Lift (xs :& h) where
   lift = hfoldrWithIndexFor (Proxy :: Proxy (Instance1 TH.Lift h))
     (\_ x xs -> infixE (Just $ TH.lift x) (varE '(<:)) (Just xs)) (varE 'nil)
 #if MIN_VERSION_template_haskell(2,17,0) 
   liftTyped e = TH.Code $ TH.TExp <$> TH.lift e
+#elif MIN_VERSION_template_haskell(2,16,0)
+  liftTyped e = TH.TExp <$> TH.lift e
 #endif
 
 newtype instance U.MVector s (xs :& h) = MV_Product (xs :& Comp (U.MVector s) h)
@@ -279,6 +273,8 @@ instance WrapForall TH.Lift h xs => TH.Lift (xs :/ h) where
     (library :: xs :& Comp Dict (Instance1 TH.Lift h))
 #if MIN_VERSION_template_haskell(2,17,0)
   liftTyped e = TH.Code $ TH.TExp <$> TH.lift e
+#elif MIN_VERSION_template_haskell(2,16,0)
+  liftTyped e = TH.TExp <$> TH.lift e
 #endif
 
 instance WrapForall Arbitrary h xs => Arbitrary (xs :/ h) where

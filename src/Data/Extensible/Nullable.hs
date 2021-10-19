@@ -31,12 +31,11 @@ import Data.Profunctor.Unsafe
 import Data.Maybe (fromMaybe)
 import GHC.Generics (Generic)
 import Language.Haskell.TH.Lift
-import Language.Haskell.TH (appE, conE)
 import Test.QuickCheck.Arbitrary
 
 -- | Wrapped Maybe
 newtype Nullable h x = Nullable { getNullable :: Maybe (h x) }
-  deriving (Show, Eq, Ord, Typeable, Generic, NFData, Arbitrary, Hashable)
+  deriving (Show, Eq, Ord, Typeable, Generic, NFData, Arbitrary, Hashable, Lift)
 
 instance Wrapper h => Wrapper (Nullable h) where
   type Repr (Nullable h) x = Maybe (Repr h x)
@@ -50,9 +49,6 @@ instance Semigroup (h x) => Semigroup (Nullable h x) where
 instance Semigroup (h x) => Monoid (Nullable h x) where
   mempty = Nullable Nothing
   mappend = (<>)
-
-instance Lift (h a) => Lift (Nullable h a) where
-  lift = appE (conE 'Nullable) . lift . getNullable
 
 -- | Apply a function to its content.
 mapNullable :: (g x -> h y) -> Nullable g x -> Nullable h y

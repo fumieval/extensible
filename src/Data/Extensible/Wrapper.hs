@@ -30,7 +30,6 @@ import Data.Kind (Type)
 import Prettyprinter
 import GHC.Generics (Generic)
 import Language.Haskell.TH.Lift
-import Language.Haskell.TH (conE, appE)
 import Test.QuickCheck.Arbitrary
 
 
@@ -85,14 +84,11 @@ instance Wrapper [] where
 
 -- | Poly-kinded composition
 newtype Comp (f :: j -> Type) (g :: i -> j) (a :: i) = Comp { getComp :: f (g a) }
-  deriving (Show, Eq, Ord, Typeable, NFData, Generic, Semigroup, Monoid, Arbitrary, Hashable, Pretty)
+  deriving (Show, Eq, Ord, Typeable, NFData, Generic, Semigroup, Monoid, Arbitrary, Hashable, Pretty, Lift)
 
 deriving instance (Functor f, Functor g) => Functor (Comp f g)
 deriving instance (Foldable f, Foldable g) => Foldable (Comp f g)
 deriving instance (Traversable f, Traversable g) => Traversable (Comp f g)
-
-instance Lift (f (g a)) => Lift (Comp f g a) where
-  lift = appE (conE 'Comp) . lift . getComp
 
 -- | Wrap a result of 'fmap'
 comp :: Functor f => (a -> g b) -> f a -> Comp f g b

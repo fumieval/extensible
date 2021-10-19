@@ -82,7 +82,6 @@ library
     , hashable
     , incremental >= 0.3.1
     , membership
-    , monad-skeleton >= 0.1.2
     , prettyprinter ^>= 1.7
     , primitive
     , profunctors
@@ -91,7 +90,7 @@ library
     , tagged
     , template-haskell
     , text
-    , th-lift
+    , th-lift >= 0.8
     , transformers
     , unordered-containers
     , vector >= 0.12.1.2
