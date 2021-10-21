@@ -50,6 +50,7 @@ import Type.Membership
 instance (MonadIO m, Lookup xs "IO" m) => MonadIO (Eff xs) where
   liftIO = liftEff (Proxy :: Proxy "IO") . liftIO
 
+-- | 'retractEff' specialised for IO
 runIODef :: Eff '["IO" ':> IO] a -> IO a
 runIODef = retractEff
 

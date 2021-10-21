@@ -11,6 +11,7 @@ cabal.sandbox.config
 cabal.config
 .stack-work
 .bash_history
+dist-newstyle
 
 # =========================
 # Operating System Files

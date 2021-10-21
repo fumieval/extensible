@@ -1,6 +1,6 @@
 cabal-version:       2.4
 name:                extensible-skeleton
-version:             0
+version:             0.0.1
 synopsis:            Operational-based extensible effect library
 homepage:            https://github.com/fumieval/extensible
 bug-reports:         http://github.com/fumieval/extensible/issues
@@ -9,13 +9,14 @@ license:             BSD-3-Clause
 license-file:        LICENSE
 author:              Fumiaki Kinoshita
 maintainer:          Fumiaki Kinoshita <fumiexcel@gmail.com>
-copyright:           Copyright (c) 2019 Fumiaki Kinoshita
+copyright:           Copyright (c) 2021 Fumiaki Kinoshita
 category:            Monads
 build-type:          Simple
 stability:           experimental
-Tested-With:         GHC == 8.4.4, GHC == 8.6.3
+Tested-With:         GHC == 8.6.5, GHC == 8.8.4, GHC == 8.10.4, GHC == 9.0.1
 
 extra-source-files:
+  CHANGELOG.md
 
 source-repository head
   type: git
@@ -23,7 +24,9 @@ source-repository head
 
 library
   build-depends: base >= 4.8 && <5
-    , extensible >= 0.6.2, monad-skeleton, resourcet, membership, transformers, mtl
+    , extensible ^>= 0.8
+    , monad-skeleton ^>= 0.1
+    , resourcet, membership, transformers, mtl
     , exceptions, profunctors, template-haskell
   exposed-modules:
     Data.Extensible.Effect
