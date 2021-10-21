@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs, DataKinds, FlexibleContexts, TemplateHaskell #-}
+{-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_GHC -ddump-splices #-}
 module Main where
 import Control.Monad.IO.Class
