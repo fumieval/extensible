@@ -97,7 +97,6 @@ import Data.Extensible.Product
 import Data.Extensible.Class
 import Data.Kind (Type)
 import Data.Functor.Identity
-import Data.Profunctor.Unsafe -- Trustworthy since 7.8
 import Data.Type.Equality
 import Type.Membership
 
@@ -205,7 +204,7 @@ newtype Interpreter f g = Interpreter { runInterpreter :: forall a. g a -> f a }
 -- | Process an 'Eff' action using a record of 'Interpreter's.
 handleEff :: RecordOf (Interpreter m) xs -> Eff xs a -> MonadView m (Eff xs) a
 handleEff hs m = case debone m of
-  Instruction i t :>>= k -> views (pieceAt i) (runInterpreter .# getField) hs t :>>= k
+  Instruction i t :>>= k -> views (pieceAt i) (\(Field (Interpreter x)) -> x) hs t :>>= k
   Return a -> Return a
 
 -- | Anonymous representation of instructions.

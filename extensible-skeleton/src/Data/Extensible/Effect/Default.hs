@@ -15,7 +15,8 @@
 -- 'MonadState', 'MonadError' instances
 -----------------------------------------------------------------------------
 module Data.Extensible.Effect.Default (
-  ReaderDef
+  runIODef
+  , ReaderDef
   , runReaderDef
   , StateDef
   , runStateDef
@@ -48,6 +49,9 @@ import Type.Membership
 
 instance (MonadIO m, Lookup xs "IO" m) => MonadIO (Eff xs) where
   liftIO = liftEff (Proxy :: Proxy "IO") . liftIO
+
+runIODef :: Eff '["IO" ':> IO] a -> IO a
+runIODef = retractEff
 
 #if MIN_VERSION_resourcet(1,2,0)
 instance (MonadResource m, Lookup xs "IO" m) => MonadResource (Eff xs) where

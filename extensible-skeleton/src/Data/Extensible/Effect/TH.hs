@@ -1,8 +1,10 @@
 {-# LANGUAGE Trustworthy, TemplateHaskell, LambdaCase, ViewPatterns #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE PatternSynonyms #-}
 ------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Effect.TH
--- Copyright   :  (c) Fumiaki Kinoshita 2019
+-- Copyright   :  (c) Fumiaki Kinoshita 2021
 -- License     :  BSD3
 --
 -- Maintainer  :  Fumiaki Kinoshita <fumiexcel@gmail.com>
@@ -62,13 +64,23 @@ customDecEffects synSet synActions decs = decs >>= \ds -> fmap concat $ forM ds 
     -> do
       (cxts, dcs) <- fmap unzip $ traverse (con2Eff tparams) cs
 
-      let vars = map PlainTV $ nub $ concatMap (varsT . snd) cxts
+      let vars = map mkPlainTV $ nub $ concatMap (varsT . snd) cxts
       return $ [TySynD dataName vars (typeListT $ map snd cxts) | synSet]
-          ++ [ TySynD k (map PlainTV $ nub $ varsT t) t | synActions, (k, t) <- cxts]
+          ++ [ TySynD k (map mkPlainTV $ nub $ varsT t) t | synActions, (k, t) <- cxts]
           ++ concat dcs
   _ -> fail "mkEffects accepts GADT declaration"
+  where
+#if MIN_VERSION_template_haskell(2,17,0)
+    mkPlainTV n = PlainTV n ()
+#else
+    mkPlainTV = PlainTV
+#endif
 
+#if MIN_VERSION_template_haskell(2,17,0)
+con2Eff :: [TyVarBndr ()] -> Con -> Q ((Name, Type), [Dec])
+#else
 con2Eff :: [TyVarBndr] -> Con -> Q ((Name, Type), [Dec])
+#endif
 con2Eff _ (GadtC [name] st (AppT _ resultT))
   = return $ effectFunD name (map snd st) resultT
 con2Eff tparams (ForallC _ eqs (NormalC name st))
@@ -78,12 +90,21 @@ con2Eff _ p = do
   runIO (print p)
   fail "Unsupported constructor"
 
+#if MIN_VERSION_template_haskell(2,17,0)
+fromMangledGADT :: [TyVarBndr ()] -> [Type] -> Name -> [(Strict, Type)] -> ((Name, Type), [Dec])
+#else
 fromMangledGADT :: [TyVarBndr] -> [Type] -> Name -> [(Strict, Type)] -> ((Name, Type), [Dec])
+#endif
 fromMangledGADT tyvars_ eqs con fieldTypes
   = effectFunD con argumentsT result
   where
+#if MIN_VERSION_template_haskell(2,17,0)
+    getTV (PlainTV n _) = n
+    getTV (KindedTV n _ _) = n
+#else
     getTV (PlainTV n) = n
     getTV (KindedTV n _) = n
+#endif
 
     tyvars = map getTV tyvars_
 
@@ -123,7 +144,13 @@ effectFunD key argumentsT resultT = ((key, PromotedT '(:>) `AppT` nameT `AppT` a
 
     fName = let (ch : rest) = nameBase key in mkName $ toLower ch : rest
 
-    typ = ForallT (map PlainTV $ varList : varsT resultT ++ concatMap varsT argumentsT)
+#if MIN_VERSION_template_haskell(2,17,0)
+    mkPlainTV n = PlainTV n SpecifiedSpec
+#else
+    mkPlainTV = PlainTV
+#endif
+
+    typ = ForallT (map mkPlainTV $ varList : varsT resultT ++ concatMap varsT argumentsT)
         [associateT nameT actionT varList]
         $ effectFunT varList argumentsT resultT
 
