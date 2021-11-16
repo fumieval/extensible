@@ -105,7 +105,7 @@ instance (WrapForall Semigroup h xs, WrapForall Monoid h xs) => Monoid (xs :& h)
   mappend = (<>)
   {-# INLINE mappend #-}
 
-instance WrapForall Hashable h xs => Hashable (xs :& h) where
+instance (WrapForall Eq h xs, WrapForall Hashable h xs) => Hashable (xs :& h) where
   hashWithSalt = hfoldlWithIndexFor (Proxy :: Proxy (Instance1 Hashable h))
     (const hashWithSalt)
   {-# INLINE hashWithSalt #-}
@@ -261,7 +261,7 @@ instance WrapForall NFData h xs => NFData (xs :/ h) where
   rnf (EmbedAt i h) = views (pieceAt i) (\(Compose Dict) -> rnf h) (library :: xs :& Compose Dict (Instance1 NFData h))
   {-# INLINE rnf #-}
 
-instance WrapForall Hashable h xs => Hashable (xs :/ h) where
+instance (WrapForall Eq h xs, WrapForall Hashable h xs) => Hashable (xs :/ h) where
   hashWithSalt s (EmbedAt i h) = views (pieceAt i)
     (\(Compose Dict) -> s `hashWithSalt` i `hashWithSalt` h)
     (library :: xs :& Compose Dict (Instance1 Hashable h))

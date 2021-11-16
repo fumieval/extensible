@@ -79,7 +79,7 @@ library
     , constraints
     , deepseq
     , ghc-prim
-    , hashable
+    , hashable >= 1.2 && <1.5
     , incremental >= 0.3.1
     , membership
     , prettyprinter ^>= 1.7
