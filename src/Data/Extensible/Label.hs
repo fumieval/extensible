@@ -20,7 +20,6 @@ import Data.Extensible.Wrapper
 
 instance (Extensible f p e
   , Lookup xs k v
-  , Labelling k p
   , Wrapper h
   , ExtensibleConstr e xs (Field h) (k ':> v)
   , rep ~ Repr h v

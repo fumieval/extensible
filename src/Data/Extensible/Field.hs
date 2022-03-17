@@ -23,7 +23,6 @@ module Data.Extensible.Field (
   , (@==)
   , FieldOptic
   , xlb
-  , FieldName
   , liftField
   , liftField2
   -- * Records and variants
@@ -44,10 +43,6 @@ module Data.Extensible.Field (
   , KeyIs
   , TargetIs
   , KeyTargetAre
-  -- * Internal
-  , LabelPhantom
-  , Labelling
-  , Inextensible
   ) where
 import Control.DeepSeq (NFData)
 import qualified Data.Aeson as J
@@ -243,15 +238,8 @@ type FieldOptic k = forall kind. forall f p t xs (h :: kind -> Type) (v :: kind)
   (Extensible f p t
   , ExtensibleConstr t xs (Field h) (k ':> v)
   , Lookup xs k v
-  , Labelling k p
   , Wrapper h)
   => Optic' p f (t xs (Field h)) (Repr h v)
-
--- | The trivial inextensible data type
-data Inextensible (xs :: [k]) (h :: k -> Type)
-
-instance (Functor f, Profunctor p) => Extensible f p Inextensible where
-  pieceAt _ _ = error "Impossible"
 
 instance k ~ l => IsLabel k (Proxy l) where
   fromLabel = Proxy
@@ -259,21 +247,6 @@ instance k ~ l => IsLabel k (Proxy l) where
 -- | Specialised version of 'itemAssoc'. Stands for "eXtensible LaBel"
 xlb :: Proxy k -> FieldOptic k
 xlb t = itemAssoc t
-
--- | When you see this type as an argument, it expects a 'FieldLens'.
--- This type is used to resolve the name of the field internally.
-type FieldName k = Optic' (LabelPhantom k) Proxy (Inextensible '[k ':> ()] (Field Proxy)) ()
-
--- | Signifies a field name internally
-type family Labelling s p :: Constraint where
-  Labelling s (LabelPhantom t) = s ~ t
-  Labelling s p = ()
-
--- | A ghostly type which spells the field name
-data LabelPhantom s a b
-
-instance Profunctor (LabelPhantom s) where
-  dimap _ _ _ = error "Impossible"
 
 -- | Annotate a value by the field name.
 --
@@ -283,7 +256,7 @@ instance Profunctor (LabelPhantom s) where
 --   <: #str \@= "foo"
 --   <: nil
 -- @
-(@=) :: Wrapper h => FieldName k -> Repr h v -> Field h (k ':> v)
+(@=) :: Wrapper h => Proxy k -> Repr h v -> Field h (k ':> v)
 (@=) _ = Field #. review _Wrapper
 {-# INLINE (@=) #-}
 infix 1 @=
@@ -297,18 +270,18 @@ infix 1 @=
 --   <: #str \<\@=\> getLine
 --   <: nil
 -- @
-(<@=>) :: (Functor f, Wrapper h) => FieldName k -> f (Repr h v) -> Compose f (Field h) (k ':> v)
+(<@=>) :: (Functor f, Wrapper h) => Proxy k -> f (Repr h v) -> Compose f (Field h) (k ':> v)
 (<@=>) k = comp (k @=)
 {-# INLINE (<@=>) #-}
 infix 1 <@=>
 
 -- | Annotate a value by the field name without 'Wrapper'.
-(@:>) :: FieldName k -> h v -> Field h (k ':> v)
+(@:>) :: Proxy k -> h v -> Field h (k ':> v)
 (@:>) _ = Field
 infix 1 @:>
 
 -- | Kind-monomorphic, unwrapped version of '@='
-(@==) :: FieldName (k :: Symbol) -> v -> Field Identity (k ':> v)
+(@==) :: Proxy (k :: Symbol) -> v -> Field Identity (k ':> v)
 (@==) = (@=)
 {-# INLINE (@==) #-}
 infix 1 @==

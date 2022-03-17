@@ -23,11 +23,11 @@ import Control.Monad.Trans.RWS.Strict
 import Control.Monad.Trans.Class
 import Data.Functor.Compose
 import Data.Extensible.Class
-import Data.Extensible.Field
 import Data.Extensible.Product
 import Data.Extensible.Internal.Rig
 import Data.Extensible.Nullable
 import Data.Extensible.Wrapper
+import Data.Proxy
 
 -- | @'TangleT' h xs m@ is the monad of computations that may depend on the elements in 'xs'.
 newtype TangleT xs h m a = TangleT
@@ -46,7 +46,7 @@ instance (Monad m, Monoid a) => Monoid (TangleT xs h m a) where
 
 -- | Hitch an element associated to the 'FieldName' through a wrapper.
 lasso :: forall k v m h xs. (Monad m, Lookup xs k v, Wrapper h)
-  => FieldName k -> TangleT xs h m (Repr h (k ':> v))
+  => Proxy k -> TangleT xs h m (Repr h (k ':> v))
 lasso _ = view _Wrapper <$> hitchAt (association :: Membership xs (k ':> v))
 {-# INLINE lasso #-}
 
