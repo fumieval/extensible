@@ -32,7 +32,6 @@ module Data.Extensible (
   , module Data.Extensible.Dictionary
   , module Data.Extensible.Field
   , module Data.Extensible.Inclusion
-  , module Data.Extensible.Label
   , module Data.Extensible.Match
   , module Data.Extensible.Nullable
   , module Data.Extensible.Product
@@ -51,7 +50,9 @@ import Data.Extensible.Class
 import Data.Extensible.Dictionary
 import Data.Extensible.Field
 import Data.Extensible.Inclusion
-import Data.Extensible.Label
+#ifdef ISLABEL
+import Data.Extensible.Label ()
+#endif
 import Data.Extensible.Match
 import Data.Extensible.Nullable
 import Data.Extensible.Product

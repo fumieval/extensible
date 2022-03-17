@@ -31,10 +31,17 @@ source-repository head
 flag barbies
   default: False
   description: "define instances for barbies"
+  manual: True
 
 flag cassava
   default: True
   description: "define instances for cassava"
+  manual: True
+
+flag IsLabel
+  default: True
+  description: "export the instance of IsLabel making optics (which could conflict with other packages such as generic-lens)"
+  manual: True
 
 library
   exposed-modules:
@@ -100,6 +107,8 @@ library
   if flag(cassava)
     build-depends: cassava
     cpp-options: -DCASSAVA
+  if flag(IsLabel)
+    cpp-options: -DISLABEL
   hs-source-dirs:      src
   ghc-options: -Wall -Wcompat
   default-language:    Haskell2010

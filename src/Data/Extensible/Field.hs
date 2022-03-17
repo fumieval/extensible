@@ -22,6 +22,7 @@ module Data.Extensible.Field (
   , (@:>)
   , (@==)
   , FieldOptic
+  , xlb
   , FieldName
   , liftField
   , liftField2
@@ -72,6 +73,7 @@ import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Unboxed as U
 import Foreign.Storable (Storable)
+import GHC.OverloadedLabels
 import GHC.Generics (Generic)
 import GHC.TypeLits hiding (Nat)
 import Language.Haskell.TH.Lift
@@ -250,6 +252,13 @@ data Inextensible (xs :: [k]) (h :: k -> Type)
 
 instance (Functor f, Profunctor p) => Extensible f p Inextensible where
   pieceAt _ _ = error "Impossible"
+
+instance k ~ l => IsLabel k (Proxy l) where
+  fromLabel = Proxy
+
+-- | Specialised version of 'itemAssoc'. Stands for "eXtensible LaBel"
+xlb :: Proxy k -> FieldOptic k
+xlb t = itemAssoc t
 
 -- | When you see this type as an argument, it expects a 'FieldLens'.
 -- This type is used to resolve the name of the field internally.

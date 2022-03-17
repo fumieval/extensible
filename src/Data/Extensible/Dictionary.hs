@@ -35,6 +35,7 @@ import Data.Extensible.Internal.Rig
 import Data.Extensible.Nullable
 import Data.Constraint
 import Data.Extensible.Struct
+import Data.Extensible.Wrapper
 import Data.Hashable
 import qualified Data.Aeson.KeyMap as KM
 import Data.Functor.Compose
@@ -52,6 +53,7 @@ import qualified Language.Haskell.TH.Lift as TH
 import qualified Language.Haskell.TH.Syntax as TH
 #endif
 import Language.Haskell.TH hiding (Type)
+import GHC.Records
 import GHC.TypeLits
 import Test.QuickCheck.Arbitrary
 import Test.QuickCheck.Gen
@@ -345,3 +347,6 @@ instance WrapForall Incremental h xs => Incremental (xs :& h) where
       check t
         | getAny $ hfoldMap (Any . isJust . unwrapDelta) t = Just t
         | otherwise = Nothing
+
+instance (Lookup xs k v, Wrapper h, Repr h v ~ a) => HasField k (RecordOf h xs) a where
+  getField = unwrap . hlookup (association :: Membership xs (k >: v))
