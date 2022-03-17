@@ -80,7 +80,7 @@ library
     , CPP
     , NoStarIsType
   build-depends:       base >= 4.8 && <5
-    , aeson ^>= 2.0
+    , aeson >= 1.5 && <2.1
     , bytestring
     , comonad
     , constraints

@@ -37,7 +37,11 @@ import Data.Constraint
 import Data.Extensible.Struct
 import Data.Extensible.Wrapper
 import Data.Hashable
+#if MIN_VERSION_aeson(2,0,0)
 import qualified Data.Aeson.KeyMap as KM
+#else
+import qualified Data.HashMap.Strict as KM
+#endif
 import Data.Functor.Compose
 import qualified Data.HashMap.Strict as HM
 import Data.Incremental
