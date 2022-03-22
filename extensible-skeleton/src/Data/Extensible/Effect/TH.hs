@@ -142,7 +142,9 @@ effectFunD key argumentsT resultT = ((key, PromotedT '(:>) `AppT` nameT `AppT` a
 
     varList = mkName "xs"
 
-    fName = let (ch : rest) = nameBase key in mkName $ toLower ch : rest
+    fName = case nameBase key of
+      ch : rest -> mkName $ toLower ch : rest
+      _ -> error "impossible: empty nameBase"
 
 #if MIN_VERSION_template_haskell(2,17,0)
     mkPlainTV n = PlainTV n SpecifiedSpec

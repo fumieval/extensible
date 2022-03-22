@@ -29,8 +29,10 @@ import Type.Membership
 -- @
 --
 mkField :: String -> DecsQ
-mkField str = fmap concat $ forM (words str) $ \s@(x:xs) ->
-  let name = mkName $ if isLower x then x : xs else '_' : x : xs
+mkField str = fmap concat $ forM (words str) $ \s ->
+  let name = mkName $ case s of
+        x : xs -> if isLower x then x : xs else '_' : x : xs
+        _ -> error "Impossible"
   in mkFieldAs name s
 
 -- | @'mkFieldAs' (mkName "foo") "bar"@ defines a field for "bar" as @foo@.
