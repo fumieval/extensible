@@ -2,6 +2,8 @@
 ------------------------------------------------
 
 * Removed `FieldName`, the relic of the old ages
+    * `(@=)`, `@==`, `@!?` and `lasso` now take `Proxy` instead of `FieldName`. Those who are using `mkField` need to replace the operands with proxies (OverloadedLabels is recommended).
+* Supported aeson 1.x
 
 0.8.3
 ------------------------------------------------
