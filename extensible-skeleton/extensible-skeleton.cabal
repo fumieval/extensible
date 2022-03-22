@@ -24,7 +24,7 @@ source-repository head
 
 library
   build-depends: base >= 4.8 && <5
-    , extensible ^>= 0.8
+    , extensible >= 0.8 && <0.10
     , monad-skeleton ^>= 0.1
     , resourcet, membership, transformers, mtl
     , exceptions, profunctors, template-haskell

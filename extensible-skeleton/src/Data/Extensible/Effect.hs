@@ -223,7 +223,7 @@ runAction r AResult = r
 runAction f (AArgument x a) = runAction (f x) a
 
 -- | Create a 'Field' of a 'Interpreter' for an 'Action'.
-(@!?) :: FieldName k -> Function xs (f a) -> Field (Interpreter f) (k ':> Action xs a)
+(@!?) :: Proxy k -> Function xs (f a) -> Field (Interpreter f) (k ':> Action xs a)
 _ @!? f = Field $ Interpreter $ runAction f
 infix 1 @!?
 
