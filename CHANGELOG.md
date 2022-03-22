@@ -4,6 +4,7 @@
 * Removed `FieldName`, the relic of the old ages
     * `(@=)`, `@==`, `@!?` and `lasso` now take `Proxy` instead of `FieldName`. Those who are using `mkField` need to replace the operands with proxies (OverloadedLabels is recommended).
 * Supported aeson 1.x
+* Introduced `IsLabel` flag which toggles the presence of optics `OverloadedLabels`. By disabling it, this package can now coexist with other users of the `IsLabel` class, such as `generic-lens` and `relational-query`.
 
 0.8.3
 ------------------------------------------------
