@@ -83,6 +83,10 @@ module Data.Extensible.Effect (
   , contEff
   , runContEff
   , callCCEff
+  -- * Reexport
+  , Assoc ((:>))
+  , type (>:)
+  , Lookup
   ) where
 
 import Control.Applicative
