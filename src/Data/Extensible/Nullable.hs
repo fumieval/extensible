@@ -15,7 +15,10 @@ module Data.Extensible.Nullable (
   , retrench
   , Nullable(..)
   , mapNullable
-  , fromNullable) where
+  , fromNullable
+  , coinclusionAssoc
+  , wrenchAssoc
+  , retrenchAssoc) where
 
 import Control.DeepSeq (NFData)
 import Data.Extensible.Class
@@ -80,3 +83,22 @@ retrench (EmbedAt i h) = views (pieceAt i) (mapNullable (`EmbedAt`h)) coinclusio
 fromNullable :: h x -> Nullable h x -> h x
 fromNullable def = fromMaybe def . getNullable
 {-# INLINE fromNullable #-}
+
+------------------------------------------------------------------
+
+-- | The inverse of 'inclusionAssoc'.
+coinclusionAssoc :: (IncludeAssoc ys xs, Generate ys) => ys :& Nullable (Membership xs)
+coinclusionAssoc = S.hfrozen $ do
+  s <- S.newRepeat $ Nullable Nothing
+  hfoldrWithIndex
+    (\i m cont -> S.set s m (Nullable $ Just i) >> cont) (return s) inclusionAssoc
+
+-- | Extend a product and fill missing fields by 'Null'.
+wrenchAssoc :: (Generate ys, IncludeAssoc ys xs) => xs :& h -> ys :& Nullable h
+wrenchAssoc xs = mapNullable (flip hlookup xs) `hmap` coinclusionAssoc
+{-# INLINE wrenchAssoc #-}
+
+-- | Narrow the range of the sum, if possible.
+retrenchAssoc :: (Generate ys, IncludeAssoc ys xs) => ys :/ h -> Nullable ((:/) xs) h
+retrenchAssoc (EmbedAt i h) = views (pieceAt i) (mapNullable (`EmbedAt`h)) coinclusionAssoc
+{-# INLINE retrenchAssoc #-}
