@@ -34,6 +34,9 @@ module Data.Extensible.Effect.Default (
 ) where
 import Control.Applicative
 import Data.Extensible.Effect
+#if MIN_VERSION_mtl(2,3,0)
+import Control.Monad
+#endif
 import Control.Monad.Except
 import Control.Monad.Catch
 import Control.Monad.Cont
