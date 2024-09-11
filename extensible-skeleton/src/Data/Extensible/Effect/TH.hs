@@ -70,13 +70,17 @@ customDecEffects synSet synActions decs = decs >>= \ds -> fmap concat $ forM ds 
           ++ concat dcs
   _ -> fail "mkEffects accepts GADT declaration"
   where
-#if MIN_VERSION_template_haskell(2,17,0)
+#if MIN_VERSION_template_haskell(2,21,0)
+    mkPlainTV n = PlainTV n BndrReq
+#elif MIN_VERSION_template_haskell(2,17,0)
     mkPlainTV n = PlainTV n ()
 #else
     mkPlainTV = PlainTV
 #endif
 
-#if MIN_VERSION_template_haskell(2,17,0)
+#if MIN_VERSION_template_haskell(2,21,0)
+con2Eff :: [TyVarBndr BndrVis] -> Con -> Q ((Name, Type), [Dec])
+#elif MIN_VERSION_template_haskell(2,17,0)
 con2Eff :: [TyVarBndr ()] -> Con -> Q ((Name, Type), [Dec])
 #else
 con2Eff :: [TyVarBndr] -> Con -> Q ((Name, Type), [Dec])
@@ -90,7 +94,9 @@ con2Eff _ p = do
   runIO (print p)
   fail "Unsupported constructor"
 
-#if MIN_VERSION_template_haskell(2,17,0)
+#if MIN_VERSION_template_haskell(2,21,0)
+fromMangledGADT :: [TyVarBndr BndrVis] -> [Type] -> Name -> [(Strict, Type)] -> ((Name, Type), [Dec])
+#elif MIN_VERSION_template_haskell(2,17,0)
 fromMangledGADT :: [TyVarBndr ()] -> [Type] -> Name -> [(Strict, Type)] -> ((Name, Type), [Dec])
 #else
 fromMangledGADT :: [TyVarBndr] -> [Type] -> Name -> [(Strict, Type)] -> ((Name, Type), [Dec])
