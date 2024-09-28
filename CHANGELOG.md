@@ -1,3 +1,15 @@
+0.9.2
+------------------------------------------------
+
+* Supported GHC 9.10 ([#40](https://github.com/fumieval/extensible/pull/40) by [@miguel-negrao](https://github.com/miguel-negrao))
+
+0.9.1
+------------------------------------------------
+
+* Supported GHCs up to 9.8 ([#38](https://github.com/fumieval/extensible/pull/38) by [@kgtkr](https://github.com/kgtkr))
+* Exported `Assoc`, `(>:)`, and `Lookup` from `Data.Extensible.Effect`
+* Added `coinclusionAssoc`, `wrenchAssoc`, and `retrenchAssoc` ([#36](https://github.com/fumieval/extensible/pull/36) by [@At-sushi](https://github.com/At-sushi))
+
 0.9
 ------------------------------------------------
 
