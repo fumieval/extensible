@@ -4,7 +4,8 @@
 {-# LANGUAGE ScopedTypeVariables, TypeFamilies #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE UndecidableSuperClasses, TypeInType #-}
+{-# LANGUAGE UndecidableSuperClasses #-}
+{-# LANGUAGE PolyKinds #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Extensible.Field

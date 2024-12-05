@@ -138,7 +138,7 @@ instance FromBits r a => FromBits r (Const a b) where
   fromBits = Const . fromBits
   toBits = toBits . getConst
 
-instance (Bits r, FromBits r (h (TargetOf x))) => FromBits r (Field h x) where
+instance (Bits r, KnownNat (BitWidth (h (TargetOf x))), FromBits r (h (TargetOf x))) => FromBits r (Field h x) where
   type BitWidth (Field h x) = BitWidth (h (TargetOf x))
   fromBits = Field . fromBits
   toBits = toBits . getField

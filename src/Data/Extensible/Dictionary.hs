@@ -3,7 +3,7 @@
 {-# LANGUAGE TypeFamilies, ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances, MultiParamTypeClasses #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
-{-# LANGUAGE TypeInType #-}
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
